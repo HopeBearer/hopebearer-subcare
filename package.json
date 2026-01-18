@@ -1,0 +1,26 @@
+{
+  "name": "subcare-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "type-check": "turbo type-check",
+    "clean": "turbo clean",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "db:push": "pnpm exec prisma db push --schema=packages/database/prisma/schema.prisma",
+    "db:studio": "pnpm exec prisma studio --schema=packages/database/prisma/schema.prisma",
+    "db:generate": "pnpm exec prisma generate --schema=packages/database/prisma/schema.prisma"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5",
+    "prisma": "5.22.0",
+    "turbo": "^1.11.3",
+    "typescript": "^5.3.3"
+  },
+  "packageManager": "pnpm@8.15.4",
+  "engines": {
+    "node": ">=18"
+  }
+}
