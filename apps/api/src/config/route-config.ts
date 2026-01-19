@@ -10,6 +10,8 @@ export const routeConfig: Record<string, string> = {
   'POST /auth/register': 'v1',
   'POST /auth/login': 'v1',
   'POST /auth/refresh': 'v1',
+  'POST /auth/forgot-password': 'v1',
+  'GET /auth/captcha': 'v1',
 
   // Subscriptions
   'POST /subscriptions': 'v1',

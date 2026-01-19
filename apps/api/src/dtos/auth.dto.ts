@@ -16,4 +16,6 @@ export interface CreateUserDTO {
 export interface LoginUserDTO {
   email: string;
   password: string;
+  captchaId?: string;
+  captchaCode?: string;
 }

@@ -5,6 +5,7 @@ import { StatusCodes } from "http-status-codes";
 import * as bcrypt from "bcrypt";
 import { User } from "@subcare/database";
 import { TokenService } from "./TokenService";
+import { CaptchaService } from "./CaptchaService";
 
 /**
  * 认证响应接口
@@ -22,10 +23,14 @@ export interface AuthResponse {
  * 处理注册、登录、刷新 Token 等认证逻辑
  */
 export class AuthService {
+  private captchaService: CaptchaService;
+
   constructor(
     private userRepository: UserRepository,
     private tokenService: TokenService
-  ) {}
+  ) {
+    this.captchaService = new CaptchaService();
+  }
 
   /**
    * 用户注册
@@ -68,11 +73,35 @@ export class AuthService {
   }
 
   /**
+   * 生成验证码
+   */
+  generateCaptcha() {
+    return this.captchaService.generate();
+  }
+
+  /**
    * 用户登录
    * @param data 登录数据
    * @returns 认证响应
    */
   async login(data: LoginUserDTO): Promise<AuthResponse> {
+    // 验证图形验证码
+    if (data.captchaId && data.captchaCode) {
+        const isValid = this.captchaService.verify(data.captchaId, data.captchaCode);
+        if (!isValid) {
+            throw new AppError("Invalid captcha code", StatusCodes.BAD_REQUEST);
+        }
+    } else {
+        // Enforce captcha if you want, or make it optional. 
+        // For security, it's better to enforce it if provided, or enforce generally.
+        // Let's enforce it if the frontend is sending it, but maybe allow without for API testing if needed,
+        // or strictly require it. The requirement was "replace with free verification", so likely mandatory.
+        // However, existing tests might break. Let's make it mandatory if we want to prevent bots.
+        
+        // Checking if we should enforce it. The user said "add a machine test", so let's enforce it.
+        throw new AppError("Captcha is required", StatusCodes.BAD_REQUEST);
+    }
+
     // 查找用户
     let user = await this.userRepository.findByEmail(data.email);
     if (!user) {
@@ -145,5 +174,22 @@ export class AuthService {
       user: userWithoutPassword,
       tokens,
     };
+  }
+
+  /**
+   * 忘记密码 (Request Password Reset)
+   * Sends an email with a reset link if the user exists.
+   * @param email User email
+   */
+  async forgotPassword(email: string): Promise<void> {
+    const user = await this.userRepository.findByEmail(email);
+    if (!user) {
+        // Don't reveal user existence
+        return;
+    }
+
+    // TODO: Generate reset token and send email
+    // For now, we'll just log it
+    console.log(`Password reset requested for ${email}`);
   }
 }

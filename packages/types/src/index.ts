@@ -15,6 +15,8 @@ export interface UserDTO {
 export interface LoginParams {
   email: string;
   password: string;
+  captchaId?: string;
+  captchaCode?: string;
 }
 
 export interface RegisterParams {
@@ -23,12 +25,21 @@ export interface RegisterParams {
   name?: string;
 }
 
+export interface ForgotPasswordParams {
+  email: string;
+}
+
 export interface AuthResponse {
   user: UserDTO;
   tokens: {
     accessToken: string;
     refreshToken: string;
   };
+}
+
+export interface CaptchaResponse {
+  captchaId: string;
+  captchaImage: string; // SVG data or base64
 }
 
 export interface ApiResponse<T = any> {

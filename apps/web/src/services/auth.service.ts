@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import { LoginParams, RegisterParams, AuthResponse, ApiResponse } from '@subcare/types';
+import { LoginParams, RegisterParams, ForgotPasswordParams, AuthResponse, ApiResponse, CaptchaResponse } from '@subcare/types';
 
 // 接口版本由后端统一控制，前端只请求 /auth/*
 // 如果需要特定版本，可以在 Header 中指定，或由后端路由配置决定
@@ -12,5 +12,12 @@ export const authService = {
   register: async (params: RegisterParams): Promise<ApiResponse<AuthResponse>> => {
     return api.post(`/auth/register`, params);
   },
-};
 
+  forgotPassword: async (params: ForgotPasswordParams): Promise<ApiResponse<void>> => {
+    return api.post(`/auth/forgot-password`, params);
+  },
+
+  getCaptcha: async (): Promise<ApiResponse<CaptchaResponse>> => {
+    return api.get(`/auth/captcha`);
+  },
+};

@@ -1,9 +1,29 @@
 :root {
-  --color-primary-500: #6366f1;
-  --color-primary-600: #4f46e5;
-  --color-bg-page: #ffffff;
-  --color-text-primary: #111827;
+  /* Brand Colors */
+  --color-primary: #A5A6F6;
+  --color-primary-hover: #9394E5; /* Slightly darker/more saturated for hover */
   
+  /* Backgrounds */
+  --color-bg-page: #FDFDFF;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-input: #F9FAFB;
+  
+  /* Text */
+  --color-text-primary: #374151;
+  --color-text-secondary: #6B7280;
+  --color-text-inverse: #FFFFFF;
+  
+  /* Borders */
+  --color-border-base: #E5E7EB;
+  --color-border-focus: #A5A6F6;
+  --color-border-error: #FCA5A5;
+  
+  /* Status */
+  --color-error: #EF4444; /* Stronger red for text */
+  --color-success: #10B981;
+  
+  /* Palette references (keeping some existing ones for compatibility if needed) */
+  --color-primary-500: #A5A6F6;
   --color-gray-50: #f9fafb;
   --color-gray-100: #f3f4f6;
   --color-gray-200: #e5e7eb;
@@ -14,13 +34,22 @@
   --color-gray-700: #374151;
   --color-gray-800: #1f2937;
   --color-gray-900: #111827;
-
+  
   --color-red-500: #ef4444;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --color-bg-page: #111827;
-    --color-text-primary: #f9fafb;
+    --color-bg-surface: #1F2937;
+    --color-bg-input: #374151;
+    
+    --color-text-primary: #F9FAFB;
+    --color-text-secondary: #D1D5DB;
+    
+    --color-border-base: #374151;
+    --color-border-focus: #A5A6F6;
+    
+    /* In dark mode, maybe adjust primary slightly if needed, but keeping for consistency */
   }
 }

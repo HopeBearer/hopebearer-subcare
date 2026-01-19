@@ -1,0 +1,109 @@
+.auth-page-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  
+  // Left side - Brand
+  .auth-brand-section {
+    display: none; // Hidden on mobile
+    
+    @media (min-width: 1024px) {
+      display: flex;
+      width: 60%;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 3rem;
+      position: relative;
+      overflow: hidden;
+      
+      // Gradient background
+      background: linear-gradient(135deg, #FDFDFF 0%, #EAEAFE 100%);
+    }
+  }
+  
+  // Right side - Form
+  .auth-form-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    background-color: var(--color-bg-surface);
+    
+    @media (min-width: 640px) {
+      padding: 3rem;
+    }
+    
+    @media (min-width: 1024px) {
+      width: 40%;
+      padding: 4rem;
+    }
+    
+    .form-container {
+      width: 100%;
+      max-width: 24rem; // max-w-sm
+    }
+  }
+}
+
+.password-strength-bar {
+  flex: 1;
+  border-radius: 9999px;
+  transition: background-color 0.3s ease;
+  height: 0.375rem; // 1.5 of tailwind unit (6px)
+  
+  &.weak { background-color: #ef4444; } // Red
+  &.fair { background-color: #facc15; } // Yellow
+  &.good { background-color: #a855f7; } // Purple
+  &.empty { background-color: var(--color-gray-200); }
+}
+
+.social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 0.75rem;
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: var(--color-gray-50);
+  }
+}
+
+.pref-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border-base);
+  transition: all 0.2s;
+  cursor: pointer;
+  background: transparent;
+  
+  &:hover {
+    border-color: var(--color-primary);
+    background-color: rgba(165, 166, 246, 0.05);
+    
+    .icon, span {
+      color: var(--color-primary);
+    }
+  }
+  
+  .icon {
+    color: var(--color-gray-400);
+    margin-bottom: 0.25rem;
+  }
+  
+  span {
+    font-size: 0.75rem;
+    color: var(--color-gray-500);
+  }
+}

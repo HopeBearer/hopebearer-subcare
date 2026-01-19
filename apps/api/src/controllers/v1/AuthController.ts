@@ -15,11 +15,18 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string(),
+  captchaId: z.string(),
+  captchaCode: z.string(),
 });
 
 // 刷新 Token 请求验证 schema
 const refreshTokenSchema = z.object({
   refreshToken: z.string(),
+});
+
+// 忘记密码请求验证 schema
+const forgotPasswordSchema = z.object({
+  email: z.string().email(),
 });
 
 /**
@@ -45,6 +52,27 @@ export class AuthController {
         status: 'success',
         code: BusinessCode.CREATED,
         data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * 获取验证码
+   * GET /auth/captcha
+   */
+  getCaptcha = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = this.authService.generateCaptcha();
+      
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data: {
+            captchaId: result.captchaId,
+            captchaImage: result.data
+        },
       });
     } catch (error) {
       next(error);
@@ -89,6 +117,28 @@ export class AuthController {
         status: 'success',
         code: BusinessCode.SUCCESS,
         data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * 处理忘记密码
+   * POST /auth/forgot-password
+   */
+  forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // 验证请求体
+      const validatedData = forgotPasswordSchema.parse(req.body);
+      // 调用服务层忘记密码逻辑
+      await this.authService.forgotPassword(validatedData.email);
+
+      // 无论用户是否存在，都返回成功，防止邮箱枚举
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        message: 'If an account exists with this email, a password reset link has been sent.',
       });
     } catch (error) {
       next(error);
