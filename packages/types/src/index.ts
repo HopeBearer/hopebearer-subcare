@@ -8,8 +8,34 @@ export interface UserDTO {
   email: string;
   name?: string | null;
   role: UserRole;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+export interface LoginParams {
+  email: string;
+  password: string;
+}
+
+export interface RegisterParams {
+  email: string;
+  password: string;
+  name?: string;
+}
+
+export interface AuthResponse {
+  user: UserDTO;
+  tokens: {
+    accessToken: string;
+    refreshToken: string;
+  };
+}
+
+export interface ApiResponse<T = any> {
+  status: string;
+  code: number;
+  data: T;
+  message?: string;
 }
 
 export interface CreateSubscriptionDTO {

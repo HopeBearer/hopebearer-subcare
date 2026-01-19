@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
-import { SubscriptionService } from '../services/SubscriptionService';
+import { SubscriptionService } from '../../services/SubscriptionService';
 import { z } from 'zod';
 import { StatusCodes } from 'http-status-codes';
-import { AppError } from '../utils/AppError';
+import { AppError } from '../../utils/AppError';
 import { Role } from '@subcare/database';
-import { BusinessCode } from '../constants/BusinessCode';
+import { BusinessCode } from '../../constants/BusinessCode';
 
 // 创建订阅的验证 schema
 const createSubscriptionSchema = z.object({

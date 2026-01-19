@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { UserService } from '../services/UserService';
+import { UserService } from '../../services/UserService';
 import { StatusCodes } from 'http-status-codes';
-import { BusinessCode } from '../constants/BusinessCode';
+import { BusinessCode } from '../../constants/BusinessCode';
 
 /**
  * 用户控制器

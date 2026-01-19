@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { AuthService } from '../services/AuthService';
+import { AuthService } from '../../services/AuthService';
 import { z } from 'zod';
 import { StatusCodes } from 'http-status-codes';
-import { BusinessCode } from '../constants/BusinessCode';
+import { BusinessCode } from '../../constants/BusinessCode';
 
 // 注册请求验证 schema
 const registerSchema = z.object({

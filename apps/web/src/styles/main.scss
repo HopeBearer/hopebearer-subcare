@@ -1,0 +1,9 @@
+@use 'variables';
+@use 'utilities';
+@use 'reset';
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--color-bg-page);
+  color: var(--color-text-primary);
+}
