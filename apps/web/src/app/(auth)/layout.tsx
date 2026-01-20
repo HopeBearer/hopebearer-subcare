@@ -1,4 +1,5 @@
 import { AuthSidebar } from '@/components/auth-sidebar';
+import { LanguageSwitcher } from '@/components/language-switcher';
 
 export default function AuthLayout({
   children,
@@ -6,12 +7,20 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex w-full">
+    <div className="min-h-screen flex w-full relative">
+      {/* Fixed Language Switcher - Positioned relative to viewport/container */}
+      <div className="fixed top-6 right-6 sm:top-8 sm:right-8 z-100">
+        <LanguageSwitcher />
+      </div>
+
       <AuthSidebar />
       {/* Right Form Area - 60% */}
-      <div className="w-full lg:w-60pct bg-gradient-to-br from-[#FFFFFF] to-[#F8F9FF] flex flex-col justify-center items-center overflow-y-auto p-8 sm:p-12 lg:p-16">
-        <div className="w-full max-w-sm space-y-10 my-auto">
-          {children}
+      <div className="w-full lg:w-60pct bg-gradient-to-br from-[#FFFFFF] to-[#F8F9FF] relative flex flex-col">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto w-full h-full flex flex-col justify-center items-center p-8 sm:p-12 lg:p-16">
+          <div className="w-full max-w-sm space-y-10 my-auto">
+            {children}
+          </div>
         </div>
       </div>
     </div>

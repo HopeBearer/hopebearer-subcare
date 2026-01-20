@@ -8,5 +8,10 @@
   "error": {
     "network": "Network error. Please try again.",
     "unknown": "An unknown error occurred."
+  },
+  "languages": {
+    "zh": "Chinese",
+    "en": "English",
+    "ja": "Japanese"
   }
 }
