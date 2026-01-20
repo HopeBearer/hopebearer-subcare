@@ -1,0 +1,15 @@
+{
+  "header": {
+    "title": "ダッシュボード",
+    "welcome": "お帰りなさい、{{name}}さん！",
+    "logout": "ログアウト"
+  },
+  "stats": {
+    "total_subscriptions": "総サブスクリプション",
+    "monthly_cost": "月額費用",
+    "upcoming_renewals": "更新予定"
+  },
+  "content": {
+    "placeholder": "メインコンテンツプレースホルダー"
+  }
+}

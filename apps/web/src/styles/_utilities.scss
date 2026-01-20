@@ -167,6 +167,7 @@
 
 .animate-spin { animation: spin 1s linear infinite; }
 .animate-float { animation: float 6s ease-in-out infinite; }
+.animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
 
 @keyframes spin {
   from { transform: rotate(0deg); }
@@ -177,6 +178,11 @@
   0% { transform: translateY(0px); }
   50% { transform: translateY(-20px); }
   100% { transform: translateY(0px); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* Specific Component Classes */

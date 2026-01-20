@@ -1,0 +1,15 @@
+{
+  "header": {
+    "title": "仪表盘",
+    "welcome": "欢迎回来，{{name}}！",
+    "logout": "退出登录"
+  },
+  "stats": {
+    "total_subscriptions": "总订阅数",
+    "monthly_cost": "月度费用",
+    "upcoming_renewals": "即将续费"
+  },
+  "content": {
+    "placeholder": "主要内容占位符"
+  }
+}

@@ -1,9 +1,16 @@
 import type { Metadata } from "next";
 import './globals.scss'
+import { I18nProvider } from '@/lib/i18n/provider';
 
 export const metadata: Metadata = {
   title: "SubCare - Subscription Management",
   description: "Manage your subscriptions efficiently",
+};
+
+const i18nConfig = {
+  defaultLanguage: 'zh',
+  fallbackLanguage: 'en',
+  defaultNS: 'common',
 };
 
 export default function RootLayout({
@@ -12,9 +19,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="zh">
       <body>
-        {children}
+        <I18nProvider config={i18nConfig}>
+          {children}
+        </I18nProvider>
       </body>
     </html>
   );  

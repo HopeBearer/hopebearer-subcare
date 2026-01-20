@@ -1,0 +1,15 @@
+{
+  "header": {
+    "title": "Dashboard",
+    "welcome": "Welcome back, {{name}}!",
+    "logout": "Logout"
+  },
+  "stats": {
+    "total_subscriptions": "Total Subscriptions",
+    "monthly_cost": "Monthly Cost",
+    "upcoming_renewals": "Upcoming Renewals"
+  },
+  "content": {
+    "placeholder": "Main Content Placeholder"
+  }
+}

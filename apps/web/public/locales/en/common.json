@@ -1,0 +1,12 @@
+{
+  "app_name": "SubCare",
+  "button": {
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  },
+  "error": {
+    "network": "Network error. Please try again.",
+    "unknown": "An unknown error occurred."
+  }
+}

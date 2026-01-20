@@ -1,0 +1,12 @@
+{
+  "app_name": "SubCare",
+  "button": {
+    "submit": "提交",
+    "cancel": "取消",
+    "confirm": "确认"
+  },
+  "error": {
+    "network": "网络错误，请重试。",
+    "unknown": "发生未知错误。"
+  }
+}

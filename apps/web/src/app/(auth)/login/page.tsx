@@ -11,15 +11,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LoginParams } from '@subcare/types';
 import { RefreshCw } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n/hooks';
 
 export default function LoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [rememberMe, setRememberMe] = useState(false);
   const [captchaImage, setCaptchaImage] = useState<string | null>(null);
   const [rotation, setRotation] = useState(0);
+  const { t } = useTranslation('auth');
 
   const {
     register,
@@ -60,7 +61,7 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (err: unknown) {
       console.error('Login failed', err);
-      let message = 'Failed to login. Please check your credentials.';
+      let message = t('status.login_failed');
       if (err instanceof AxiosError && err.response?.data?.message) {
         message = err.response.data.message;
       }
@@ -82,9 +83,9 @@ export default function LoginPage() {
                 <span className="text-white font-bold text-2xl">S</span>
             </div>
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Welcome back</h1>
+        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{t('login.title')}</h1>
         <p className="mt-2 text-base text-gray-600">
-          Please enter your details to sign in.
+          {t('login.subtitle')}
         </p>
       </div>
 
@@ -98,36 +99,35 @@ export default function LoginPage() {
         <div className="space-y-6">
             <Input
             id="email"
-            label="Email"
+            label={t('form.email.label')}
             type="email"
-            placeholder="Enter your email"
+            placeholder={t('form.email.placeholder')}
             error={errors.email?.message}
-            {...register('email', { required: 'Email is required' })}
+            {...register('email', { required: t('form.email.required') })}
             />
 
             <div className="relative">
                 <Input
                 id="password"
-                label="Password"
+                label={t('form.password.label')}
                 type="password"
-                placeholder="Enter your password"
+                placeholder={t('form.password.placeholder')}
                 error={errors.password?.message}
-                {...register('password', { required: 'Password is required' })}
+                {...register('password', { required: t('form.password.required') })}
                 />
             </div>
 
             <div className="flex flex-col space-y-2">
                 <label className="block text-base font-medium text-secondary mb-1">
-                    Security Code
+                    {t('form.security_code.label')}
                 </label>
                 <div className="flex space-x-2 mb-2">
                     <div className="relative flex-1 mr-2">
                         <Input
                         id="captchaCode"
-                        placeholder="Enter code"
-                        error={errors.captchaCode?.message}
-                        className="mt-0"
-                        {...register('captchaCode', { required: 'Code is required' })}
+                        placeholder={t('form.security_code.placeholder')}
+                        className={`mt-0 ${errors.captchaCode ? 'error' : ''}`}
+                        {...register('captchaCode', { required: t('form.security_code.required') })}
                         />
                     </div>
                     <div className="flex items-center space-x-2">
@@ -156,40 +156,29 @@ export default function LoginPage() {
                         </button>
                     </div>
                 </div>
+                {errors.captchaCode?.message && (
+                    <p className="mt-1 text-sm text-red-500">{errors.captchaCode.message}</p>
+                )}
                  <input type="hidden" {...register('captchaId')} />
             </div>
         </div>
 
-        <div className="flex items-center justify-between py-1">
-          <div className="flex items-center">
-            <input
-              id="remember-me"
-              name="remember-me"
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded cursor-pointer accent-primary"
-            />
-            <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 cursor-pointer">
-              Remember me
-            </label>
-          </div>
-
+        <div className="flex items-center justify-end py-1">
           <div className="text-sm">
             <Link href="/forgot-password" className="font-medium text-primary hover:text-primary-hover">
-              Forgot password?
+              {t('login.forgot_password')}
             </Link>
           </div>
         </div>
 
         <Button type="submit" className="w-full py-3 text-base shadow-lg shadow-primary/20 mt-4" isLoading={isLoading}>
-          Sign in
-        </Button>
+          {t('login.submit')}
+        </Button>                                  
 
         <div className="mt-6 text-center text-sm">
-          <span className="text-gray-600">Don&apos;t have an account? </span>
+          <span className="text-gray-600">{t('login.no_account')} </span>
           <Link href="/register" className="font-medium text-primary hover:text-primary-hover">
-            Sign up
+            {t('login.sign_up_link')}
           </Link>
         </div>
 

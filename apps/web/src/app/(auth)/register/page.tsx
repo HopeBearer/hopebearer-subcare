@@ -10,6 +10,7 @@ import { authService } from '@/services/auth.service';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RegisterParams } from '@subcare/types';
+import { useTranslation } from '@/lib/i18n/hooks';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [passwordStrength, setPasswordStrength] = useState(0);
+  const { t } = useTranslation('auth');
 
   const {
     register,
@@ -62,7 +64,7 @@ export default function RegisterPage() {
       router.push('/dashboard');
     } catch (err: unknown) {
       console.error('Registration failed', err);
-      let message = 'Failed to register. Please try again.';
+      let message = t('status.register_failed');
       if (err instanceof AxiosError && err.response?.data?.message) {
         message = err.response.data.message;
       }
@@ -80,8 +82,8 @@ export default function RegisterPage() {
                 <span className="text-white font-bold text-2xl">S</span>
             </div>
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
-        <p className="text-gray-600">Join SubCare to manage your subscriptions.</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('register.title')}</h1>
+        <p className="text-gray-600">{t('register.subtitle')}</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-7">
@@ -93,15 +95,15 @@ export default function RegisterPage() {
 
         <Input
           id="email"
-          label="Email"
+          label={t('form.email.label')}
           type="email"
-          placeholder="Enter your email"
+          placeholder={t('form.email.placeholder')}
           error={errors.email?.message}
           {...register('email', { 
-            required: 'Email is required',
+            required: t('form.email.required'),
             pattern: {
               value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-              message: 'Invalid email address'
+              message: t('form.email.invalid')
             }
           })}
         />
@@ -109,15 +111,15 @@ export default function RegisterPage() {
         <div className="space-y-3">
             <Input
               id="password"
-              label="Password"
+              label={t('form.password.label')}
               type="password"
-              placeholder="Create a password"
+              placeholder={t('form.password.create_placeholder')}
               error={errors.password?.message}
               {...register('password', { 
-                required: 'Password is required',
+                required: t('form.password.required'),
                 minLength: {
                   value: 6,
-                  message: 'Password must be at least 6 characters'
+                  message: t('form.password.min_length')
                 }
               })}
             />
@@ -140,24 +142,24 @@ export default function RegisterPage() {
 
         <Input
           id="confirmPassword"
-          label="Confirm Password"
+          label={t('form.confirm_password.label')}
           type="password"
-          placeholder="Confirm your password"
+          placeholder={t('form.confirm_password.placeholder')}
           error={errors.confirmPassword?.message}
           {...register('confirmPassword', { 
-            required: 'Please confirm your password',
-            validate: (val) => val === password || 'Passwords do not match'
+            required: t('form.confirm_password.required'),
+            validate: (val) => val === password || t('form.confirm_password.mismatch')
           })}
         />
         
         <Button type="submit" className="w-full py-3 mt-6 shadow-primary-sm" isLoading={isLoading}>
-          Create Account
+          {t('register.submit')}
         </Button>
 
          <div className="text-center mt-4 text-sm">
-            <span className="text-gray-500">Already have an account? </span>
+            <span className="text-gray-500">{t('register.has_account')} </span>
             <Link href="/login" className="font-medium text-primary hover:text-primary-hover">
-              Log in
+              {t('register.login_link')}
             </Link>
          </div>
       </form>

@@ -1,0 +1,12 @@
+{
+  "app_name": "SubCare",
+  "button": {
+    "submit": "送信",
+    "cancel": "キャンセル",
+    "confirm": "確認"
+  },
+  "error": {
+    "network": "ネットワークエラーです。もう一度お試しください。",
+    "unknown": "不明なエラーが発生しました。"
+  }
+}

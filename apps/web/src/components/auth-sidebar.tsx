@@ -1,6 +1,11 @@
+'use client';
+
 import { Globe, Music, CreditCard, Cloud } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n/hooks';
 
 export function AuthSidebar() {
+  const { t } = useTranslation('auth');
+
   return (
     <div className="hidden lg:flex lg:w-40pct bg-gradient-to-br from-[#FDFDFF] to-[#EAEAFE] relative overflow-hidden flex-col justify-center z-10">
       {/* Decorative Background Elements */}
@@ -37,8 +42,8 @@ export function AuthSidebar() {
 
       {/* Slogan */}
       <div className="p-12 bottom-12 left-12 right-12 z-10">
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Master Your Subscriptions</h2>
-        <p className="text-lg text-gray-600">Take control of every subscription, organize your life.</p>
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">{t('sidebar.title')}</h2>
+        <p className="text-lg text-gray-600">{t('sidebar.subtitle')}</p>
       </div>
     </div>
   );
