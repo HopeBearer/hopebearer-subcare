@@ -337,3 +337,10 @@ $fractions: (
   .dark\:text-gray-400 { color: var(--color-gray-400); }
   .dark\:hover\:bg-gray-800:hover { background-color: var(--color-gray-800); }
 }
+
+/* Custom Utilities for Language Switcher */
+.hover\:bg-primary-pale:hover { background-color: rgba(165, 166, 246, 0.05) !important; }
+.bg-primary-soft { background-color: rgba(165, 166, 246, 0.15) !important; }
+.ease { transition-timing-function: ease; }
+.bg-primary-pale { background-color: rgba(165, 166, 246, 0.05) !important; }
+.bg-primary-soft { background-color: rgba(165, 166, 246, 0.15) !important; }

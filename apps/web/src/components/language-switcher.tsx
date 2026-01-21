@@ -49,9 +49,9 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 group',
-          'hover:bg-primary/10', // Soft purple background on hover
-          isOpen ? 'bg-primary/10' : 'bg-transparent'
+          'flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 ease group',
+          'hover:bg-primary-pale', // Soft purple background on hover
+          isOpen ? 'bg-primary-soft' : 'bg-transparent'
         )}
         aria-label="Switch Language"
         aria-expanded={isOpen}
@@ -83,7 +83,7 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
       {/* Dropdown Menu */}
       <div
         className={cn(
-          'absolute right-0 top-full mt-2 w-32 bg-white rounded-xl shadow-lg ring-1 ring-black/5 py-1 overflow-hidden origin-top-right transition-all duration-200',
+          'absolute right-0 top-full mt-2 w-32 p-2 bg-white rounded-xl shadow-md ring-1 ring-black/5 py-1 overflow-hidden origin-top-right transition-all duration-200 ease',
           isOpen
             ? 'opacity-100 scale-100 translate-y-0 visible'
             : 'opacity-0 scale-95 -translate-y-2 invisible'
@@ -94,10 +94,10 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
             key={lang.code}
             onClick={() => handleLanguageChange(lang.code)}
             className={cn(
-              'w-full text-left px-4 py-1 text-sm flex items-center justify-between transition-colors',
-              'hover:bg-gray-50',
+              'w-full text-left px-4 py-1 mb-1 text-sm rounded-md flex items-center justify-between transition-colors',
+              'hover:bg-primary-pale',
               currentLangCode === lang.code
-                ? 'text-primary font-medium bg-primary/5'
+                ? 'text-primary font-medium bg-primary-pale'
                 : 'text-gray-600'
             )}
           >
