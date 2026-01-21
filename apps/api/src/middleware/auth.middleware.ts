@@ -18,7 +18,7 @@ export class AuthMiddleware {
     // 获取 Authorization 头
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return next(new AppError('No token provided', StatusCodes.UNAUTHORIZED));
+      return next(new AppError('TOKEN_MISSING', StatusCodes.UNAUTHORIZED, { message: 'No token provided' }));
     }
 
     // 提取 Token
@@ -34,7 +34,7 @@ export class AuthMiddleware {
       };
       next();
     } catch (error) {
-      next(new AppError('Invalid token', StatusCodes.UNAUTHORIZED));
+      next(new AppError('TOKEN_INVALID', StatusCodes.UNAUTHORIZED, { message: 'Invalid token' }));
     }
   };
 
@@ -47,12 +47,12 @@ export class AuthMiddleware {
     return (req: Request, res: Response, next: NextFunction) => {
       // 确保用户已通过认证
       if (!req.user) {
-        return next(new AppError('Not authenticated', StatusCodes.UNAUTHORIZED));
+        return next(new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'Not authenticated' }));
       }
 
       // 检查角色权限
       if (!roles.includes(req.user.role)) {
-        return next(new AppError('Not authorized', StatusCodes.FORBIDDEN));
+        return next(new AppError('FORBIDDEN', StatusCodes.FORBIDDEN, { message: 'Not authorized' }));
       }
 
       next();

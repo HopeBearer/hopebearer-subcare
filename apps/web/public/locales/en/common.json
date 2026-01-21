@@ -6,8 +6,39 @@
     "confirm": "Confirm"
   },
   "error": {
-    "network": "Network error. Please try again.",
-    "unknown": "An unknown error occurred."
+    "network": "Network error. Please try again",
+    "UNKNOWN": "An unknown error occurred",
+    "40000": {
+      "CAPTCHA_INVALID": "Invalid captcha code",
+      "CAPTCHA_REQUIRED": "Captcha is required",
+      "BAD_REQUEST": "Bad request",
+      "INVALID_CREDENTIALS": "Username or password incorrect",
+      "USER_NOT_FOUND": "User not found",
+      "INVALID_PASSWORD": "Password incorrect"
+    },
+    "40100": {
+      "UNAUTHORIZED": "Session expired, please login again",
+      "INVALID_CREDENTIALS": "Username or password incorrect",
+      "TOKEN_MISSING": "Authentication token missing",
+      "TOKEN_INVALID": "Invalid authentication token",
+      "REFRESH_TOKEN_INVALID": "Session expired"
+    },
+    "40300": {
+      "FORBIDDEN": "Permission denied."
+    },
+    "40400": {
+      "NOT_FOUND": "Resource not found."
+    },
+    "40900": {
+      "USER_ALREADY_EXISTS": "User already exists.",
+      "CONFLICT": "Conflict occurred."
+    },
+    "42200": {
+      "VALIDATION_ERROR": "Validation failed.",
+      "EMAIL_INVALID": "Invalid email format.",
+      "PASSWORD_TOO_SHORT": "Password must be at least {{min}} characters."
+    },
+    "50000": "System error, please try again later."
   },
   "languages": {
     "zh": "Chinese",

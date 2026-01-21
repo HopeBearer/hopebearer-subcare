@@ -3,29 +3,28 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
-import { AxiosError } from 'axios';
 import { authService } from '@/services/auth.service';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ForgotPasswordParams } from '@subcare/types';
 import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/hooks';
+import { handleApiError } from '@/lib/error-helper';
 
 export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const { t } = useTranslation('auth');
 
+  const form = useForm<ForgotPasswordParams>();
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<ForgotPasswordParams>();
+  } = form;
 
   const onSubmit = async (data: ForgotPasswordParams) => {
     setIsLoading(true);
-    setError(null);
     setSuccessMessage(null);
 
     try {
@@ -33,11 +32,8 @@ export default function ForgotPasswordPage() {
       setSuccessMessage(t('status.reset_link_sent'));
     } catch (err: unknown) {
       console.error('Forgot password request failed', err);
-      let message = t('status.reset_link_failed');
-      if (err instanceof AxiosError && err.response?.data?.message) {
-        message = err.response.data.message;
-      }
-      setError(message);
+      // 使用统一的错误处理函数
+      handleApiError(err, form);
     } finally {
       setIsLoading(false);
     }
@@ -62,12 +58,7 @@ export default function ForgotPasswordPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        {error && (
-          <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-100 rounded-lg">
-            {error}
-          </div>
-        )}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8" noValidate>
         
         {successMessage && (
            <div className="p-3 text-sm text-green-600 bg-green-50 border border-green-100 rounded-lg">
@@ -82,7 +73,7 @@ export default function ForgotPasswordPage() {
             type="email"
             placeholder={t('form.email.placeholder')}
             error={errors.email?.message}
-            {...register('email', { required: t('form.email.required') })}
+            {...register('email', { required: 'auth:form.email.required' })}
             />
         </div>
 

@@ -29,7 +29,7 @@ export class SubscriptionController {
   create = async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
-        throw new AppError('Not authenticated', StatusCodes.UNAUTHORIZED);
+        throw new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'Not authenticated' });
       }
       
       const validatedData = createSubscriptionSchema.parse(req.body);
@@ -55,7 +55,7 @@ export class SubscriptionController {
   list = async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
-        throw new AppError('Not authenticated', StatusCodes.UNAUTHORIZED);
+        throw new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'Not authenticated' });
       }
       
       const subscriptions = await this.subscriptionService.getUserSubscriptions(req.user.userId);
@@ -77,12 +77,12 @@ export class SubscriptionController {
   stats = async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
-        throw new AppError('Not authenticated', StatusCodes.UNAUTHORIZED);
+        throw new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'Not authenticated' });
       }
 
       // 显式检查管理员权限，虽然路由层面应该也有保护
       if (req.user.role !== Role.ADMIN) {
-        throw new AppError('Not authorized', StatusCodes.FORBIDDEN);
+        throw new AppError('FORBIDDEN', StatusCodes.FORBIDDEN, { message: 'Not authorized' });
       }
 
       const stats = await this.subscriptionService.getGlobalStats();
