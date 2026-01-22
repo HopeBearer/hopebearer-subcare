@@ -1,5 +1,12 @@
 {
   "app_name": "SubCare",
+  "nav": {
+    "dashboard": "Dashboard",
+    "subscriptions": "Subscriptions",
+    "finance": "Finance Analysis",
+    "notifications": "Notifications",
+    "settings": "Settings"
+  },
   "button": {
     "submit": "Submit",
     "cancel": "Cancel",

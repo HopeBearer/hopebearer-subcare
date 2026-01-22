@@ -10,6 +10,7 @@ import commonJa from '../../../public/locales/ja/common.json';
 import authJa from '../../../public/locales/ja/auth.json';
 import dashboardJa from '../../../public/locales/ja/dashboard.json';
 
+// Export resources for i18n initialization
 export const resources = {
   en: {
     common: commonEn,

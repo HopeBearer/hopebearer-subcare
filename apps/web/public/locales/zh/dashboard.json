@@ -5,9 +5,26 @@
     "logout": "退出登录"
   },
   "stats": {
-    "total_subscriptions": "总订阅数",
-    "monthly_cost": "月度费用",
-    "upcoming_renewals": "即将续费"
+    "total_expenses": "总支出",
+    "active_subs": "活跃订阅",
+    "remaining_budget": "剩余预算",
+    "upcoming_renewals": "即将续费",
+    "growth_last_month": "较上月",
+    "categories": "分类",
+    "footer": {
+      "total_expenses": "较上月同期增加 {{amount}}",
+      "active_subs": "涵盖 {{count}} 个不同的服务分类",
+      "remaining_budget": "本月额度使用占比",
+      "upcoming_renewals": "未来 {{days}} 天内将有扣款"
+    }
+  },
+  "ai": {
+    "title": "AI 智能推荐",
+    "beta": "Beta",
+    "refresh": "刷新推荐",
+    "save": "省",
+    "details": "了解详情",
+    "estimated_cost": "预估月费"
   },
   "content": {
     "placeholder": "主要内容占位符"

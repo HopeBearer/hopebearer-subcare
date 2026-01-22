@@ -1,5 +1,12 @@
 {
   "app_name": "SubCare",
+  "nav": {
+    "dashboard": "仪表盘",
+    "subscriptions": "订阅管理",
+    "finance": "财务分析",
+    "notifications": "通知中心",
+    "settings": "设置"
+  },
   "button": {
     "submit": "提交",
     "cancel": "取消",

@@ -5,9 +5,26 @@
     "logout": "ログアウト"
   },
   "stats": {
-    "total_subscriptions": "総サブスクリプション",
-    "monthly_cost": "月額費用",
-    "upcoming_renewals": "更新予定"
+    "total_expenses": "総支出",
+    "active_subs": "アクティブなサブスク",
+    "remaining_budget": "残りの予算",
+    "upcoming_renewals": "更新予定",
+    "growth_last_month": "先月比",
+    "categories": "カテゴリー",
+    "footer": {
+      "total_expenses": "先月比 {{amount}} 増加",
+      "active_subs": "{{count}} 種類のサービスカテゴリーをカバー",
+      "remaining_budget": "今月の予算使用率",
+      "upcoming_renewals": "今後 {{days}} 日以内に更新予定"
+    }
+  },
+  "ai": {
+    "title": "AI レコメンデーション",
+    "beta": "ベータ",
+    "refresh": "更新",
+    "save": "節約",
+    "details": "詳細",
+    "estimated_cost": "推定費用"
   },
   "content": {
     "placeholder": "メインコンテンツプレースホルダー"

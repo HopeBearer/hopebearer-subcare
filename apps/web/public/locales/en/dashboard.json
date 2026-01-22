@@ -5,9 +5,26 @@
     "logout": "Logout"
   },
   "stats": {
-    "total_subscriptions": "Total Subscriptions",
-    "monthly_cost": "Monthly Cost",
-    "upcoming_renewals": "Upcoming Renewals"
+    "total_expenses": "Total Expenses",
+    "active_subs": "Active Subscriptions",
+    "remaining_budget": "Remaining Budget",
+    "upcoming_renewals": "Upcoming Renewals",
+    "growth_last_month": "vs last month",
+    "categories": "Categories",
+    "footer": {
+      "total_expenses": "Increased by {{amount}} vs last month",
+      "active_subs": "Covering {{count}} different service categories",
+      "remaining_budget": "Budget usage this month",
+      "upcoming_renewals": "Renewals in the next {{days}} days"
+    }
+  },
+  "ai": {
+    "title": "AI Recommendations",
+    "beta": "Beta",
+    "refresh": "Refresh",
+    "save": "Save",
+    "details": "Details",
+    "estimated_cost": "Est. Cost"
   },
   "content": {
     "placeholder": "Main Content Placeholder"
