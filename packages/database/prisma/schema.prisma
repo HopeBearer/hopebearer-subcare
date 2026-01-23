@@ -32,6 +32,8 @@ model User {
   updatedAt DateTime @updatedAt
   
   subscriptions Subscription[]
+  notifications Notification[]
+  // SystemLogs are linked loosely by userId, no strict relation needed for logging to avoid overhead
 
   @@map("users")
 }
@@ -64,4 +66,63 @@ model Subscription {
   updatedAt   DateTime @updatedAt
 
   @@map("subscriptions")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  content   String   @db.Text
+  type      String   // system / billing / security / marketing
+  isRead    Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notifications")
+}
+
+model SystemLog {
+  id        String   @id @default(uuid())
+
+  level     String   // DEBUG | INFO | WARN | ERROR | AUDIT
+  domain    String   // AUTH | API | EMAIL | NOTIFICATION | PAYMENT | SYSTEM
+  action    String   // login | send_email | create_subscription
+
+  userId    String?
+  ip        String?
+  requestId String?
+
+  metadata  Json?
+  error     String?  @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([domain])
+  @@index([level])
+  @@index([userId])
+  @@map("system_logs")
+}
+
+model MessageTemplate {
+  id       String @id @default(uuid())
+
+  key      String @unique  // reset-password / subscription-expire
+  title    String
+  content  String @db.Text  // HTML or Markdown
+  channel  String          // email / in-app
+
+  @@map("message_templates")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  email     String
+  token     String   @unique // Hashed token
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("password_reset_tokens")
 }

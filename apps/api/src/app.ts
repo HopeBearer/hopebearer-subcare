@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { VersionedRouter } from './core/router/VersionedRouter';
 import { globalErrorHandler } from './middleware/error.middleware';
+import { requestLogger } from './middleware/request-logger';
 
 // 创建 Express 应用实例
 const app: Express = express();
@@ -16,8 +17,11 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // 允许的方法
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'] // 允许的请求头
 }));              // 跨域资源共享
-app.use(morgan('dev'));       // HTTP 请求日志
+// app.use(morgan('dev'));       // HTTP 请求日志 - Replaced by our custom requestLogger
 app.use(express.json());      // 解析 JSON 请求体
+
+// Custom Request Logger
+app.use(requestLogger);
 
 // 注册 API 路由 (使用版本化路由)
 const versionedRouter = new VersionedRouter();

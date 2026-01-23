@@ -17,4 +17,10 @@ export const authRegistry: Record<string, RouteVersions> = {
   'POST /auth/forgot-password': {
     v1: { handler: controllersV1.Auth.forgotPassword }
   },
+  'POST /auth/reset-password': {
+    v1: { handler: controllersV1.Auth.resetPassword }
+  },
+  'POST /auth/verify-reset-token': {
+    v1: { handler: controllersV1.Auth.verifyResetToken }
+  },
 };

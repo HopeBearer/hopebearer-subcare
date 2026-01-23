@@ -3,6 +3,9 @@ import { authRegistry } from './registries/auth.registry';
 import { subscriptionRegistry } from './registries/subscription.registry';
 import { userRegistry } from './registries/user.registry';
 import { dashboardRegistry } from './registries/dashboard.registry';
+import { notificationRegistry } from './registries/notification.registry';
+import { systemLogRegistry } from './registries/system-log.registry';
+import { messageTemplateRegistry } from './registries/message-template.registry';
 
 export interface RouteImplementation {
   handler: RequestHandler;
@@ -22,4 +25,7 @@ export const routeRegistry: Record<string, RouteVersions> = {
   ...subscriptionRegistry,
   ...userRegistry,
   ...dashboardRegistry,
+  ...notificationRegistry,
+  ...systemLogRegistry,
+  ...messageTemplateRegistry,
 };

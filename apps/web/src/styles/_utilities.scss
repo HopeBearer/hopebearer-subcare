@@ -1,4 +1,5 @@
 @use 'sass:math';
+@use 'sass:string';
 
 /* =========================================
    Base & Variables
@@ -138,7 +139,7 @@ $fractions: (
 $halves: 0.5, 1.5, 2.5, 3.5;
 @each $h in $halves {
   $val: #{$h * 0.25}rem;
-  $escaped: str-slice(#{$h}, 1, 1) + '\\.' + str-slice(#{$h}, 3);
+  $escaped: string.slice(#{$h}, 1, 1) + '\\.' + string.slice(#{$h}, 3);
   
   .p-#{$escaped} { padding: $val; }
   .px-#{$escaped} { padding-left: $val; padding-right: $val; }

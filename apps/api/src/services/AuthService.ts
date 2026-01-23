@@ -3,9 +3,11 @@ import { CreateUserDTO, LoginUserDTO } from "../dtos/auth.dto";
 import { AppError } from "../utils/AppError";
 import { StatusCodes } from "http-status-codes";
 import * as bcrypt from "bcrypt";
-import { User } from "@subcare/database";
+import * as crypto from "crypto";
+import { User, prisma } from "@subcare/database";
 import { TokenService } from "./TokenService";
 import { CaptchaService } from "./CaptchaService";
+import { NotificationService } from "../modules/notification/notification.service";
 
 /**
  * 认证响应接口
@@ -27,7 +29,8 @@ export class AuthService {
 
   constructor(
     private userRepository: UserRepository,
-    private tokenService: TokenService
+    private tokenService: TokenService,
+    private notificationService: NotificationService
   ) {
     this.captchaService = new CaptchaService();
   }
@@ -62,6 +65,15 @@ export class AuthService {
     user = await this.userRepository.update(user.id, {
       refreshToken: hashedRefreshToken,
     });
+    
+    // 发送欢迎通知
+    await this.notificationService.notify({
+        userId: user.id,
+        title: "Welcome to SubCare!",
+        content: "We are glad to have you on board. Start tracking your subscriptions today.",
+        type: "system",
+        channels: ["in-app", "email"]
+    }).catch(err => console.error('Failed to send welcome notification', err));
 
     // 返回结果时移除敏感字段
     const { password, refreshToken: rt, ...userWithoutPassword } = user;
@@ -183,13 +195,127 @@ export class AuthService {
    */
   async forgotPassword(email: string): Promise<void> {
     const user = await this.userRepository.findByEmail(email);
+    
+    // Always return success to prevent user enumeration
     if (!user) {
-      // Don't reveal user existence
       return;
     }
 
-    // TODO: Generate reset token and send email
-    // For now, we'll just log it
-    console.log(`Password reset requested for ${email}`);
+    // 1. Generate random token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    // 2. Hash token for storage
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    // 3. Store in DB (Expire in 15 mins)
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    // Delete existing tokens for this email to keep it clean (optional but good practice)
+    await prisma.passwordResetToken.deleteMany({
+      where: { email: user.email },
+    });
+
+    await prisma.passwordResetToken.create({
+      data: {
+        email: user.email,
+        token: tokenHash,
+        expiresAt,
+      },
+    });
+
+    // 4. Send Email
+    // Construct reset link (Frontend URL)
+    // NOTE: In production, FRONTEND_URL should be an env var
+    const frontendUrl = process.env.CORS_ORIGIN || 'http://localhost:3000';
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+
+    await this.notificationService.notify({
+      userId: user.id,
+      title: '重置您的密码',
+      content: `您申请了重置密码。请复制以下链接到浏览器中访问以重置您的密码。此链接15分钟内有效。\n\n${resetUrl}`,
+      type: 'security',
+      channels: ['email'] // Only email is appropriate for this
+    });
+  }
+
+  /**
+   * Verify Reset Token
+   * Checks if the token is valid and not expired
+   * @param token Plain token from URL
+   */
+  async verifyResetToken(token: string): Promise<boolean> {
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+    const record = await prisma.passwordResetToken.findUnique({
+      where: { token: tokenHash },
+    });
+
+    if (!record) {
+      return false;
+    }
+
+    if (record.expiresAt < new Date()) {
+        // Expired, maybe delete it?
+        await prisma.passwordResetToken.delete({ where: { id: record.id } }).catch(() => {});
+        return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Reset Password
+   * @param token Plain token
+   * @param newPassword New password
+   */
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    if (newPassword.length < 8) {
+       throw new AppError("INVALID_PASSWORD", StatusCodes.BAD_REQUEST, { message: "Password must be at least 8 characters" });
+    }
+
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+    const record = await prisma.passwordResetToken.findUnique({
+      where: { token: tokenHash },
+    });
+
+    if (!record || record.expiresAt < new Date()) {
+      throw new AppError("INVALID_TOKEN", StatusCodes.BAD_REQUEST, { message: "Token is invalid or expired" });
+    }
+
+    // Find user
+    const user = await this.userRepository.findByEmail(record.email);
+    if (!user) {
+        throw new AppError("USER_NOT_FOUND", StatusCodes.BAD_REQUEST, { message: "User not found" });
+    }
+
+    // Update password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.userRepository.update(user.id, {
+        password: hashedPassword
+    });
+
+    // Delete token (Consume)
+    await prisma.passwordResetToken.delete({
+        where: { id: record.id }
+    });
+    
+    // Notify user
+    await this.notificationService.notify({
+        userId: user.id,
+        title: '密码修改成功',
+        content: '您的密码已成功修改。',
+        type: 'security',
+        channels: ['email', 'in-app']
+    });
   }
 }

@@ -1,13 +1,17 @@
 import { SubscriptionRepository } from "../repositories/SubscriptionRepository";
 import { CreateSubscriptionDTO, SubscriptionFilterDTO } from "@subcare/types";
 import { Subscription } from "@subcare/database";
+import { NotificationService } from "../modules/notification/notification.service";
 
 /**
  * 订阅服务
  * 处理订阅管理相关的业务逻辑
  */
 export class SubscriptionService {
-  constructor(private subscriptionRepository: SubscriptionRepository) {}
+  constructor(
+    private subscriptionRepository: SubscriptionRepository,
+    private notificationService: NotificationService
+  ) {}
 
   /**
    * 创建新订阅
@@ -15,7 +19,7 @@ export class SubscriptionService {
    * @returns 创建的订阅实体
    */
   async createSubscription(data: CreateSubscriptionDTO): Promise<Subscription> {
-    return this.subscriptionRepository.create({
+    const subscription = await this.subscriptionRepository.create({
       name: data.name,
       price: data.price,
       currency: data.currency,
@@ -35,6 +39,16 @@ export class SubscriptionService {
         connect: { id: data.userId }
       }
     });
+
+    await this.notificationService.notify({
+      userId: data.userId,
+      title: 'New Subscription Added',
+      content: `You have successfully added ${data.name} to your subscriptions.`,
+      type: 'system',
+      channels: ['in-app']
+    }).catch(console.error);
+
+    return subscription;
   }
 
   /**

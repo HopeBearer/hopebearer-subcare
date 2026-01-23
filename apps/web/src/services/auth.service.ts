@@ -17,6 +17,14 @@ export const authService = {
     return api.post(`/auth/forgot-password`, params);
   },
 
+  verifyResetToken: async (token: string): Promise<ApiResponse<{ valid: boolean }>> => {
+    return api.post(`/auth/verify-reset-token`, { token });
+  },
+
+  resetPassword: async (token: string, password: string): Promise<ApiResponse<void>> => {
+    return api.post(`/auth/reset-password`, { token, password });
+  },
+
   getCaptcha: async (): Promise<ApiResponse<CaptchaResponse>> => {
     return api.get(`/auth/captcha`);
   },

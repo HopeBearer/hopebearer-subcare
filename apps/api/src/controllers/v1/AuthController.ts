@@ -29,12 +29,25 @@ const forgotPasswordSchema = z.object({
   email: z.string().email(),
 });
 
+// 重置密码请求验证 schema
+const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+});
+
+// 验证 Token 请求验证 schema
+const verifyTokenSchema = z.object({
+  token: z.string().min(1),
+});
+
 /**
  * 认证控制器
  * 处理所有与认证相关的 HTTP 请求
  */
 export class AuthController {
   constructor(private authService: AuthService) {}
+
+// ... existing register, getCaptcha, login, refresh methods ...
 
   /**
    * 处理用户注册
@@ -139,6 +152,44 @@ export class AuthController {
         status: 'success',
         code: BusinessCode.SUCCESS,
         message: 'If an account exists with this email, a password reset link has been sent.',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * 验证重置 Token
+   * POST /auth/verify-reset-token
+   */
+  verifyResetToken = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const validatedData = verifyTokenSchema.parse(req.body);
+      const isValid = await this.authService.verifyResetToken(validatedData.token);
+
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data: { valid: isValid },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * 处理重置密码
+   * POST /auth/reset-password
+   */
+  resetPassword = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const validatedData = resetPasswordSchema.parse(req.body);
+      await this.authService.resetPassword(validatedData.token, validatedData.password);
+
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        message: 'Password successfully reset.',
       });
     } catch (error) {
       next(error);
