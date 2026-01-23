@@ -23,6 +23,11 @@ model User {
   role      Role     @default(USER)
   isActive  Boolean  @default(true)
   refreshToken String?  @db.Text
+  
+  // User settings
+  currency      String  @default("CNY")
+  monthlyBudget Decimal @default(0) @db.Decimal(10, 2)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
@@ -35,12 +40,23 @@ model Subscription {
   id          String   @id @default(uuid())
   name        String
   price       Decimal  @db.Decimal(10, 2)
-  currency    String   @default("USD")
-  billingCycle String  // monthly, yearly, etc.
+  currency    String   @default("CNY")
+  billingCycle String  // monthly, yearly, weekly, daily
   startDate   DateTime
   nextPayment DateTime?
   status      String   @default("ACTIVE") // ACTIVE, CANCELLED, PAUSED
+  category    String   @default("Other")  // Entertainment, Tools, Cloud, etc.
+  icon        String?  // Optional icon identifier or url
+  description String?  @db.Text
   
+  // New fields from frontend requirements
+  paymentMethod      String?
+  autoRenewal        Boolean  @default(true)
+  enableNotification Boolean  @default(false)
+  notifyDaysBefore   Int?
+  website            String?
+  notes              String?  @db.Text
+
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 

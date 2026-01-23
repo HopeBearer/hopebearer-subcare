@@ -2,6 +2,7 @@ import { RequestHandler } from 'express';
 import { authRegistry } from './registries/auth.registry';
 import { subscriptionRegistry } from './registries/subscription.registry';
 import { userRegistry } from './registries/user.registry';
+import { dashboardRegistry } from './registries/dashboard.registry';
 
 export interface RouteImplementation {
   handler: RequestHandler;
@@ -20,4 +21,5 @@ export const routeRegistry: Record<string, RouteVersions> = {
   ...authRegistry,
   ...subscriptionRegistry,
   ...userRegistry,
+  ...dashboardRegistry,
 };

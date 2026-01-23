@@ -1,5 +1,5 @@
 import { SubscriptionRepository } from "../repositories/SubscriptionRepository";
-import { CreateSubscriptionDTO } from "@subcare/types";
+import { CreateSubscriptionDTO, SubscriptionFilterDTO } from "@subcare/types";
 import { Subscription } from "@subcare/database";
 
 /**
@@ -21,7 +21,16 @@ export class SubscriptionService {
       currency: data.currency,
       billingCycle: data.billingCycle,
       startDate: data.startDate,
-      status: 'ACTIVE', // 默认为激活状态
+      status: 'Active',
+      category: data.category || 'Other',
+      description: data.description,
+      icon: data.icon,
+      paymentMethod: data.paymentMethod,
+      autoRenewal: data.autoRenewal ?? true,
+      enableNotification: data.enableNotification ?? false,
+      notifyDaysBefore: data.notifyDaysBefore,
+      website: data.website,
+      notes: data.notes,
       user: {
         connect: { id: data.userId }
       }
@@ -31,10 +40,11 @@ export class SubscriptionService {
   /**
    * 获取用户的所有订阅
    * @param userId 用户 ID
-   * @returns 订阅列表
+   * @param filters 过滤参数
+   * @returns 订阅列表和总数
    */
-  async getUserSubscriptions(userId: string): Promise<Subscription[]> {
-    return this.subscriptionRepository.findByUserId(userId);
+  async getUserSubscriptions(userId: string, filters?: SubscriptionFilterDTO): Promise<{ items: Subscription[]; total: number }> {
+    return this.subscriptionRepository.findByUserId(userId, filters);
   }
 
   /**

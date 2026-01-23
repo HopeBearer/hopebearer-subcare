@@ -9,13 +9,15 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@prisma/client": "5.22.0"
+    "@prisma/client": "5.22.0",
+    "@tanstack/react-query": "^5.90.19",
+    "react-intersection-observer": "^10.0.2"
   },
   "devDependencies": {
-    "prisma": "5.22.0",
-    "@subcare/tsconfig": "workspace:*",
     "@subcare/eslint-config": "workspace:*",
-    "typescript": "^5.3.3",
-    "@types/node": "^20.11.19"
+    "@subcare/tsconfig": "workspace:*",
+    "@types/node": "^20.11.19",
+    "prisma": "5.22.0",
+    "typescript": "^5.3.3"
   }
 }

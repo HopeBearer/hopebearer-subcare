@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import './globals.scss'
 import { I18nProvider } from '@/lib/i18n/provider';
+import QueryProvider from '@/components/providers/query-provider';
 import { Toaster } from 'sonner';
 
 export const metadata: Metadata = {
@@ -22,10 +23,12 @@ export default function RootLayout({
   return (
     <html lang="zh">
       <body>
-        <I18nProvider config={i18nConfig}>
-          {children}
-          <Toaster />
-        </I18nProvider>
+        <QueryProvider>
+          <I18nProvider config={i18nConfig}>
+            {children}
+            <Toaster />
+          </I18nProvider>
+        </QueryProvider>
       </body>
     </html>
   );  

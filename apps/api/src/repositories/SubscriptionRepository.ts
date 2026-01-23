@@ -1,4 +1,5 @@
 import { prisma, Subscription, Prisma } from "@subcare/database";
+import { SubscriptionFilterDTO } from "@subcare/types";
 
 /**
  * 订阅数据仓库
@@ -19,13 +20,36 @@ export class SubscriptionRepository {
   /**
    * 查找用户的订阅列表
    * @param userId 用户 ID
-   * @returns 订阅列表，按创建时间倒序排列
+   * @param filters 过滤和分页参数
+   * @returns 订阅列表和总数
    */
-  async findByUserId(userId: string): Promise<Subscription[]> {
-    return prisma.subscription.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-    });
+  async findByUserId(userId: string, filters?: SubscriptionFilterDTO): Promise<{ items: Subscription[]; total: number }> {
+    const { search, status, category, billingCycle, page, limit } = filters || {};
+    
+    const where: Prisma.SubscriptionWhereInput = {
+      userId,
+      ...(status && status !== 'All' ? { status: status } : {}), // TODO: Normalize status case if needed
+      ...(category && category !== 'All' ? { category } : {}),
+      ...(billingCycle && billingCycle !== 'All' ? { billingCycle } : {}),
+      ...(search ? {
+        name: { contains: search }
+      } : {})
+    };
+
+    const take = limit || undefined;
+    const skip = page && limit ? (page - 1) * limit : undefined;
+
+    const [items, total] = await Promise.all([
+      prisma.subscription.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take
+      }),
+      prisma.subscription.count({ where })
+    ]);
+
+    return { items, total };
   }
 
   /**
@@ -58,6 +82,45 @@ export class SubscriptionRepository {
    */
   async count(): Promise<number> {
     return prisma.subscription.count();
+  }
+
+  /**
+   * 查找用户的活跃订阅
+   * @param userId 用户 ID
+   * @returns 活跃订阅列表
+   */
+  async findActiveByUserId(userId: string): Promise<Subscription[]> {
+    return prisma.subscription.findMany({
+      where: { 
+        userId,
+        status: 'ACTIVE'
+      },
+      orderBy: { price: 'desc' },
+    });
+  }
+
+  /**
+   * 查找即将续费的订阅
+   * @param userId 用户 ID
+   * @param days 天数阈值
+   * @returns 订阅列表
+   */
+  async findUpcomingRenewals(userId: string, days: number): Promise<Subscription[]> {
+    const today = new Date();
+    const futureDate = new Date();
+    futureDate.setDate(today.getDate() + days);
+
+    return prisma.subscription.findMany({
+      where: {
+        userId,
+        status: 'ACTIVE',
+        nextPayment: {
+          gte: today,
+          lte: futureDate
+        }
+      },
+      orderBy: { nextPayment: 'asc' }
+    });
   }
 
   /**

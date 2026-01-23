@@ -1,0 +1,57 @@
+{
+  "add": "添加订阅",
+  "manage": "订阅管理",
+  "name": "服务名称",
+  "cost": "费用",
+  "cycle": "周期",
+  "billing_date": "账单日期",
+  "first_payment": "首次付款日期",
+  "next_bill": "下次续费",
+  "search_placeholder": "搜索订阅...",
+  "filter_all_status": "所有状态",
+  "filter_all_categories": "所有分类",
+  "filter_all_cycles": "所有周期",
+  "filter_label_status": "状态",
+  "filter_label_category": "分类",
+  "filter_label_cycle": "周期",
+  "reset_filters": "重置",
+  "status": {
+    "Active": "活跃",
+    "Paused": "已暂停",
+    "Renewal Soon": "即将续费"
+  },
+  "categories": {
+    "entertainment": "娱乐",
+    "tools": "工具",
+    "productivity": "生产力",
+    "cloud": "云服务",
+    "utility": "实用工具",
+    "social": "社交",
+    "education": "教育",
+    "other": "其他"
+  },
+  "cycle_options": {
+    "Monthly": "按月",
+    "Yearly": "按年"
+  },
+  "steps": {
+    "core_info": "核心信息",
+    "payment_category": "支付与分类",
+    "notification_notes": "通知与备注"
+  },
+  "preview_name": "订阅名称",
+  "save_now": "立即保存",
+  "category": "分类",
+  "payment_method": "支付方式",
+  "auto_renewal": "自动续订",
+  "enable_notification": "启用通知",
+  "notify_me": "提醒我",
+  "days_before": "天前",
+  "notes_placeholder": "添加备注...",
+  "payment_methods": {
+    "credit_card": "信用卡",
+    "alipay": "支付宝",
+    "wechat": "微信支付",
+    "paypal": "PayPal"
+  }
+}

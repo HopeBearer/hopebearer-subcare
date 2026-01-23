@@ -1,0 +1,57 @@
+{
+  "add": "Add Subscription",
+  "manage": "Manage Subscriptions",
+  "name": "Service Name",
+  "cost": "Cost",
+  "cycle": "Cycle",
+  "billing_date": "Billing Date",
+  "first_payment": "First Payment Date",
+  "next_bill": "Next Bill",
+  "search_placeholder": "Search subscriptions...",
+  "filter_all_status": "All Status",
+  "filter_all_categories": "All Categories",
+  "filter_all_cycles": "All Cycles",
+  "filter_label_status": "Status",
+  "filter_label_category": "Category",
+  "filter_label_cycle": "Billing Cycle",
+  "reset_filters": "Reset",
+  "status": {
+    "Active": "Active",
+    "Paused": "Paused",
+    "Renewal Soon": "Renewal Soon"
+  },
+  "categories": {
+    "entertainment": "Entertainment",
+    "tools": "Tools",
+    "productivity": "Productivity",
+    "cloud": "Cloud",
+    "utility": "Utility",
+    "social": "Social",
+    "education": "Education",
+    "other": "Other"
+  },
+  "cycle_options": {
+    "Monthly": "Monthly",
+    "Yearly": "Yearly"
+  },
+  "steps": {
+    "core_info": "Core Info",
+    "payment_category": "Payment & Category",
+    "notification_notes": "Notification & Notes"
+  },
+  "preview_name": "Subscription Name",
+  "save_now": "Save Now",
+  "category": "Category",
+  "payment_method": "Payment Method",
+  "auto_renewal": "Auto Renewal",
+  "enable_notification": "Enable Notification",
+  "notify_me": "Notify me",
+  "days_before": "days before",
+  "notes_placeholder": "Add some notes...",
+  "payment_methods": {
+    "credit_card": "Credit Card",
+    "alipay": "Alipay",
+    "wechat": "WeChat",
+    "paypal": "PayPal"
+  }
+}

@@ -5,14 +5,23 @@ import { StatusCodes } from 'http-status-codes';
 import { AppError } from '../../utils/AppError';
 import { Role } from '@subcare/database';
 import { BusinessCode } from '../../constants/BusinessCode';
+import { SubscriptionFilterDTO } from '@subcare/types';
 
 // 创建订阅的验证 schema
 const createSubscriptionSchema = z.object({
   name: z.string().min(1),
-  price: z.number().positive(),
+  price: z.number().nonnegative(),
   currency: z.string().length(3),
   billingCycle: z.string(),
-  startDate: z.string().datetime().or(z.date()),
+  startDate: z.coerce.date(),
+  category: z.string().optional(),
+  paymentMethod: z.string().optional(),
+  autoRenewal: z.boolean().optional(),
+  enableNotification: z.boolean().optional(),
+  notifyDaysBefore: z.number().optional(),
+  website: z.string().optional(),
+  notes: z.string().optional(),
+  icon: z.string().optional(),
 });
 
 /**
@@ -33,8 +42,10 @@ export class SubscriptionController {
       }
       
       const validatedData = createSubscriptionSchema.parse(req.body);
+      
       const subscription = await this.subscriptionService.createSubscription({
         ...validatedData,
+        startDate: new Date(validatedData.startDate), // Ensure it's a Date object
         userId: req.user.userId,
       });
       
@@ -58,12 +69,29 @@ export class SubscriptionController {
         throw new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'Not authenticated' });
       }
       
-      const subscriptions = await this.subscriptionService.getUserSubscriptions(req.user.userId);
+      const filters: SubscriptionFilterDTO = {
+        search: req.query.search as string,
+        status: req.query.status as string,
+        category: req.query.category as string,
+        billingCycle: req.query.cycle as string,
+        page: req.query.page ? parseInt(req.query.page as string) : 1,
+        limit: req.query.limit ? parseInt(req.query.limit as string) : 12,
+      };
+
+      const { items, total } = await this.subscriptionService.getUserSubscriptions(req.user.userId, filters);
       
       res.status(StatusCodes.OK).json({
         status: 'success',
         code: BusinessCode.SUCCESS,
-        data: { subscriptions },
+        data: { 
+          subscriptions: items,
+          pagination: {
+            total,
+            page: filters.page,
+            limit: filters.limit,
+            totalPages: Math.ceil(total / (filters.limit || 12))
+          }
+        },
       });
     } catch (error) {
       next(error);

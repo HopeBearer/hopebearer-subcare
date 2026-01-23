@@ -9,6 +9,7 @@
     "active_subs": "Active Subscriptions",
     "remaining_budget": "Remaining Budget",
     "upcoming_renewals": "Upcoming Renewals",
+    "no_upcoming_renewals": "No upcoming renewals",
     "growth_last_month": "vs last month",
     "categories": "Categories",
     "footer": {

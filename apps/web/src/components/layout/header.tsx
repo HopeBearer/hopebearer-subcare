@@ -2,14 +2,16 @@
 
 import { useTranslation } from '@/lib/i18n/hooks';
 import { useAuthStore } from '@/store/auth.store';
+import { useModalStore } from '@/store/modal.store';
 import { useRouter, usePathname } from 'next/navigation';
-import { LogOut } from 'lucide-react';
+import { LogOut, Plus } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { cn } from '@/lib/utils';
 
 export function Header() {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation(['common', 'subscription']);
   const { user, logout } = useAuthStore();
+  const { openAddSubscription } = useModalStore();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -28,12 +30,12 @@ export function Header() {
   };
 
   return (
-    <header className="h-20 px-8 flex items-center justify-between sticky top-0 z-40 bg-surface border-b border-base shadow-sm">
+    <header className="h-20 px-8 flex items-center justify-between fixed top-0 right-0 left-72 z-40 bg-surface border-b border-base shadow-sm">
       <div className="flex flex-col justify-center">
         <h1 className="text-xl font-bold mb-0 mt-0 text-gray-900 dark:text-white tracking-tight">
           {getPageTitle()}
         </h1>
-        {pathname?.includes('/dashboard') && (
+        {(
           <div className="text-sm mb-0 mt-0 text-secondary">
             {t('header.welcome', { ns: 'dashboard', name: user?.name || 'User' })}
           </div>
@@ -41,6 +43,20 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-4">
+        <button
+          onClick={openAddSubscription}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ease-out",
+            "bg-lavender text-white font-medium",
+            "hover:bg-lavender-hover hover:shadow-[0_0_15px_rgba(165,166,246,0.3)] hover:-translate-y-px",
+            "active:bg-lavender-active active:shadow-none active:translate-y-0 active:scale-[0.99]",
+            "focus:ring-2 focus:ring-lavender-light focus:outline-none"
+          )}
+        >
+          <Plus className="w-5 h-5" />
+          <span>{t('add', { ns: 'subscription' })}</span>
+        </button>
+
         <LanguageSwitcher />
 
         <button 

@@ -68,10 +68,10 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
+                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1",
                 isActive 
                   ? "bg-primary-soft text-primary font-medium shadow-sm" 
-                  : "text-secondary hover:bg-gray-50 hover:text-primary dark:hover:bg-gray-800"
+                  : "text-secondary hover:bg-primary-pale hover:text-primary dark:hover:bg-gray-800"
               )}
             >
               <Icon className={cn("w-5 h-5 transition-colors", isActive ? "text-primary" : "text-gray-400 group-hover:text-primary")} />
@@ -82,7 +82,7 @@ export function Sidebar() {
       </nav>
 
       {/* User Profile Section */}
-      <div className="p-4 border-t border-base m-4">
+      <div className="border-t border-base">
         <div className="flex items-center gap-3 p-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer group relative">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-[#EAEAFE] flex items-center justify-center text-white font-bold shadow-sm">
             {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}

@@ -128,7 +128,27 @@ $fractions: (
     .right-#{$i} { right: $val; }
     .bottom-#{$i} { bottom: $val; }
     .left-#{$i} { left: $val; }
+
+    /* Flex Grow Factor */
+    .flex-#{$i} { flex: $i; }
   }
+}
+
+/* Halves (0.5, 1.5, 2.5, 3.5) */
+$halves: 0.5, 1.5, 2.5, 3.5;
+@each $h in $halves {
+  $val: #{$h * 0.25}rem;
+  $escaped: str-slice(#{$h}, 1, 1) + '\\.' + str-slice(#{$h}, 3);
+  
+  .p-#{$escaped} { padding: $val; }
+  .px-#{$escaped} { padding-left: $val; padding-right: $val; }
+  .py-#{$escaped} { padding-top: $val; padding-bottom: $val; }
+  .m-#{$escaped} { margin: $val; }
+  .mx-#{$escaped} { margin-left: $val; margin-right: $val; }
+  .my-#{$escaped} { margin-top: $val; margin-bottom: $val; }
+  .w-#{$escaped} { width: $val; }
+  .h-#{$escaped} { height: $val; }
+  .gap-#{$escaped} { gap: $val; }
 }
 
 /* Auto Margins */
@@ -354,6 +374,16 @@ $fractions: (
 .bg-primary-soft { background-color: rgba(165, 166, 246, 0.15) !important; }
 .ease { transition-timing-function: ease; }
 .bg-primary-pale { background-color: rgba(165, 166, 246, 0.05) !important; }
+
+/* =========================================
+   Extended Pixel Sizing (Charts/Layouts)
+   Range: 200px to 800px, Step: 50px
+   ========================================= */
+@for $i from 4 through 16 {
+  $px: $i * 50;
+  .h-#{$px} { height: #{$px}px; }
+  .min-h-#{$px} { min-height: #{$px}px; }
+}
 
 /* Group Hover Utilities */
 .group:hover .group-hover\:text-primary { color: var(--color-primary) !important; }

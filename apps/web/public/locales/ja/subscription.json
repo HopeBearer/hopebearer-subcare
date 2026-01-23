@@ -1,0 +1,57 @@
+{
+  "add": "サブスクリプションを追加",
+  "manage": "サブスクリプション管理",
+  "name": "サービス名",
+  "cost": "費用",
+  "cycle": "周期",
+  "billing_date": "請求日",
+  "first_payment": "初回支払日",
+  "next_bill": "次回請求",
+  "search_placeholder": "サブスクリプションを検索...",
+  "filter_all_status": "すべてのステータス",
+  "filter_all_categories": "すべてのカテゴリ",
+  "filter_all_cycles": "すべての周期",
+  "filter_label_status": "ステータス",
+  "filter_label_category": "カテゴリ",
+  "filter_label_cycle": "周期",
+  "reset_filters": "リセット",
+  "status": {
+    "Active": "有効",
+    "Paused": "停止中",
+    "Renewal Soon": "更新間近"
+  },
+  "categories": {
+    "entertainment": "エンターテイメント",
+    "tools": "ツール",
+    "productivity": "生産性",
+    "cloud": "クラウド",
+    "utility": "ユーティリティ",
+    "social": "ソーシャル",
+    "education": "教育",
+    "other": "その他"
+  },
+  "cycle_options": {
+    "Monthly": "月次",
+    "Yearly": "年次"
+  },
+  "steps": {
+    "core_info": "基本情報",
+    "payment_category": "支払いとカテゴリ",
+    "notification_notes": "通知とメモ"
+  },
+  "preview_name": "サブスクリプション名",
+  "save_now": "今すぐ保存",
+  "category": "カテゴリ",
+  "payment_method": "支払方法",
+  "auto_renewal": "自動更新",
+  "enable_notification": "通知を有効化",
+  "notify_me": "通知",
+  "days_before": "日前",
+  "notes_placeholder": "メモを追加...",
+  "payment_methods": {
+    "credit_card": "クレジットカード",
+    "alipay": "Alipay",
+    "wechat": "WeChat Pay",
+    "paypal": "PayPal"
+  }
+}

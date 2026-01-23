@@ -9,6 +9,7 @@
     "active_subs": "アクティブなサブスク",
     "remaining_budget": "残りの予算",
     "upcoming_renewals": "更新予定",
+    "no_upcoming_renewals": "更新予定なし",
     "growth_last_month": "先月比",
     "categories": "カテゴリー",
     "footer": {

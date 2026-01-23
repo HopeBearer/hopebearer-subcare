@@ -18,6 +18,11 @@ export const routeConfig: Record<string, string> = {
   'GET /subscriptions': 'v1',
   'GET /subscriptions/stats': 'v1',
 
+  // Dashboard
+  'GET /dashboard/stats': 'v1',
+  'GET /dashboard/trend': 'v1',
+  'GET /dashboard/distribution': 'v1',
+
   // Users
   'GET /users': 'v2', // Switched to v2
   'PATCH /users/:id/disable': 'v2', // Switched to v2
