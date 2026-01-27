@@ -14,7 +14,7 @@ export const initI18n = (config: I18nConfig) => {
     .use(initReactI18next)
     .init({
       resources,
-      lng: config.defaultLanguage, // Force initial language to match server
+      lng: config.defaultLanguage, // Force initial language to match server to avoid hydration mismatch
       fallbackLng: config.fallbackLanguage || config.defaultLanguage,
       defaultNS: config.defaultNS || 'common',
       debug: config.debug || process.env.NODE_ENV === 'development',
@@ -23,7 +23,7 @@ export const initI18n = (config: I18nConfig) => {
       },
       detection: {
         order: ['querystring', 'cookie', 'localStorage', 'navigator', 'htmlTag'],
-        caches: ['localStorage', 'cookie'],
+        caches: [], // Disable auto-caching to prevent overwriting user preference on init
         lookupQuerystring: 'lang',
         lookupCookie: 'i18next',
         lookupLocalStorage: 'i18nextLng',

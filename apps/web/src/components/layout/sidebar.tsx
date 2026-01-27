@@ -84,7 +84,7 @@ export function Sidebar() {
       {/* User Profile Section */}
       <div className="border-t border-base">
         <div className="flex items-center gap-3 p-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer group relative">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-[#EAEAFE] flex items-center justify-center text-white font-bold shadow-sm">
+          <div className="w-10 h-10 rounded-full bg-primary-soft flex items-center justify-center text-primary font-bold shadow-sm">
             {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
           </div>
           <div className="flex-1 min-w-0">

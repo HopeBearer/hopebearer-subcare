@@ -22,7 +22,36 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh">
+    <html lang="zh" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var storage = localStorage.getItem('subcare-theme');
+                  var theme = 'light';
+                  if (storage) {
+                    try {
+                      var parsed = JSON.parse(storage);
+                      if (parsed.state && parsed.state.theme) {
+                        theme = parsed.state.theme;
+                      }
+                    } catch (e) {}
+                  } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    theme = 'dark';
+                  }
+                  
+                  var root = document.documentElement;
+                  root.classList.remove('light', 'dark');
+                  root.classList.add(theme);
+                  root.style.colorScheme = theme;
+                } catch (e) {}
+              })()
+            `,
+          }}
+        />
+      </head>
       <body>
         <QueryProvider>
           <I18nProvider config={i18nConfig}>
