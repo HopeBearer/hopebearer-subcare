@@ -1,5 +1,6 @@
 {
   "add": "Add Subscription",
+  "edit": "Edit Subscription",
   "manage": "Manage Subscriptions",
   "name": "Service Name",
   "cost": "Cost",
@@ -7,6 +8,18 @@
   "billing_date": "Billing Date",
   "first_payment": "First Payment Date",
   "next_bill": "Next Bill",
+  "details": "Details",
+  "website": "Website",
+  "on": "On",
+  "off": "Off",
+  "reminders": "Reminders",
+  "notifications_enabled": "Notifications are enabled",
+  "notifications_disabled": "Notifications disabled",
+  "alert_before": "Alert me <bold>{{days}} days</bold> before renewal.",
+  "notes_usage": "Notes & Usage",
+  "notes_empty": "No notes added.",
+  "usage": "Usage",
+  "loading_details": "Loading details...",
   "search_placeholder": "Search subscriptions...",
   "filter_all_status": "All Status",
   "filter_all_categories": "All Categories",
@@ -20,10 +33,22 @@
   "filter_next_15_days": "Next 15 Days",
   "filter_next_30_days": "Next 30 Days",
   "reset_filters": "Reset",
+  "help_delete": "Permanently remove this subscription record.",
+  "help_pause": "Temporarily stop tracking without deleting data.",
+  "help_unsubscribe": "Mark as cancelled but keep history.",
+  "resume": "Resume",
+  "pause": "Pause",
+  "unsubscribe": "Unsubscribe",
   "status": {
     "Active": "Active",
     "Paused": "Paused",
-    "Renewal Soon": "Renewal Soon"
+    "Renewal Soon": "Renewal Soon",
+    "ACTIVE": "Active",
+    "PAUSED": "Paused",
+    "CANCELLED": "Cancelled",
+    "Active": "Active",
+    "Paused": "Paused",
+    "Cancelled": "Cancelled"
   },
   "categories": {
     "entertainment": "Entertainment",
@@ -65,6 +90,7 @@
     "credit_card": "Credit Card",
     "alipay": "Alipay",
     "wechat": "WeChat",
-    "paypal": "PayPal"
+    "paypal": "PayPal",
+    "other": "Other"
   }
 }

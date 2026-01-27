@@ -18,7 +18,7 @@ export function Modal({ isOpen, onClose, title, children, className, headerClass
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center">
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
@@ -27,7 +27,7 @@ export function Modal({ isOpen, onClose, title, children, className, headerClass
       
       {/* Content */}
       <div className={cn(
-        "relative z-50 w-full max-w-lg bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 transform transition-all animate-in fade-in zoom-in-95 duration-200",
+        "relative z-[60] w-full max-w-lg bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 transform transition-all animate-in fade-in zoom-in-95 duration-200",
         className
       )}>
         <div className={cn("flex items-center justify-between mb-4", headerClassName)}>

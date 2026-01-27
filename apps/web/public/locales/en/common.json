@@ -12,6 +12,7 @@
     "cancel": "Cancel",
     "confirm": "Confirm",
     "save": "Save",
+    "save_changes": "Save Changes",
     "next": "Next",
     "back": "Back",
     "complete": "Complete"
@@ -20,8 +21,13 @@
   "yes": "Yes",
   "no": "No",
   "edit": "Edit",
-  "delete": "Delete",
-  "error": {
+    "delete": "Delete",
+    "not_found_page": {
+      "title": "Page Not Found",
+      "description": "The page you are looking for doesn't exist or has been moved.",
+      "back_home": "Back to Home"
+    },
+    "error": {
     "network": "Network error. Please try again",
     "UNKNOWN": "An unknown error occurred",
     "40000": {

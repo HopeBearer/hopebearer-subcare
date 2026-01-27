@@ -73,7 +73,7 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
       cycle: (initialValues?.billingCycle as 'Monthly' | 'Yearly') || 'Monthly',
       startDate: defaultStartDate,
       category: initialValues?.category || 'Entertainment',
-      paymentMethod: initialValues?.paymentMethod || '',
+      paymentMethod: initialValues?.paymentMethod || 'Credit Card',
       autoRenewal: initialValues?.autoRenewal ?? true,
       usage: initialValues?.usage || 'Normally',
       enableNotification: initialValues?.enableNotification ?? false,
@@ -234,15 +234,21 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
                    <div className="space-y-1">
                       <label className="block text-base font-medium text-secondary dark:text-gray-300 mb-1">{t('cost', { ns: 'subscription' })}</label>
                       <div className="flex gap-2">
-                        <Select 
-                           {...register('currency')}
-                           className="w-24"
-                           options={[
-                             { label: 'CNY', value: 'CNY' },
-                             { label: 'USD', value: 'USD' },
-                             { label: 'EUR', value: 'EUR' },
-                             { label: 'JPY', value: 'JPY' },
-                           ]}
+                        <Controller
+                           control={control}
+                           name="currency"
+                           render={({ field }) => (
+                             <Select 
+                               {...field}
+                               className="w-32"
+                               options={[
+                                 { label: 'CNY', value: 'CNY' },
+                                 { label: 'USD', value: 'USD' },
+                                 { label: 'EUR', value: 'EUR' },
+                                 { label: 'JPY', value: 'JPY' },
+                               ]}
+                             />
+                           )}
                         />
                         <Input 
                           type="number" 
@@ -302,17 +308,23 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
                 className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300"
               >
                  <div className="grid grid-cols-1 gap-4">
-                   <Select
-                     label={t('category', { ns: 'subscription' })}
-                     {...register('category')}
-                     options={[
-                       { label: t('categories.entertainment', { ns: 'subscription' }), value: 'Entertainment' },
-                       { label: t('categories.productivity', { ns: 'subscription' }), value: 'Productivity' },
-                       { label: t('categories.tools', { ns: 'subscription' }), value: 'Tools' },
-                       { label: t('categories.social', { ns: 'subscription' }), value: 'Social' },
-                       { label: t('categories.utilities', { ns: 'subscription' }), value: 'Utilities' },
-                       { label: t('categories.other', { ns: 'subscription' }), value: 'Other' },
-                     ]}
+                   <Controller
+                     control={control}
+                     name="category"
+                     render={({ field }) => (
+                       <Select
+                         label={t('category', { ns: 'subscription' })}
+                         {...field}
+                         options={[
+                           { label: t('categories.entertainment', { ns: 'subscription' }), value: 'Entertainment' },
+                           { label: t('categories.productivity', { ns: 'subscription' }), value: 'Productivity' },
+                           { label: t('categories.tools', { ns: 'subscription' }), value: 'Tools' },
+                           { label: t('categories.social', { ns: 'subscription' }), value: 'Social' },
+                           { label: t('categories.utilities', { ns: 'subscription' }), value: 'Utilities' },
+                           { label: t('categories.other', { ns: 'subscription' }), value: 'Other' },
+                         ]}
+                       />
+                     )}
                    />
                  </div>
 
@@ -339,15 +351,22 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
                  </div>
 
                  <div className="grid grid-cols-2 gap-4">
-                   <Select
-                      label={t('payment_method', { ns: 'subscription' })}
-                      {...register('paymentMethod')}
-                      options={[
-                        { label: t('payment_methods.credit_card', { defaultValue: 'Credit Card' }), value: 'Credit Card' },
-                        { label: t('payment_methods.alipay', { defaultValue: 'Alipay' }), value: 'Alipay' },
-                        { label: t('payment_methods.wechat', { defaultValue: 'WeChat' }), value: 'WeChat' },
-                        { label: t('payment_methods.paypal', { defaultValue: 'PayPal' }), value: 'PayPal' },
-                      ]}
+                   <Controller
+                      control={control}
+                      name="paymentMethod"
+                      render={({ field }) => (
+                        <Select
+                          label={t('payment_method', { ns: 'subscription' })}
+                          {...field}
+                          options={[
+                            { label: t('payment_methods.credit_card', { defaultValue: 'Credit Card' }), value: 'Credit Card' },
+                            { label: t('payment_methods.alipay', { defaultValue: 'Alipay' }), value: 'Alipay' },
+                            { label: t('payment_methods.wechat', { defaultValue: 'WeChat' }), value: 'WeChat' },
+                            { label: t('payment_methods.paypal', { defaultValue: 'PayPal' }), value: 'PayPal' },
+                            { label: t('payment_methods.other', { defaultValue: 'Other' }), value: 'Other' },
+                          ]}
+                        />
+                      )}
                    />
                    <div className="space-y-2">
                      <label className="block text-base font-medium text-secondary dark:text-gray-300">{t('auto_renewal', { ns: 'subscription' })}</label>

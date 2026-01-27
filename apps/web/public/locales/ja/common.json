@@ -1,10 +1,27 @@
 {
   "app_name": "SubCare",
+  "nav": {
+    "dashboard": "ダッシュボード",
+    "subscriptions": "サブスクリプション",
+    "finance": "財務分析",
+    "notifications": "通知",
+    "settings": "設定"
+  },
   "button": {
     "submit": "送信",
     "cancel": "キャンセル",
-    "confirm": "確認"
+    "confirm": "確認",
+    "save": "保存",
+    "save_changes": "変更を保存",
+    "next": "次へ",
+    "back": "戻る",
+    "complete": "完了"
   },
+  "preview": "プレビュー",
+  "yes": "はい",
+  "no": "いいえ",
+  "edit": "編集",
+  "delete": "削除",
   "error": {
     "network": "ネットワークエラーが発生しました。再試行してください。",
     "UNKNOWN": "不明なエラーが発生しました。",

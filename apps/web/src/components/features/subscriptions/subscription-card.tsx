@@ -80,50 +80,58 @@ export function SubscriptionCard({ subscription, onClick }: SubscriptionCardProp
         "hover:shadow-md hover:-translate-y-1 hover:border-lavender/30 dark:hover:border-lavender/30"
       )}
     >
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex items-center gap-4 flex-1 min-w-0 pr-2">
-          <div className="w-12 h-12 rounded-xl bg-lavender/10 dark:bg-lavender/20 flex items-center justify-center text-lavender font-bold text-xl shrink-0">
+      {/* Header Row: Icon + Title + Actions */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3 flex-1 min-w-0 pr-2">
+          <div className="w-10 h-10 rounded-xl bg-lavender/10 dark:bg-lavender/20 flex items-center justify-center text-lavender font-bold text-lg shrink-0">
             {/* Placeholder Logo Logic */}
             {subscription.icon ? (
-              <img src={subscription.icon} alt={subscription.name} className="w-8 h-8 object-contain" />
+              <img src={subscription.icon} alt={subscription.name} className="w-6 h-6 object-contain" />
             ) : (
               subscription.name.charAt(0).toUpperCase()
             )}
           </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-lg leading-tight group-hover:text-lavender transition-colors truncate" title={subscription.name}>
-              {subscription.name}
-            </h3>
-            <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 flex flex-wrap items-center gap-2">
-              <span className={cn(
-                "px-2 py-0.5 rounded-full text-xs font-medium",
-                statusColors[statusKey] || 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-              )}>
-                {t(`status.${statusKey}`, { defaultValue: statusKey })}
-              </span>
-              <span 
-                className="px-2 py-0.5 rounded-full text-xs font-medium"
-                style={{ 
-                  backgroundColor: `${categoryColor}20`, 
-                  color: categoryColor 
-                }}
-              >
-                {t(`categories.${subscription.category.toLowerCase()}`, { defaultValue: subscription.category })}
-              </span>
-              {subscription.usage && (
-                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
-                  {t(`usage_options.${subscription.usage}`, { defaultValue: subscription.usage })}
-                </span>
-              )}
-            </div>
-          </div>
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-lg leading-tight group-hover:text-lavender transition-colors truncate" title={subscription.name}>
+            {subscription.name}
+          </h3>
         </div>
         
         {/* Action Menu */}
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={(e) => e.stopPropagation()}>
           <ActionDropdown items={actionItems} />
         </div>
       </div>
+
+      {/* Tags Block - Independent */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+          <span className={cn(
+            "px-2 py-0.5 rounded-full text-xs font-medium",
+            statusColors[statusKey] || 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+          )}>
+            {t(`status.${statusKey}`, { defaultValue: statusKey })}
+          </span>
+          <span 
+            className="px-2 py-0.5 rounded-full text-xs font-medium"
+            style={{ 
+              backgroundColor: `${categoryColor}20`, 
+              color: categoryColor 
+            }}
+          >
+            {t(`categories.${subscription.category.toLowerCase()}`, { defaultValue: subscription.category })}
+          </span>
+          {subscription.usage && (
+            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
+              {t(`usage_options.${subscription.usage}`, { defaultValue: subscription.usage })}
+            </span>
+          )}
+      </div>
+
+      {/* Description */}
+      {subscription.description && (
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 line-clamp-2">
+          {subscription.description}
+        </p>
+      )}
 
       <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-50 dark:border-gray-700/50">
         <div className="flex flex-col">

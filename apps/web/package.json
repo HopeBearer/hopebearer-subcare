@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
+    "@radix-ui/react-tooltip": "^1.2.8",
     "@subcare/eslint-config": "workspace:*",
     "@subcare/tsconfig": "workspace:*",
     "@subcare/types": "workspace:*",

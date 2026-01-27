@@ -93,11 +93,22 @@ export function UpcomingRenewals() {
               <div
                 key={sub.id}
                 className={cn(
-                  "relative group flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 w-full",
-                  "hover:shadow-md hover:border-primary/50 hover:-translate-y-0.5",
+                  "relative group flex items-center justify-between p-4 rounded-2xl border w-full",
+                  "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+                  "hover:-translate-y-[5px]",
                   isUrgent 
-                    ? "bg-red-50/30 border-red-100 dark:bg-red-900/10 dark:border-red-800/30" 
-                    : "bg-white dark:bg-gray-800/50 border-gray-100 dark:border-gray-800"
+                    ? cn(
+                        "bg-red-50/30 border-red-100 dark:bg-red-900/10 dark:border-red-800/30",
+                        "hover:shadow-[0_8px_30px_rgba(239,68,68,0.1)] dark:hover:shadow-[0_8px_30px_rgba(239,68,68,0.2)]",
+                        "hover:border-red-200 dark:hover:border-red-700"
+                      )
+                    : cn(
+                        "bg-white dark:bg-gray-800/40",
+                        "border-[rgba(165,166,246,0.15)] dark:border-[rgba(165,166,246,0.1)]",
+                        "shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]",
+                        "hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)]",
+                        "hover:border-[#A5A6F6]"
+                      )
                 )}
               >
                 <div className="flex items-center gap-4">

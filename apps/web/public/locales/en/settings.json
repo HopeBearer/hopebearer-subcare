@@ -1,0 +1,49 @@
+{
+  "title": "Settings",
+  "subtitle": "Manage your account settings and preferences.",
+  "nav": {
+    "profile": "Profile",
+    "profile_desc": "Manage your public profile",
+    "account": "Account",
+    "account_desc": "Security and account settings",
+    "notifications": "Notifications",
+    "notifications_desc": "Email and push notifications"
+  },
+  "profile": {
+    "title": "Public Profile",
+    "description": "Manage your public profile information",
+    "avatar": "Profile Picture",
+    "avatar_hint": "JPG, GIF or PNG. Max size of 800K",
+    "name": "Display Name",
+    "email": "Email Address",
+    "bio": "Bio",
+    "bio_placeholder": "Tell us about yourself"
+  },
+  "account": {
+    "title": "Account Security",
+    "description": "Manage your account security and preferences",
+    "password": "Change Password",
+    "current_password": "Current Password",
+    "new_password": "New Password",
+    "confirm_password": "Confirm New Password",
+    "update_password": "Update Password",
+    "danger_zone": "Danger Zone",
+    "delete_account": "Delete Account",
+    "delete_warning": "Permanently remove your account and all of its data.",
+    "delete_confirm": "Delete Account"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "description": "Choose how and when you want to be notified",
+    "email": "Email Notifications",
+    "sub_reminders": "Subscription Reminders",
+    "sub_reminders_desc": "Get notified before your subscriptions renew",
+    "security": "Security Alerts",
+    "security_desc": "Get notified about suspicious activity",
+    "push": "Push Notifications",
+    "push_reminders": "Due Date Reminders",
+    "push_reminders_desc": "Instant notifications for upcoming payments",
+    "product_updates": "Product Updates",
+    "product_updates_desc": "News about new features and improvements"
+  }
+}

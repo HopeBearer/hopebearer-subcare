@@ -1,5 +1,6 @@
 {
   "add": "添加订阅",
+  "edit": "编辑订阅",
   "manage": "订阅管理",
   "name": "服务名称",
   "cost": "费用",
@@ -7,6 +8,18 @@
   "billing_date": "账单日期",
   "first_payment": "首次付款日期",
   "next_bill": "下次续费",
+  "details": "详细信息",
+  "website": "官方网站",
+  "on": "已开启",
+  "off": "已关闭",
+  "reminders": "提醒设置",
+  "notifications_enabled": "已启用提醒",
+  "notifications_disabled": "未启用提醒",
+  "alert_before": "在续费前 <bold>{{days}} 天</bold> 提醒我",
+  "notes_usage": "备注与使用情况",
+  "notes_empty": "暂无备注",
+  "usage": "使用频率",
+  "loading_details": "正在加载详情...",
   "search_placeholder": "搜索订阅...",
   "filter_all_status": "所有状态",
   "filter_all_categories": "所有分类",
@@ -20,10 +33,22 @@
   "filter_next_15_days": "未来15天",
   "filter_next_30_days": "未来30天",
   "reset_filters": "重置",
+  "help_delete": "永久删除此订阅记录。",
+  "help_pause": "暂停跟踪，但保留历史数据。",
+  "help_unsubscribe": "标记为已取消，保留历史记录。",
+  "resume": "恢复订阅",
+  "pause": "暂停订阅",
+  "unsubscribe": "取消订阅",
   "status": {
     "Active": "活跃",
     "Paused": "已暂停",
-    "Renewal Soon": "即将续费"
+    "Renewal Soon": "即将续费",
+    "ACTIVE": "活跃",
+    "PAUSED": "已暂停",
+    "CANCELLED": "已取消",
+    "Active": "活跃",
+    "Paused": "已暂停",
+    "Cancelled": "已取消"
   },
   "categories": {
     "entertainment": "娱乐",
@@ -65,6 +90,7 @@
     "credit_card": "信用卡",
     "alipay": "支付宝",
     "wechat": "微信支付",
-    "paypal": "PayPal"
+    "paypal": "PayPal",
+    "other": "其他"
   }
 }

@@ -1,0 +1,49 @@
+{
+  "title": "設定",
+  "subtitle": "アカウント設定と好みを管理します。",
+  "nav": {
+    "profile": "プロフィール",
+    "profile_desc": "公開プロフィールを管理",
+    "account": "アカウント",
+    "account_desc": "セキュリティとアカウント設定",
+    "notifications": "通知",
+    "notifications_desc": "メールとプッシュ通知"
+  },
+  "profile": {
+    "title": "公開プロフィール",
+    "description": "公開プロフィール情報を管理",
+    "avatar": "プロフィール画像",
+    "avatar_hint": "JPG, GIF, PNG。最大 800K",
+    "name": "表示名",
+    "email": "メールアドレス",
+    "bio": "自己紹介",
+    "bio_placeholder": "あなたについて教えてください"
+  },
+  "account": {
+    "title": "アカウントセキュリティ",
+    "description": "アカウントのセキュリティと設定を管理",
+    "password": "パスワード変更",
+    "current_password": "現在のパスワード",
+    "new_password": "新しいパスワード",
+    "confirm_password": "新しいパスワード（確認）",
+    "update_password": "パスワードを更新",
+    "danger_zone": "危険エリア",
+    "delete_account": "アカウント削除",
+    "delete_warning": "アカウントとすべてのデータを完全に削除します。",
+    "delete_confirm": "アカウント削除"
+  },
+  "notifications": {
+    "title": "通知",
+    "description": "通知の受信方法とタイミングを選択",
+    "email": "メール通知",
+    "sub_reminders": "サブスクリプション通知",
+    "sub_reminders_desc": "更新前に通知を受け取る",
+    "security": "セキュリティアラート",
+    "security_desc": "不審なアクティビティについて通知",
+    "push": "プッシュ通知",
+    "push_reminders": "期日リマインダー",
+    "push_reminders_desc": "支払いのための即時通知",
+    "product_updates": "製品アップデート",
+    "product_updates_desc": "新機能と改善に関するニュース"
+  }
+}

@@ -3,16 +3,19 @@
 import { useTranslation } from '@/lib/i18n/hooks';
 import { useAuthStore } from '@/store/auth.store';
 import { useModalStore } from '@/store/modal.store';
+import { useSettingsStore } from '@/store/settings.store';
 import { useRouter, usePathname } from 'next/navigation';
-import { LogOut, Plus } from 'lucide-react';
+import { LogOut, Plus, ArrowLeft } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { cn } from '@/lib/utils';
+import { settingsConfig } from '@/components/settings/config';
 
 export function Header() {
-  const { t } = useTranslation(['common', 'subscription']);
+  const { t } = useTranslation(['common', 'subscription', 'dashboard', 'settings']);
   const { user, logout } = useAuthStore();
   const { openAddSubscription } = useModalStore();
+  const { activeTab } = useSettingsStore();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -21,42 +24,73 @@ export function Header() {
     router.push('/login');
   };
 
-  // Simple title logic based on path
+  const isSettingsPage = pathname?.includes('/settings');
+
+  // Dynamic title logic
   const getPageTitle = () => {
-    if (pathname?.includes('/dashboard')) return t('nav.dashboard');
-    if (pathname?.includes('/subscriptions')) return t('nav.subscriptions');
-    if (pathname?.includes('/finance')) return t('nav.finance');
-    if (pathname?.includes('/notifications')) return t('nav.notifications');
-    return t('app_name');
+    if (isSettingsPage) {
+      const activeTabConfig = settingsConfig.find(tab => tab.id === activeTab) || settingsConfig[0];
+      const tabLabel = t(activeTabConfig.label.replace('settings.', ''), { ns: 'settings', defaultValue: activeTabConfig.label.split('.').pop() });
+      return `${t('nav.settings', { ns: 'common' })} —— ${tabLabel}`;
+    }
+
+    if (pathname?.includes('/dashboard')) return t('nav.dashboard', { ns: 'common' });
+    if (pathname?.includes('/subscriptions')) return t('nav.subscriptions', { ns: 'common' });
+    if (pathname?.includes('/finance')) return t('nav.finance', { ns: 'common' });
+    if (pathname?.includes('/notifications')) return t('nav.notifications', { ns: 'common' });
+    return t('app_name', { ns: 'common' });
+  };
+
+  const getPageSubtitle = () => {
+    if (isSettingsPage) {
+      const activeTabConfig = settingsConfig.find(tab => tab.id === activeTab) || settingsConfig[0];
+      return t(activeTabConfig.description || '', { ns: 'settings' });
+    }
+    return t('header.welcome', { ns: 'dashboard', name: user?.name || 'User' });
   };
 
   return (
     <header className="h-20 px-8 flex items-center justify-between fixed top-0 right-0 left-72 z-40 bg-surface border-b border-base shadow-sm">
       <div className="flex flex-col justify-center">
-        <h1 className="text-xl font-bold mb-0 mt-0 text-gray-900 dark:text-white tracking-tight">
-          {getPageTitle()}
-        </h1>
-        {(
-          <div className="text-sm mb-0 mt-0 text-secondary">
-            {t('header.welcome', { ns: 'dashboard', name: user?.name || 'User' })}
+        <div className="flex items-center gap-3">
+          {isSettingsPage && (
+            <button
+              onClick={() => router.back()}
+              className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-secondary transition-colors self-start mt-1"
+              aria-label={t('button.back', { ns: 'common' })}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
+          <div className="flex flex-col">
+            <h1 className="text-xl font-bold mb-0 mt-0 text-gray-900 dark:text-white tracking-tight leading-tight">
+              {getPageTitle()}
+            </h1>
+            {getPageSubtitle() && (
+              <div className="text-sm text-secondary mt-0.5 leading-snug">
+                {getPageSubtitle()}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       <div className="flex items-center gap-4">
-        <button
-          onClick={() => openAddSubscription()}
-          className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ease-out",
-            "bg-lavender text-white font-medium",
-            "hover:bg-lavender-hover hover:shadow-[0_0_15px_rgba(165,166,246,0.3)] hover:-translate-y-px",
-            "active:bg-lavender-active active:shadow-none active:translate-y-0 active:scale-[0.99]",
-            "focus:ring-2 focus:ring-lavender-light focus:outline-none"
-          )}
-        >
-          <Plus className="w-5 h-5" />
-          <span>{t('add', { ns: 'subscription' })}</span>
-        </button>
+        {!isSettingsPage && (
+          <button
+            onClick={() => openAddSubscription()}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ease-out",
+              "bg-lavender text-white font-medium",
+              "hover:bg-lavender-hover hover:shadow-[0_0_15px_rgba(165,166,246,0.3)] hover:-translate-y-px",
+              "active:bg-lavender-active active:shadow-none active:translate-y-0 active:scale-[0.99]",
+              "focus:ring-2 focus:ring-lavender-light focus:outline-none"
+            )}
+          >
+            <Plus className="w-5 h-5" />
+            <span>{t('add', { ns: 'subscription' })}</span>
+          </button>
+        )}
 
         <ThemeToggle className="mr-2" />
         <LanguageSwitcher />

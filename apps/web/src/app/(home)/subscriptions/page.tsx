@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { SubscriptionCard } from '@/components/features/subscriptions/subscription-card';
+import { SubscriptionDetailDrawer } from '@/components/features/subscriptions/drawer/subscription-detail-drawer';
 import { Input } from '@/components/ui/input';
 import { FilterDropdown } from '@/components/ui/filter-dropdown';
 import { Search, Loader2, RotateCcw } from 'lucide-react';
@@ -32,6 +33,10 @@ export default function SubscriptionsPage() {
   const [expiringInFilter, setExpiringInFilter] = useState(searchParams.get('expiringIn') || 'All');
   const [isResetting, setIsResetting] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  
+  // Drawer State
+  const [selectedSubscription, setSelectedSubscription] = useState<SubscriptionDTO | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const EXPIRING_OPTIONS = [
     { label: t('filter_all_time', 'All Time'), value: 'All' },
@@ -123,8 +128,16 @@ export default function SubscriptionsPage() {
   };
 
   const handleCardClick = (id: string) => {
-    console.log('Navigate to subscription details:', id);
-    // router.push(`/subscriptions/${id}`);
+    const subscription = items.find((item: SubscriptionDTO) => item.id === id);
+    if (subscription) {
+      setSelectedSubscription(subscription);
+      setIsDrawerOpen(true);
+    }
+  };
+
+  const handleDrawerClose = () => {
+    setIsDrawerOpen(false);
+    setTimeout(() => setSelectedSubscription(null), 300); // Clear after animation
   };
 
   const hasActiveFilters = searchQuery || statusFilter !== 'All' || categoryFilter !== 'All' || cycleFilter !== 'All' || expiringInFilter !== 'All';
@@ -246,6 +259,13 @@ export default function SubscriptionsPage() {
       
       {/* Infinite Scroll Trigger */}
       <div ref={ref} className="h-4" />
+
+      {/* Detail Drawer */}
+      <SubscriptionDetailDrawer 
+        isOpen={isDrawerOpen} 
+        onClose={handleDrawerClose} 
+        subscription={selectedSubscription} 
+      />
     </div>
   );
 }

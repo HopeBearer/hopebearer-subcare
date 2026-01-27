@@ -10,17 +10,17 @@ import {
   PieChart, 
   Bell, 
   Settings, 
-  ShieldCheck,
-  LogOut,
-  ChevronRight
+  ShieldCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { SettingsPageSidebar } from './settings-sidebar';
 
 export function Sidebar() {
   const pathname = usePathname();
   const { t } = useTranslation('common');
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
+
+  const isSettingsPage = pathname?.startsWith('/settings');
 
   const navItems = [
     {
@@ -53,50 +53,62 @@ export function Sidebar() {
           <ShieldCheck className="w-6 h-6" />
         </div>
         <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
-          {t('app_name')}
+          {isSettingsPage ? t('nav.settings') : t('app_name')}
         </span>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 space-y-2 py-4">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
-          const Icon = item.icon;
-          
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1",
-                isActive 
-                  ? "bg-primary-soft text-primary font-medium shadow-sm" 
-                  : "text-secondary hover:bg-primary-pale hover:text-primary dark:hover:bg-gray-800"
-              )}
-            >
-              <Icon className={cn("w-5 h-5 transition-colors", isActive ? "text-primary" : "text-gray-400 group-hover:text-primary")} />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
+      {isSettingsPage ? (
+        <SettingsPageSidebar />
+      ) : (
+        <nav className="flex-1 px-4 space-y-2 py-4">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+            const Icon = item.icon;
+            
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1",
+                  isActive 
+                    ? "bg-primary-soft text-primary font-medium shadow-sm" 
+                    : "text-secondary hover:bg-primary-pale hover:text-primary dark:hover:bg-gray-800"
+                )}
+              >
+                <Icon className={cn("w-5 h-5 transition-colors", isActive ? "text-primary" : "text-gray-400 group-hover:text-primary")} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      )}
 
       {/* User Profile Section */}
-      <div className="border-t border-base">
-        <div className="flex items-center gap-3 p-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer group relative">
-          <div className="w-10 h-10 rounded-full bg-primary-soft flex items-center justify-center text-primary font-bold shadow-sm">
+      <div className="border-t border-base p-4">
+        <Link
+          href="/settings"
+          className={cn(
+            "flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group relative",
+            isSettingsPage
+              ? "bg-primary-soft text-primary shadow-sm"
+              : "hover:bg-gray-50 dark:hover:bg-gray-800 text-secondary hover:text-gray-900"
+          )}
+        >
+          <div className="w-10 h-10 rounded-full bg-primary-soft flex items-center justify-center text-primary font-bold shadow-sm flex-shrink-0">
             {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+            <p className={cn("text-sm font-medium truncate", isSettingsPage ? "text-primary" : "text-gray-900 dark:text-white")}>
               {user?.name || 'User'}
             </p>
             <p className="text-xs text-gray-500 truncate">
               {user?.email || 'user@example.com'}
             </p>
           </div>
-          <Settings className="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors" />
-        </div>
+          <Settings className={cn("w-4 h-4 transition-colors", isSettingsPage ? "text-primary" : "text-gray-400 group-hover:text-primary")} />
+        </Link>
       </div>
     </aside>
   );

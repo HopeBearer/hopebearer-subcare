@@ -17,7 +17,7 @@ export const I18nProvider = ({ children, config }: I18nProviderProps) => {
     initI18n(config);
 
     const storedLang = localStorage.getItem('i18nextLng');
-    const targetLang = storedLang || config.language;
+    const targetLang = storedLang || config.defaultLanguage;
 
     i18n.changeLanguage(targetLang).then(() => {
       setReady(true);
