@@ -98,8 +98,8 @@ export default function RegisterPage() {
             <span className="text-white font-bold text-2xl">S</span>
           </div>
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('register.title')}</h1>
-        <p className="text-gray-600">{t('register.subtitle')}</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('register.title')}</h1>
+        <p className="text-gray-600 dark:text-gray-400">{t('register.subtitle')}</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-7" noValidate>
@@ -138,11 +138,11 @@ export default function RegisterPage() {
           {/* Password Strength Meter */}
           {password && (
             <div className="flex gap-1 h-1.5 mt-2">
-              <div className={`flex-1 rounded-full transition-colors duration-300 ${passwordStrength >= 1 ? 'bg-red-400' : 'bg-gray-200'
+              <div className={`flex-1 rounded-full transition-colors duration-300 ${passwordStrength >= 1 ? 'bg-red-400' : 'bg-gray-200 dark:bg-gray-700'
                 }`} />
-              <div className={`flex-1 rounded-full transition-colors duration-300 ${passwordStrength >= 2 ? 'bg-yellow-400' : 'bg-gray-200'
+              <div className={`flex-1 rounded-full transition-colors duration-300 ${passwordStrength >= 2 ? 'bg-yellow-400' : 'bg-gray-200 dark:bg-gray-700'
                 }`} />
-              <div className={`flex-1 rounded-full transition-colors duration-300 ${passwordStrength >= 3 ? 'bg-purple-400' : 'bg-gray-200'
+              <div className={`flex-1 rounded-full transition-colors duration-300 ${passwordStrength >= 3 ? 'bg-purple-400' : 'bg-gray-200 dark:bg-gray-700'
                 }`} />
             </div>
           )}
@@ -165,7 +165,7 @@ export default function RegisterPage() {
         </Button>
 
         <div className="text-center mt-4 text-sm">
-          <span className="text-gray-500">{t('register.has_account')} </span>
+          <span className="text-gray-500 dark:text-gray-400">{t('register.has_account')} </span>
           <Link href="/login" className="font-medium text-primary hover:text-primary-hover">
             {t('register.login_link')}
           </Link>

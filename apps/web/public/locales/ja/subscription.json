@@ -14,6 +14,11 @@
   "filter_label_status": "ステータス",
   "filter_label_category": "カテゴリ",
   "filter_label_cycle": "周期",
+  "filter_label_expiring": "期限切れ",
+  "filter_all_time": "全期間",
+  "filter_next_7_days": "今後7日間",
+  "filter_next_15_days": "今後15日間",
+  "filter_next_30_days": "今後30日間",
   "reset_filters": "リセット",
   "status": {
     "Active": "有効",

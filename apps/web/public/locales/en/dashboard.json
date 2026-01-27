@@ -5,7 +5,7 @@
     "logout": "Logout"
   },
   "stats": {
-    "total_expenses": "Total Expenses",
+    "total_expenses": "Total Expenses This Month",
     "active_subs": "Active Subscriptions",
     "remaining_budget": "Remaining Budget",
     "upcoming_renewals": "Upcoming Renewals",
@@ -18,6 +18,33 @@
       "remaining_budget": "Budget usage this month",
       "upcoming_renewals": "Renewals in the next {{days}} days"
     }
+  },
+  "charts": {
+    "spending_trends": {
+      "title": "Spending Trends",
+      "subtitle": "Monthly Subscription Cost Changes",
+      "periods": {
+        "6m": "6 Months",
+        "1y": "1 Year",
+        "all": "All"
+      }
+    },
+    "category_distribution": {
+      "title": "Category Distribution",
+      "subtitle": "Spending by Category",
+      "percentage": "Percentage",
+      "amount": "Amount"
+    }
+  },
+  "upcoming": {
+    "title": "Upcoming Renewals",
+    "view_all": "View All",
+    "empty_title": "No upcoming renewals",
+    "empty_desc": "You have no subscriptions due for renewal in the next 30 days.",
+    "today": "Today",
+    "days_left": "{{days}} days",
+    "amount": "Amount",
+    "date": "Date"
   },
   "ai": {
     "title": "AI Recommendations",

@@ -5,14 +5,15 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, ChevronLeft, Check, Upload, Calendar as CalendarIcon, Bell, CreditCard, Tag, Link as LinkIcon, StickyNote } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Check, Upload, Calendar as CalendarIcon, Bell, CreditCard, Tag, Link as LinkIcon, StickyNote, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Select } from '@/components/ui/select';
 import { SubscriptionCard, Subscription } from './subscription-card';
-import { CreateSubscriptionDTO } from '@subcare/types';
+import { CreateSubscriptionDTO, SubscriptionDTO, SubscriptionUsage } from '@subcare/types';
+import { calculateNextPayment } from '@subcare/utils';
 // --- Validation Schemas ---
 
 const step1Schema = z.object({
@@ -20,14 +21,15 @@ const step1Schema = z.object({
   price: z.coerce.number().min(0, 'invalid_price'),
   currency: z.string().default('CNY'),
   cycle: z.enum(['Monthly', 'Yearly']).default('Monthly'),
+  startDate: z.string().min(1, 'required'), // Date string YYYY-MM-DD
   logo: z.any().optional(), // File or string URL
 });
 
 const step2Schema = z.object({
   category: z.string().optional(),
-  startDate: z.string().min(1, 'required'), // Date string YYYY-MM-DD
   paymentMethod: z.string().optional(),
   autoRenewal: z.boolean().default(true),
+  usage: z.string().default('Normally'),
 });
 
 const step3Schema = z.object({
@@ -46,6 +48,7 @@ type FormData = z.infer<typeof formSchema>;
 interface AddSubscriptionStepFormProps {
   onCancel: () => void;
   onSubmit: (data: FormData) => void;
+  initialValues?: SubscriptionDTO | null;
 }
 
 const STEPS = [
@@ -54,46 +57,63 @@ const STEPS = [
   { id: 3, title: 'notification_notes', icon: Bell },
 ];
 
-export function AddSubscriptionStepForm({ onCancel, onSubmit }: AddSubscriptionStepFormProps) {
+export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: AddSubscriptionStepFormProps) {
   const { t } = useTranslation(['subscription', 'common']);
   const [step, setStep] = useState(1);
-  const [logoPreview, setLogoPreview] = useState<string | undefined>(undefined);
+  const [logoPreview, setLogoPreview] = useState<string | undefined>(initialValues?.icon || undefined);
+
+  const defaultStartDate = initialValues?.startDate ? new Date(initialValues.startDate).toISOString().split('T')[0] : '';
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      currency: 'CNY',
-      cycle: 'Monthly',
-      autoRenewal: true,
-      enableNotification: false,
-      notifyDaysBefore: 1,
-      category: 'Entertainment', // Default category
+      name: initialValues?.name || '',
+      price: initialValues?.price || undefined,
+      currency: initialValues?.currency || 'CNY',
+      cycle: (initialValues?.billingCycle as 'Monthly' | 'Yearly') || 'Monthly',
+      startDate: defaultStartDate,
+      category: initialValues?.category || 'Entertainment',
+      paymentMethod: initialValues?.paymentMethod || '',
+      autoRenewal: initialValues?.autoRenewal ?? true,
+      usage: initialValues?.usage || 'Normally',
+      enableNotification: initialValues?.enableNotification ?? false,
+      notifyDaysBefore: initialValues?.notifyDaysBefore || 1,
+      notes: initialValues?.notes || '',
+      url: initialValues?.website || '',
     },
     mode: 'onChange',
   });
 
   const { control, register, handleSubmit, watch, trigger, setValue, formState: { errors, isValid } } = form;
   const formData = watch();
+  const isEditMode = !!initialValues;
 
   // Watch fields for preview
   const previewSubscription: Subscription = {
-    id: 'preview',
+    id: initialValues?.id || 'preview',
     name: formData.name || t('preview_name', { defaultValue: 'Subscription Name' }),
-    cost: formData.price || 0,
+    price: formData.price || 0,
     currency: formData.currency,
-    cycle: formData.cycle,
-    nextRenewalDate: formData.startDate || new Date().toISOString(),
-    status: 'Active',
+    billingCycle: formData.cycle,
+    startDate: formData.startDate ? new Date(formData.startDate) : new Date(),
+    nextPayment: formData.startDate ? calculateNextPayment(formData.startDate, formData.cycle) : new Date(),
+    status: initialValues?.status || 'Active',
     category: formData.category || 'Uncategorized',
-    logoUrl: logoPreview,
+    usage: formData.usage,
+    icon: logoPreview,
+    autoRenewal: formData.autoRenewal,
+    enableNotification: formData.enableNotification,
+    userId: initialValues?.userId || 'preview',
+    createdAt: initialValues?.createdAt || new Date(),
+    updatedAt: new Date(),
   };
 
   const handleNext = async () => {
     let isStepValid = false;
     if (step === 1) {
-      isStepValid = await trigger(['name', 'price', 'currency', 'cycle']);
+      isStepValid = await trigger(['name', 'price', 'currency', 'cycle', 'startDate']);
     } else if (step === 2) {
-      isStepValid = await trigger(['category', 'startDate', 'paymentMethod', 'autoRenewal']);
+      isStepValid = await trigger(['category', 'paymentMethod', 'autoRenewal', 'usage']);
     }
 
     if (isStepValid) {
@@ -114,8 +134,6 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit }: AddSubscriptionS
     }
   };
 
-// ... other code ...
-
   const onFormSubmit = (data: FormData) => {
     // Transform FormData to CreateSubscriptionDTO
     const payload: CreateSubscriptionDTO = {
@@ -127,6 +145,7 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit }: AddSubscriptionS
       category: data.category,
       paymentMethod: data.paymentMethod,
       autoRenewal: data.autoRenewal,
+      usage: data.usage as SubscriptionUsage,
       enableNotification: data.enableNotification,
       notifyDaysBefore: data.notifyDaysBefore,
       notes: data.notes,
@@ -140,10 +159,9 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit }: AddSubscriptionS
   };
 
   return (
-// ... rest of the file ...
     <div className="flex flex-col h-full max-h-[80vh]">
       {/* Stepper */}
-      <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100">
+      <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100 dark:border-gray-800">
         {STEPS.map((s, index) => {
           const isActive = s.id === step;
           const isCompleted = s.id < step;
@@ -155,21 +173,21 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit }: AddSubscriptionS
                 className={cn(
                   "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border-2",
                   isActive ? "bg-primary text-white border-primary shadow-lg scale-110" : 
-                  isCompleted ? "bg-green-500 text-white border-green-500" : "bg-white text-gray-400 border-gray-200"
+                  isCompleted ? "bg-green-500 text-white border-green-500" : "bg-white dark:bg-gray-700 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-600"
                 )}
               >
                 {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
               </div>
               <span className={cn(
                 "text-xs mt-2 font-medium transition-colors duration-300",
-                isActive ? "text-primary" : isCompleted ? "text-green-500" : "text-gray-400"
+                isActive ? "text-primary" : isCompleted ? "text-green-500" : "text-gray-400 dark:text-gray-500"
               )}>
                 {t(`steps.${s.title}`)}
               </span>
               
               {/* Connector Line */}
               {index < STEPS.length - 1 && (
-                <div className="absolute top-5 left-1/2 w-[calc(100%+4rem)] h-[2px] -z-10 bg-gray-100">
+                <div className="absolute top-5 left-1/2 w-[calc(100%+4rem)] h-[2px] -z-10 bg-gray-100 dark:bg-gray-800">
                   <div 
                     className="h-full bg-green-500 transition-all duration-500" 
                     style={{ width: isCompleted ? '100%' : '0%' }}
@@ -191,7 +209,7 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit }: AddSubscriptionS
                 {/* Logo Upload & Name */}
                 <div className="flex items-start gap-4">
                    <div className="shrink-0">
-                    <label className="block w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 hover:border-primary cursor-pointer flex flex-col items-center justify-center text-gray-400 hover:text-primary transition-colors bg-gray-50">
+                    <label className="block w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-primary dark:hover:border-primary cursor-pointer flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 hover:text-primary transition-colors bg-gray-50 dark:bg-gray-800/50">
                       {logoPreview ? (
                         <img src={logoPreview} alt="Logo" className="w-full h-full object-cover rounded-xl" />
                       ) : (
@@ -214,7 +232,7 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit }: AddSubscriptionS
                 {/* Price & Currency & Cycle */}
                 <div className="grid grid-cols-2 gap-4">
                    <div className="space-y-1">
-                      <label className="block text-base font-medium text-secondary mb-1">{t('cost', { ns: 'subscription' })}</label>
+                      <label className="block text-base font-medium text-secondary dark:text-gray-300 mb-1">{t('cost', { ns: 'subscription' })}</label>
                       <div className="flex gap-2">
                         <Select 
                            {...register('currency')}
@@ -236,9 +254,9 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit }: AddSubscriptionS
                       </div>
                    </div>
                    <div className="space-y-1">
-                     <label className="block text-base font-medium text-secondary mb-1">{t('cycle', { ns: 'subscription' })}</label>
+                     <label className="block text-base font-medium text-secondary dark:text-gray-300 mb-1">{t('cycle', { ns: 'subscription' })}</label>
                      <div className="flex items-center gap-3 h-[3rem] px-1">
-                        <span className={cn("text-sm transition-colors", formData.cycle === 'Monthly' ? "text-primary font-bold" : "text-gray-500")}>
+                        <span className={cn("text-sm transition-colors", formData.cycle === 'Monthly' ? "text-primary font-bold" : "text-gray-500 dark:text-gray-400")}>
                           {t('cycle_options.Monthly', { ns: 'subscription' })}
                         </span>
                         <Controller
@@ -251,15 +269,25 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit }: AddSubscriptionS
                             />
                           )}
                         />
-                        <span className={cn("text-sm transition-colors", formData.cycle === 'Yearly' ? "text-primary font-bold" : "text-gray-500")}>
+                        <span className={cn("text-sm transition-colors", formData.cycle === 'Yearly' ? "text-primary font-bold" : "text-gray-500 dark:text-gray-400")}>
                           {t('cycle_options.Yearly', { ns: 'subscription' })}
                         </span>
                      </div>
                    </div>
                 </div>
 
+                {/* First Payment Date */}
+                <div>
+                   <Input 
+                     type="date" 
+                     label={t('first_payment', { ns: 'subscription' })}
+                     {...register('startDate')}
+                     error={errors.startDate?.message}
+                   />
+                </div>
+
                 {/* Live Preview */}
-                <div className="mt-8 pt-6 border-t border-gray-100">
+                <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
                   <h4 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-4">{t('preview', { ns: 'common' })}</h4>
                   <div className="max-w-sm mx-auto transform hover:scale-105 transition-transform duration-300">
                     <SubscriptionCard subscription={previewSubscription} />
@@ -273,7 +301,7 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit }: AddSubscriptionS
                 key="step2"
                 className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300"
               >
-                 <div className="grid grid-cols-2 gap-4">
+                 <div className="grid grid-cols-1 gap-4">
                    <Select
                      label={t('category', { ns: 'subscription' })}
                      {...register('category')}
@@ -286,12 +314,28 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit }: AddSubscriptionS
                        { label: t('categories.other', { ns: 'subscription' }), value: 'Other' },
                      ]}
                    />
-                   <Input 
-                     type="date" 
-                     label={t('first_payment', { ns: 'subscription' })}
-                     {...register('startDate')}
-                     error={errors.startDate?.message}
-                   />
+                 </div>
+
+                 {/* Usage Level */}
+                 <div className="space-y-2">
+                   <label className="block text-base font-medium text-secondary dark:text-gray-300">{t('usage_level', { ns: 'subscription' })}</label>
+                   <div className="flex flex-wrap gap-2">
+                     {['Almost Never', 'Occasionally', 'Normally', 'Frequently', 'Heavily'].map((level) => (
+                        <button
+                          key={level}
+                          type="button"
+                          onClick={() => setValue('usage', level)}
+                          className={cn(
+                            "px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 border",
+                            formData.usage === level 
+                              ? "bg-primary text-white border-primary shadow-sm" 
+                              : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/50 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          )}
+                        >
+                          {t(`usage_options.${level}`, { ns: 'subscription' })}
+                        </button>
+                     ))}
+                   </div>
                  </div>
 
                  <div className="grid grid-cols-2 gap-4">
@@ -306,7 +350,7 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit }: AddSubscriptionS
                       ]}
                    />
                    <div className="space-y-2">
-                     <label className="block text-base font-medium text-secondary">{t('auto_renewal', { ns: 'subscription' })}</label>
+                     <label className="block text-base font-medium text-secondary dark:text-gray-300">{t('auto_renewal', { ns: 'subscription' })}</label>
                      <div className="flex items-center gap-3 h-10">
                        <Controller
                           control={control}
@@ -318,7 +362,7 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit }: AddSubscriptionS
                             />
                           )}
                         />
-                        <span className="text-sm text-gray-500">{formData.autoRenewal ? t('yes', { ns: 'common' }) : t('no', { ns: 'common' })}</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">{formData.autoRenewal ? t('yes', { ns: 'common' }) : t('no', { ns: 'common' })}</span>
                      </div>
                    </div>
                  </div>
@@ -330,11 +374,11 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit }: AddSubscriptionS
                 key="step3"
                 className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300"
               >
-                 <div className="bg-gray-50 p-4 rounded-xl space-y-4">
+                 <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl space-y-4">
                     <div className="flex items-center justify-between">
                        <div className="flex items-center gap-2">
-                         <Bell className="w-5 h-5 text-gray-500" />
-                         <span className="font-medium text-gray-900">{t('enable_notification', { ns: 'subscription' })}</span>
+                         <Bell className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                         <span className="font-medium text-gray-900 dark:text-white">{t('enable_notification', { ns: 'subscription' })}</span>
                        </div>
                        <Controller
                           control={control}
@@ -353,13 +397,13 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit }: AddSubscriptionS
                         className="pl-7 animate-in slide-in-from-top-2 fade-in duration-200"
                       >
                          <div className="flex items-center gap-2">
-                           <span className="text-sm text-gray-600">{t('notify_me', { ns: 'subscription' })}</span>
+                           <span className="text-sm text-gray-600 dark:text-gray-300">{t('notify_me', { ns: 'subscription' })}</span>
                            <Input 
                              type="number" 
                              className="w-20 text-center"
                              {...register('notifyDaysBefore')}
                            />
-                           <span className="text-sm text-gray-600">{t('days_before', { ns: 'subscription' })}</span>
+                           <span className="text-sm text-gray-600 dark:text-gray-300">{t('days_before', { ns: 'subscription' })}</span>
                          </div>
                       </div>
                     )}
@@ -390,35 +434,45 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit }: AddSubscriptionS
       </div>
 
       {/* Footer Actions */}
-      <div className="px-8 py-4 border-t border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-b-xl">
+      <div className="px-8 py-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50 rounded-b-xl">
          {step === 1 ? (
-           <Button variant="ghost" onClick={onCancel} className="text-gray-500 hover:text-gray-700">
+           <Button 
+             variant="ghost" 
+             onClick={onCancel} 
+             className={cn(
+               "transition-all duration-200 ease group text-gray-500 dark:text-gray-400",
+               "hover:bg-red-50 hover:text-red-500",
+               "dark:hover:bg-red-900/10 dark:hover:text-red-400"
+             )}
+           >
              {t('button.cancel', { ns: 'common' })}
            </Button>
          ) : (
-           <Button variant="outline" onClick={handleBack} className="gap-2">
-             <ChevronLeft className="w-4 h-4" /> {t('back', { ns: 'common' })}
+           <Button variant="outline" onClick={handleBack} className="gap-2 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700">
+             <ChevronLeft className="w-4 h-4" /> {t('button.back', { ns: 'common' })}
            </Button>
          )}
 
          <div className="flex gap-3">
-           {step === 1 && (
+           {/* If editing, show Save button on any step. If creating, only show Save Now on step 1 */}
+           {(isEditMode || step === 1) && (
              <Button 
                 variant="outline" 
                 onClick={handleSubmit(onFormSubmit)}
-                className="border-primary text-primary hover:bg-primary-pale"
+                className="border-primary text-primary hover:bg-primary-pale dark:hover:bg-primary-pale/10"
               >
-                {t('save_now', { ns: 'subscription' })}
-             </Button>
+                <Save className="w-4 h-4 mr-2" />
+                {t('button.save', { ns: 'common', defaultValue: 'Save' })}
+              </Button>
            )}
            
            {step < 3 ? (
              <Button onClick={handleNext} className="gap-2 bg-primary hover:bg-primary-hover text-white">
-               {t('next', { ns: 'common' })} <ChevronRight className="w-4 h-4" />
+               {t('button.next', { ns: 'common' })} <ChevronRight className="w-4 h-4" />
              </Button>
            ) : (
              <Button onClick={handleSubmit(onFormSubmit)} className="gap-2 bg-primary hover:bg-primary-hover text-white">
-               <Check className="w-4 h-4" /> {t('complete', { ns: 'common' })}
+               <Check className="w-4 h-4" /> {t('button.complete', { ns: 'common' })}
              </Button>
            )}
          </div>

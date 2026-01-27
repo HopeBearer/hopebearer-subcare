@@ -58,6 +58,7 @@ model Subscription {
   notifyDaysBefore   Int?
   website            String?
   notes              String?  @db.Text
+  usage              String   @default("Normally")
 
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)

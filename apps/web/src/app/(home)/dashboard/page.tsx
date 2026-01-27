@@ -3,6 +3,7 @@
 import { StatsGrid } from '@/components/features/dashboard/stats-grid';
 import { AIRecommendations } from '@/components/features/dashboard/ai-recommendations';
 import { DashboardCharts } from '@/components/features/dashboard/charts';
+import { UpcomingRenewals } from '@/components/features/dashboard/upcoming-renewals';
 
 export default function DashboardPage() {
   return (
@@ -10,6 +11,7 @@ export default function DashboardPage() {
       <StatsGrid />
       <AIRecommendations />
       <DashboardCharts />
+      <UpcomingRenewals />
     </div>
   );
 }

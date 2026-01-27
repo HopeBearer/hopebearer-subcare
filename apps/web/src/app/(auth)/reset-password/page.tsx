@@ -98,8 +98,8 @@ function ResetPasswordForm() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">{t('reset_password.invalid_token_title')}</h1>
-        <p className="mt-4 text-gray-600 mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('reset_password.invalid_token_title')}</h1>
+        <p className="mt-4 text-gray-600 dark:text-gray-400 mb-8">
           {t('reset_password.invalid_token_desc')}
         </p>
         <Link href="/forgot-password">
@@ -114,8 +114,8 @@ function ResetPasswordForm() {
   return (
     <>
       <div className="text-center lg:text-left">
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{t('reset_password.title')}</h1>
-        <p className="mt-2 text-base text-gray-600">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{t('reset_password.title')}</h1>
+        <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
           {t('reset_password.subtitle')}
         </p>
       </div>

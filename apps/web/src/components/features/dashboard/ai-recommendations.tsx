@@ -117,11 +117,11 @@ export function AIRecommendations() {
         <button
           className={cn(
             'flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 ease group',
-            'hover:bg-primary-pale bg-transparent'
+            'hover:bg-primary-pale dark:hover:bg-white/5 bg-transparent'
           )}
         >
-          <RefreshCw className="w-4 h-4 text-gray-500 transition-colors group-hover:text-primary" />
-          <span className="text-sm font-medium text-gray-700 transition-colors group-hover:text-primary">
+          <RefreshCw className="w-4 h-4 text-gray-500 dark:text-gray-400 transition-colors group-hover:text-primary" />
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors group-hover:text-primary">
             {t('ai.refresh')}
           </span>
         </button>
@@ -138,14 +138,14 @@ export function AIRecommendations() {
           {recommendations.map((rec) => (
             <Card 
               key={rec.id} 
-              className="bg-surface relative overflow-hidden group/card stat-card p-0 border-0"
+              className="bg-surface dark:bg-gray-800/80 relative overflow-hidden group/card stat-card p-0 border-0"
             >
               {/* Decorator Background */}
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -mr-10 -mt-10 transition-transform duration-500 group-hover/card:scale-110" />
 
               <div className="relative z-10 space-y-4 p-5">
                 <div className="flex justify-between items-start">
-                  <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-2xl z-10">
+                  <div className="w-12 h-12 rounded-xl bg-white dark:bg-gray-700 border border-gray-100 dark:border-gray-600 shadow-sm flex items-center justify-center text-2xl z-10">
                     {rec.icon}
                   </div>
                   <div className="flex flex-col items-end">
@@ -159,27 +159,27 @@ export function AIRecommendations() {
                   <h3 className="font-bold text-gray-900 dark:text-white text-lg">
                     {rec.name}
                   </h3>
-                  <p className="text-sm text-secondary mt-1 leading-relaxed">
+                  <p className="text-sm text-secondary dark:text-gray-400 mt-1 leading-relaxed">
                     {rec.reason}
                   </p>
                 </div>
 
-                <div className="pt-4 flex items-center justify-between border-t border-gray-100 dark:border-gray-800">
+                <div className="pt-4 flex items-center justify-between border-t border-gray-100 dark:border-gray-700">
                   <div className="flex flex-col">
-                    <span className="text-xs text-secondary">{t('ai.estimated_cost')}</span>
+                    <span className="text-xs text-secondary dark:text-gray-400">{t('ai.estimated_cost')}</span>
                     <span className="font-semibold text-gray-900 dark:text-white">{rec.price}</span>
                   </div>
                   <button 
                     className={cn(
                       'flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 ease group',
-                      'border border-gray-200 hover:border-[#A5A6F6]/30',
-                      'bg-transparent hover:bg-primary-pale'
+                      'border border-gray-200 dark:border-gray-600 hover:border-[#A5A6F6]/30',
+                      'bg-transparent hover:bg-primary-pale dark:hover:bg-white/5'
                     )}
                   >
-                    <span className="text-sm font-medium text-gray-700 transition-colors group-hover:text-primary">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors group-hover:text-primary">
                       {t('ai.details')}
                     </span>
-                    <ArrowRight className="w-3 h-3 ml-1 text-gray-500 transition-colors group-hover:text-primary" />
+                    <ArrowRight className="w-3 h-3 ml-1 text-gray-500 dark:text-gray-400 transition-colors group-hover:text-primary" />
                   </button>
                 </div>
               </div>
@@ -196,7 +196,7 @@ export function AIRecommendations() {
             <h4 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               AI Optimization Analysis
             </h4>
-            <p className="text-sm text-secondary leading-relaxed">
+            <p className="text-sm text-secondary dark:text-gray-400 leading-relaxed">
               Through the above suggestions, you can save <span className="font-semibold text-[#7C3AED] dark:text-[#A5A6F6]">CNY {totalMonthlySave}/mo</span>, <span className="font-semibold text-[#7C3AED] dark:text-[#A5A6F6]">CNY {totalYearlySave}/yr</span>. 
               AI will continuously analyze your usage patterns to recommend the optimal plan.
             </p>

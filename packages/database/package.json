@@ -4,9 +4,9 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:generate": "pnpm exec prisma generate --schema=./prisma/schema.prisma DOTENV_CONFIG_PATH=../../.env",
+    "db:push": "pnpm exec prisma db push --schema=./prisma/schema.prisma DOTENV_CONFIG_PATH=../../.env",
+    "db:studio": "pnpm exec prisma studio --schema=./prisma/schema.prisma DOTENV_CONFIG_PATH=../../.env"
   },
   "dependencies": {
     "@prisma/client": "5.22.0",

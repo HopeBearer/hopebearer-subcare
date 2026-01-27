@@ -14,6 +14,11 @@
   "filter_label_status": "状态",
   "filter_label_category": "分类",
   "filter_label_cycle": "周期",
+  "filter_label_expiring": "即将过期",
+  "filter_all_time": "所有时间",
+  "filter_next_7_days": "未来7天",
+  "filter_next_15_days": "未来15天",
+  "filter_next_30_days": "未来30天",
   "reset_filters": "重置",
   "status": {
     "Active": "活跃",
@@ -48,6 +53,14 @@
   "notify_me": "提醒我",
   "days_before": "天前",
   "notes_placeholder": "添加备注...",
+  "usage_level": "使用程度",
+  "usage_options": {
+    "Almost Never": "几乎不用",
+    "Occasionally": "偶尔使用",
+    "Normally": "正常使用",
+    "Frequently": "经常使用",
+    "Heavily": "高频使用"
+  },
   "payment_methods": {
     "credit_card": "信用卡",
     "alipay": "支付宝",

@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { useModalStore } from '@/store/modal.store';
 import { useRouter, usePathname } from 'next/navigation';
 import { LogOut, Plus } from 'lucide-react';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { cn } from '@/lib/utils';
 
@@ -44,7 +45,7 @@ export function Header() {
 
       <div className="flex items-center gap-4">
         <button
-          onClick={openAddSubscription}
+          onClick={() => openAddSubscription()}
           className={cn(
             "flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ease-out",
             "bg-lavender text-white font-medium",
@@ -57,17 +58,18 @@ export function Header() {
           <span>{t('add', { ns: 'subscription' })}</span>
         </button>
 
+        <ThemeToggle className="mr-2" />
         <LanguageSwitcher />
 
         <button 
           onClick={handleLogout}
           className={cn(
             'flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 ease group',
-            'bg-transparent hover:bg-red-50' // Soft red background for logout
+            'bg-transparent hover:bg-red-50 dark:hover:bg-red-900/10' // Soft red background for logout
           )}
         >
-          <LogOut className="w-4 h-4 text-gray-500 transition-colors group-hover:text-red-500" />
-          <span className="text-sm font-medium text-gray-700 transition-colors group-hover:text-red-500">
+          <LogOut className="w-4 h-4 text-gray-500 dark:text-gray-400 transition-colors group-hover:text-red-500 dark:group-hover:text-red-400" />
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors group-hover:text-red-500 dark:group-hover:text-red-400">
             {t('header.logout', { ns: 'dashboard' })}
           </span>
         </button>

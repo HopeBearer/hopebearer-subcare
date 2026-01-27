@@ -54,8 +54,8 @@ export default function ForgotPasswordPage() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">{t('forgot_password.check_email')}</h1>
-        <p className="mt-4 text-gray-600 mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('forgot_password.check_email')}</h1>
+        <p className="mt-4 text-gray-600 dark:text-gray-400 mb-8">
           {t('forgot_password.email_sent_desc')}
         </p>
         <Link href="/login">
@@ -70,8 +70,8 @@ export default function ForgotPasswordPage() {
   return (
     <>
       <div className="text-center lg:text-left">
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{t('forgot_password.title')}</h1>
-        <p className="mt-2 text-base text-gray-600">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{t('forgot_password.title')}</h1>
+        <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
           {t('forgot_password.subtitle')}
         </p>
       </div>
@@ -91,7 +91,7 @@ export default function ForgotPasswordPage() {
         </Button>
 
         <div className="text-center mt-4">
-          <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900">
+          <Link href="/login" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">
             {t('forgot_password.back_to_login')}
           </Link>
         </div>

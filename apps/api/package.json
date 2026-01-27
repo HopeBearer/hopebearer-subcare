@@ -12,6 +12,7 @@
   "dependencies": {
     "@subcare/database": "workspace:*",
     "@subcare/types": "workspace:*",
+    "@subcare/utils": "workspace:^",
     "@types/nodemailer": "^7.0.5",
     "axios": "^1.13.2",
     "bcrypt": "^5.1.1",

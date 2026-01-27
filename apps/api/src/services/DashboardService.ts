@@ -47,7 +47,6 @@ export class DashboardService {
     
     // 1. Calculate Total Expenses (Monthly Equivalent)
     let totalMonthlyAmount = 0;
-    const historyData: number[] = Array(12).fill(0); // Mock history for now
     
     // For trend calculation
     const now = new Date();
@@ -55,24 +54,38 @@ export class DashboardService {
     let newSubsAmountThisMonth = 0;
 
     // Process subscriptions in parallel for currency conversion
-    await Promise.all(activeSubs.map(async (sub) => {
+    const subsWithConvertedPrice = await Promise.all(activeSubs.map(async (sub) => {
       const originalPrice = Number(sub.price);
       // Convert to user's currency
       const convertedPrice = await this.currencyService.convert(originalPrice, sub.currency, userCurrency);
-      
       const monthlyPrice = this.calculateMonthlyEquivalent(convertedPrice, sub.billingCycle);
-      totalMonthlyAmount += monthlyPrice;
-
-      if (sub.createdAt >= startOfCurrentMonth) {
-        newSubsAmountThisMonth += monthlyPrice;
-      }
+      
+      return {
+        ...sub,
+        monthlyPrice,
+        startDate: new Date(sub.startDate)
+      };
     }));
 
-    // Mock history generation based on current total (random variation)
+    subsWithConvertedPrice.forEach(sub => {
+      totalMonthlyAmount += sub.monthlyPrice;
+      if (sub.createdAt >= startOfCurrentMonth) {
+        newSubsAmountThisMonth += sub.monthlyPrice;
+      }
+    });
+
+    // Generate real history data (last 12 months)
+    const historyData: number[] = [];
     for (let i = 0; i < 12; i++) {
-        historyData[i] = Math.max(0, totalMonthlyAmount * (0.8 + Math.random() * 0.4));
+        const date = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
+        const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        
+        const monthlyTotal = subsWithConvertedPrice.reduce((sum, sub) => {
+            if (sub.startDate > endOfMonth) return sum;
+            return sum + sub.monthlyPrice;
+        }, 0);
+        historyData.push(Number(monthlyTotal.toFixed(2)));
     }
-    historyData[11] = totalMonthlyAmount;
 
     const previousMonthAmount = totalMonthlyAmount - newSubsAmountThisMonth;
     const trendDiff = totalMonthlyAmount - previousMonthAmount;
@@ -90,6 +103,8 @@ export class DashboardService {
       const cat = sub.category || 'Other';
       categoryMap.set(cat, (categoryMap.get(cat) || 0) + 1);
     });
+    
+    const categoryCount = categoryMap.size;
 
     const categories = Array.from(categoryMap.entries()).map(([name, count], index) => ({
       id: name,
@@ -151,6 +166,7 @@ export class DashboardService {
       subscriptions: {
         activeCount,
         newCount,
+        categoryCount,
         categories
       },
       budget: {
@@ -196,21 +212,23 @@ export class DashboardService {
       const convertedPrice = await this.currencyService.convert(price, sub.currency, userCurrency);
       return {
         ...sub,
-        monthlyPrice: this.calculateMonthlyEquivalent(convertedPrice, sub.billingCycle)
+        monthlyPrice: this.calculateMonthlyEquivalent(convertedPrice, sub.billingCycle),
+        startDate: new Date(sub.startDate)
       };
     }));
 
     for (let i = 0; i < monthsBack; i++) {
       const currentMonth = new Date(startDate);
       currentMonth.setMonth(startDate.getMonth() + i);
+      const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
       
       const monthLabel = `${currentMonth.getMonth() + 1}月`;
       
       // Calculate total for this month
-      // Assuming 'createdAt' determines when the subscription started.
+      // Assuming 'startDate' determines when the subscription started.
       // If a subscription was created AFTER this month, it shouldn't be counted.
       const monthlyTotal = subsWithConvertedPrice.reduce((sum, sub) => {
-        if (new Date(sub.createdAt) > new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0)) {
+        if (sub.startDate > endOfMonth) {
           return sum;
         }
         return sum + sub.monthlyPrice;

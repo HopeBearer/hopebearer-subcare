@@ -93,8 +93,8 @@ export default function LoginPage() {
             <span className="text-white font-bold text-2xl">S</span>
           </div>
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{t('login.title')}</h1>
-        <p className="mt-2 text-base text-gray-600">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{t('login.title')}</h1>
+        <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
           {t('login.subtitle')}
         </p>
       </div>
@@ -123,7 +123,7 @@ export default function LoginPage() {
           </div>
 
           <div className="flex flex-col space-y-2">
-            <label className="block text-base font-medium text-secondary mb-1">
+            <label className="block text-base font-medium text-secondary dark:text-gray-300 mb-1">
               {t('form.security_code.label')}
             </label>
             <div className="flex space-x-2 mb-2">
@@ -139,18 +139,18 @@ export default function LoginPage() {
               <div className={`flex items-center space-x-2 ${errors.captchaCode ? 'mb-6' : ''}`}>
                 {captchaImage ? (
                   <div
-                    className="h-12 w-32 bg-gray-100 rounded overflow-hidden border border-gray-200 flex items-center justify-center cursor-pointer"
+                    className="h-12 w-32 bg-gray-100 dark:bg-gray-700 rounded overflow-hidden border border-gray-200 dark:border-gray-600 flex items-center justify-center cursor-pointer"
                     onClick={handleRefreshCaptcha}
                     title="Click to refresh"
                     dangerouslySetInnerHTML={{ __html: captchaImage }}
                   />
                 ) : (
-                  <div className="h-12 w-32 bg-gray-100 rounded animate-pulse" />
+                  <div className="h-12 w-32 bg-gray-100 dark:bg-gray-700 rounded animate-pulse" />
                 )}
                 <button
                   type="button"
                   onClick={handleRefreshCaptcha}
-                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                 >
                   <RefreshCw
                     className="w-5 h-5"
@@ -179,7 +179,7 @@ export default function LoginPage() {
         </Button>
 
         <div className="mt-6 text-center text-sm">
-          <span className="text-gray-600">{t('login.no_account')} </span>
+          <span className="text-gray-600 dark:text-gray-400">{t('login.no_account')} </span>
           <Link href="/register" className="font-medium text-primary hover:text-primary-hover">
             {t('login.sign_up_link')}
           </Link>

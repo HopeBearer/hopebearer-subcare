@@ -51,11 +51,11 @@ export function FilterDropdown({
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           'flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 ease group',
-          'hover:bg-primary-pale',
-          isOpen ? 'bg-primary-soft text-primary' : 'bg-transparent text-gray-700'
+          'hover:bg-primary-pale dark:hover:bg-white/5',
+          isOpen ? 'bg-primary-soft text-primary' : 'bg-transparent text-gray-700 dark:text-gray-300'
         )}
       >
-        {icon && <span className={cn("text-gray-500 group-hover:text-primary transition-colors", isOpen && "text-primary")}>{icon}</span>}
+        {icon && <span className={cn("text-gray-500 dark:text-gray-400 group-hover:text-primary transition-colors", isOpen && "text-primary")}>{icon}</span>}
         <span className={cn("text-sm font-medium whitespace-nowrap")}>
           {label}
         </span>
@@ -69,7 +69,7 @@ export function FilterDropdown({
 
       <div
         className={cn(
-          'absolute right-0 top-full mt-2 min-w-[160px] p-2 bg-white rounded-xl shadow-md ring-1 ring-black/5 py-1 overflow-hidden origin-top-right transition-all duration-200 ease z-30',
+          'absolute right-0 top-full mt-2 min-w-[160px] p-2 bg-white dark:bg-gray-800 rounded-xl shadow-md ring-1 ring-black/5 dark:ring-white/10 py-1 overflow-hidden origin-top-right transition-all duration-200 ease z-30',
           isOpen
             ? 'opacity-100 scale-100 translate-y-0 visible'
             : 'opacity-0 scale-95 -translate-y-2 invisible'
@@ -84,10 +84,10 @@ export function FilterDropdown({
             }}
             className={cn(
               'w-full text-left px-4 py-2 mb-1 text-sm rounded-md flex items-center justify-between transition-colors',
-              'hover:bg-primary-pale',
+              'hover:bg-primary-pale dark:hover:bg-white/5',
               value === option.value
-                ? 'text-primary font-medium bg-primary-pale'
-                : 'text-gray-600'
+                ? 'text-primary font-medium bg-primary-pale dark:bg-primary-pale/10'
+                : 'text-gray-600 dark:text-gray-300'
             )}
           >
             <span>{option.label}</span>

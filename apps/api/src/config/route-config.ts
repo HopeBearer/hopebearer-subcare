@@ -18,7 +18,10 @@ export const routeConfig: Record<string, string> = {
   // Subscriptions
   'POST /subscriptions': 'v1',
   'GET /subscriptions': 'v1',
+  'PATCH /subscriptions/:id': 'v1',
+  'DELETE /subscriptions/:id': 'v1',
   'GET /subscriptions/stats': 'v1',
+  'GET /subscriptions/upcoming': 'v1',
 
   // Dashboard
   'GET /dashboard/stats': 'v1',

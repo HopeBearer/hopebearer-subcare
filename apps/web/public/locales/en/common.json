@@ -10,8 +10,17 @@
   "button": {
     "submit": "Submit",
     "cancel": "Cancel",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "save": "Save",
+    "next": "Next",
+    "back": "Back",
+    "complete": "Complete"
   },
+  "preview": "Preview",
+  "yes": "Yes",
+  "no": "No",
+  "edit": "Edit",
+  "delete": "Delete",
   "error": {
     "network": "Network error. Please try again",
     "UNKNOWN": "An unknown error occurred",

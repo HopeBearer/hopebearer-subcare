@@ -38,18 +38,40 @@
   --color-red-500: #ef4444;
 }
 
+@mixin dark-theme {
+  --color-bg-page: #111827;
+  --color-bg-surface: #1F2937;
+  --color-bg-input: #374151;
+  
+  --color-text-primary: #F9FAFB;
+  --color-text-secondary: #D1D5DB;
+  
+  --color-border-base: #374151;
+  --color-border-focus: #A5A6F6;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg-page: #111827;
-    --color-bg-surface: #1F2937;
-    --color-bg-input: #374151;
-    
-    --color-text-primary: #F9FAFB;
-    --color-text-secondary: #D1D5DB;
-    
-    --color-border-base: #374151;
-    --color-border-focus: #A5A6F6;
-    
-    /* In dark mode, maybe adjust primary slightly if needed, but keeping for consistency */
+    @include dark-theme;
   }
+}
+
+:root.dark {
+  @include dark-theme;
+}
+
+:root.light {
+  /* Revert to default light theme variables if needed, 
+     but since they are defined in :root, removing .dark class is enough 
+     UNLESS system is dark and we want to force light. */
+     
+  --color-bg-page: #FDFDFF;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-input: #F9FAFB;
+  
+  --color-text-primary: #374151;
+  --color-text-secondary: #6B7280;
+  
+  --color-border-base: #E5E7EB;
+  --color-border-focus: #A5A6F6;
 }

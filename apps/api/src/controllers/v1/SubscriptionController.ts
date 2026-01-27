@@ -24,6 +24,8 @@ const createSubscriptionSchema = z.object({
   icon: z.string().optional(),
 });
 
+const updateSubscriptionSchema = createSubscriptionSchema.partial();
+
 /**
  * 订阅控制器
  * 处理订阅相关的 HTTP 请求
@@ -73,9 +75,10 @@ export class SubscriptionController {
         search: req.query.search as string,
         status: req.query.status as string,
         category: req.query.category as string,
-        billingCycle: req.query.cycle as string,
+        billingCycle: req.query.billingCycle as string,
         page: req.query.page ? parseInt(req.query.page as string) : 1,
         limit: req.query.limit ? parseInt(req.query.limit as string) : 12,
+        expiringInDays: req.query.expiringInDays ? parseInt(req.query.expiringInDays as string) : undefined,
       };
 
       const { items, total } = await this.subscriptionService.getUserSubscriptions(req.user.userId, filters);
@@ -93,6 +96,51 @@ export class SubscriptionController {
           }
         },
       });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * 更新订阅
+   * PATCH /subscriptions/:id
+   */
+  update = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.user) {
+        throw new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'Not authenticated' });
+      }
+
+      const { id } = req.params;
+      const validatedData = updateSubscriptionSchema.parse(req.body);
+
+      const subscription = await this.subscriptionService.updateSubscription(id, req.user.userId, validatedData);
+
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data: { subscription },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * 删除订阅
+   * DELETE /subscriptions/:id
+   */
+  delete = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.user) {
+        throw new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'Not authenticated' });
+      }
+
+      const { id } = req.params;
+      
+      await this.subscriptionService.deleteSubscription(id, req.user.userId);
+
+      res.status(StatusCodes.NO_CONTENT).send();
     } catch (error) {
       next(error);
     }
@@ -119,6 +167,29 @@ export class SubscriptionController {
         status: 'success',
         code: BusinessCode.SUCCESS,
         data: { stats },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * 获取即将续费的订阅
+   * GET /subscriptions/upcoming
+   */
+  upcoming = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.user) {
+        throw new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'Not authenticated' });
+      }
+
+      const days = req.query.days ? parseInt(req.query.days as string) : 7;
+      const subscriptions = await this.subscriptionService.getUpcomingRenewals(req.user.userId, days);
+      
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data: { subscriptions },
       });
     } catch (error) {
       next(error);

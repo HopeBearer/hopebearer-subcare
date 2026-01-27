@@ -11,7 +11,10 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
+    "@subcare/eslint-config": "workspace:*",
+    "@subcare/tsconfig": "workspace:*",
     "@subcare/types": "workspace:*",
+    "@subcare/utils": "workspace:^",
     "@tanstack/react-query": "^5.90.19",
     "axios": "^1.13.2",
     "clsx": "^2.1.1",

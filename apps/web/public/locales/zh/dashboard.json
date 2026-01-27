@@ -5,7 +5,7 @@
     "logout": "退出登录"
   },
   "stats": {
-    "total_expenses": "总支出",
+    "total_expenses": "本月总支出",
     "active_subs": "活跃订阅",
     "remaining_budget": "剩余预算",
     "upcoming_renewals": "即将续费",
@@ -18,6 +18,33 @@
       "remaining_budget": "本月额度使用占比",
       "upcoming_renewals": "未来 {{days}} 天内将有扣款"
     }
+  },
+  "charts": {
+    "spending_trends": {
+      "title": "支出趋势",
+      "subtitle": "月度订阅成本变化",
+      "periods": {
+        "6m": "6个月",
+        "1y": "1年",
+        "all": "全部"
+      }
+    },
+    "category_distribution": {
+      "title": "分类占比",
+      "subtitle": "按分类统计支出",
+      "percentage": "占比",
+      "amount": "金额"
+    }
+  },
+  "upcoming": {
+    "title": "即将续费",
+    "view_all": "查看全部",
+    "empty_title": "暂无近期续费",
+    "empty_desc": "未来30天内没有即将到期的订阅。",
+    "today": "今天",
+    "days_left": "还有 {{days}} 天",
+    "amount": "金额",
+    "date": "日期"
   },
   "ai": {
     "title": "AI 智能推荐",

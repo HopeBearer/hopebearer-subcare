@@ -29,6 +29,9 @@ importers:
       '@subcare/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@subcare/utils':
+        specifier: workspace:^
+        version: link:../../packages/utils
       '@types/nodemailer':
         specifier: ^7.0.5
         version: 7.0.5
@@ -120,9 +123,18 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.9.1
         version: 3.10.0(react-hook-form@7.71.1)
+      '@subcare/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/eslint-config
+      '@subcare/tsconfig':
+        specifier: workspace:*
+        version: link:../../packages/tsconfig
       '@subcare/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@subcare/utils':
+        specifier: workspace:^
+        version: link:../../packages/utils
       '@tanstack/react-query':
         specifier: ^5.90.19
         version: 5.90.19(react@19.2.3)
@@ -304,6 +316,18 @@ importers:
   packages/tsconfig: {}
 
   packages/types:
+    devDependencies:
+      '@subcare/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@subcare/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
+  packages/utils:
     devDependencies:
       '@subcare/eslint-config':
         specifier: workspace:*

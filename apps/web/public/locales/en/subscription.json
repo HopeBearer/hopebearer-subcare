@@ -14,6 +14,11 @@
   "filter_label_status": "Status",
   "filter_label_category": "Category",
   "filter_label_cycle": "Billing Cycle",
+  "filter_label_expiring": "Expiring",
+  "filter_all_time": "All Time",
+  "filter_next_7_days": "Next 7 Days",
+  "filter_next_15_days": "Next 15 Days",
+  "filter_next_30_days": "Next 30 Days",
   "reset_filters": "Reset",
   "status": {
     "Active": "Active",
@@ -48,6 +53,14 @@
   "notify_me": "Notify me",
   "days_before": "days before",
   "notes_placeholder": "Add some notes...",
+  "usage_level": "Usage Level",
+  "usage_options": {
+    "Almost Never": "Almost Never",
+    "Occasionally": "Occasionally",
+    "Normally": "Normally",
+    "Frequently": "Frequently",
+    "Heavily": "Heavily"
+  },
   "payment_methods": {
     "credit_card": "Credit Card",
     "alipay": "Alipay",

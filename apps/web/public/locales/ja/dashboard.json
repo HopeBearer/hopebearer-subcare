@@ -5,7 +5,7 @@
     "logout": "ログアウト"
   },
   "stats": {
-    "total_expenses": "総支出",
+    "total_expenses": "今月の総支出",
     "active_subs": "アクティブなサブスク",
     "remaining_budget": "残りの予算",
     "upcoming_renewals": "更新予定",
@@ -17,6 +17,33 @@
       "active_subs": "{{count}} 種類のサービスカテゴリーをカバー",
       "remaining_budget": "今月の予算使用率",
       "upcoming_renewals": "今後 {{days}} 日以内に更新予定"
+    }
+  },
+  "upcoming": {
+    "title": "更新予定",
+    "view_all": "すべて見る",
+    "empty_title": "更新予定なし",
+    "empty_desc": "今後30日以内に更新期限を迎えるサブスクリプションはありません。",
+    "today": "今日",
+    "days_left": "あと {{days}} 日",
+    "amount": "金額",
+    "date": "日付"
+  },
+  "charts": {
+    "spending_trends": {
+      "title": "支出推移",
+      "subtitle": "月間サブスクリプション費用の変化",
+      "periods": {
+        "6m": "6ヶ月",
+        "1y": "1年",
+        "all": "すべて"
+      }
+    },
+    "category_distribution": {
+      "title": "カテゴリー別割合",
+      "subtitle": "カテゴリー別支出統計",
+      "percentage": "割合",
+      "amount": "金額"
     }
   },
   "ai": {

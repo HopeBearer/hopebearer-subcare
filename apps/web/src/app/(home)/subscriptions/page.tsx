@@ -12,6 +12,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { subscriptionService } from '@/services/subscription.service';
 import { SubscriptionDTO } from '@subcare/types';
 import { useInView } from 'react-intersection-observer';
+import { useSearchParams } from 'next/navigation';
 
 // Constants
 const CATEGORIES = ['Entertainment', 'Tools', 'Productivity', 'Cloud', 'Utility', 'Education'];
@@ -21,14 +22,23 @@ const ITEMS_PER_PAGE = 12;
 
 export default function SubscriptionsPage() {
   const { t } = useTranslation('subscription');
+  const searchParams = useSearchParams();
   
   // Filter States
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [cycleFilter, setCycleFilter] = useState('All');
+  const [expiringInFilter, setExpiringInFilter] = useState(searchParams.get('expiringIn') || 'All');
   const [isResetting, setIsResetting] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  const EXPIRING_OPTIONS = [
+    { label: t('filter_all_time', 'All Time'), value: 'All' },
+    { label: t('filter_next_7_days', 'Next 7 Days'), value: '7' },
+    { label: t('filter_next_15_days', 'Next 15 Days'), value: '15' },
+    { label: t('filter_next_30_days', 'Next 30 Days'), value: '30' },
+  ];
 
   // Debounce search query
   useEffect(() => {
@@ -47,13 +57,14 @@ export default function SubscriptionsPage() {
     isLoading,
     isError,
   } = useInfiniteQuery({
-    queryKey: ['subscriptions', debouncedSearch, statusFilter, categoryFilter, cycleFilter],
+    queryKey: ['subscriptions', debouncedSearch, statusFilter, categoryFilter, cycleFilter, expiringInFilter],
     queryFn: async ({ pageParam = 1 }) => {
       const response = await subscriptionService.getAll({
         search: debouncedSearch || undefined,
         status: statusFilter !== 'All' ? statusFilter : undefined,
         category: categoryFilter !== 'All' ? categoryFilter : undefined,
         billingCycle: cycleFilter !== 'All' ? cycleFilter : undefined,
+        expiringInDays: expiringInFilter !== 'All' ? parseInt(expiringInFilter) : undefined,
         page: pageParam,
         limit: ITEMS_PER_PAGE,
       });
@@ -96,6 +107,10 @@ export default function SubscriptionsPage() {
     setCycleFilter(value);
   };
 
+  const handleExpiringInChange = (value: string) => {
+    setExpiringInFilter(value);
+  };
+
   const resetFilters = () => {
     setIsResetting(true);
     setSearchQuery('');
@@ -103,6 +118,7 @@ export default function SubscriptionsPage() {
     setStatusFilter('All');
     setCategoryFilter('All');
     setCycleFilter('All');
+    setExpiringInFilter('All');
     setTimeout(() => setIsResetting(false), 500);
   };
 
@@ -111,7 +127,7 @@ export default function SubscriptionsPage() {
     // router.push(`/subscriptions/${id}`);
   };
 
-  const hasActiveFilters = searchQuery || statusFilter !== 'All' || categoryFilter !== 'All' || cycleFilter !== 'All';
+  const hasActiveFilters = searchQuery || statusFilter !== 'All' || categoryFilter !== 'All' || cycleFilter !== 'All' || expiringInFilter !== 'All';
 
   if (isError) {
       // TODO: Better error handling UI
@@ -121,12 +137,12 @@ export default function SubscriptionsPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
       {/* Search and Filter Section */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between sticky top-0 z-10 backdrop-blur-xl bg-white/90">
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between sticky top-0 z-10 backdrop-blur-xl bg-white/90 dark:bg-gray-800/90">
         <div className="relative w-full xl:w-80">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input 
             placeholder={t('search_placeholder') || "Search subscriptions..."} 
-            className="pl-9 bg-gray-50 border-gray-200 focus:bg-white transition-colors"
+            className="pl-9 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 focus:bg-white dark:focus:bg-gray-800 transition-colors"
             value={searchQuery}
             onChange={handleSearchChange}
           />
@@ -146,6 +162,16 @@ export default function SubscriptionsPage() {
               <span className="hidden md:inline">{t('reset_filters')}</span>
             </Button>
           )}
+
+          {/* Expiring Soon Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-500 whitespace-nowrap hidden md:block">{t('filter_label_expiring', 'Expiring')}</span>
+            <FilterDropdown
+              value={expiringInFilter}
+              onChange={handleExpiringInChange}
+              options={EXPIRING_OPTIONS}
+            />
+          </div>
 
           {/* Status Filter */}
           <div className="flex items-center gap-2">

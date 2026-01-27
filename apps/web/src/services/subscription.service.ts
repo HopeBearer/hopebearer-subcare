@@ -24,8 +24,24 @@ export const subscriptionService = {
     return response.data;
   },
 
+  update: async (id: string, data: Partial<CreateSubscriptionDTO>): Promise<SubscriptionDTO> => {
+    const response = await api.patch<any, ApiResponse<{ subscription: SubscriptionDTO }>>(`/subscriptions/${id}`, data);
+    return response.data.subscription;
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/subscriptions/${id}`);
+  },
+
   getStats: async (): Promise<DashboardStatsResponse> => {
     const response = await api.get<any, ApiResponse<{ stats: DashboardStatsResponse }>>('/subscriptions/stats');
     return response.data.stats;
+  },
+
+  getUpcomingRenewals: async (days: number = 7): Promise<SubscriptionDTO[]> => {
+    const response = await api.get<any, ApiResponse<{ subscriptions: SubscriptionDTO[] }>>('/subscriptions/upcoming', {
+      params: { days }
+    });
+    return response.data.subscriptions;
   }
 };

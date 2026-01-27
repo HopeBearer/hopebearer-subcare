@@ -27,18 +27,18 @@ export function Modal({ isOpen, onClose, title, children, className, headerClass
       
       {/* Content */}
       <div className={cn(
-        "relative z-50 w-full max-w-lg bg-white rounded-xl shadow-2xl p-6 transform transition-all animate-in fade-in zoom-in-95 duration-200",
+        "relative z-50 w-full max-w-lg bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 transform transition-all animate-in fade-in zoom-in-95 duration-200",
         className
       )}>
         <div className={cn("flex items-center justify-between mb-4", headerClassName)}>
-          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{title}</h2>
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-full hover:bg-gray-100"
+            className="h-8 w-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
             onClick={onClose}
           >
-            <X className="w-4 h-4 text-gray-500" />
+            <X className="w-4 h-4 text-gray-500 dark:text-gray-400" />
           </Button>
         </div>
         

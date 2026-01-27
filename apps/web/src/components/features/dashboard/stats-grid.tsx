@@ -80,7 +80,7 @@ function StatCard({ stat }: { stat: StatProps }) {
           )}>
             <stat.icon className="w-5 h-5" />
           </div>
-          <span className="font-medium text-gray-600">{stat.label}</span>
+          <span className="font-medium text-gray-600 dark:text-gray-400">{stat.label}</span>
         </div>
         
         <span 
@@ -104,7 +104,7 @@ function StatCard({ stat }: { stat: StatProps }) {
       </div>
 
       {/* 4. Footer */}
-      <p className="relative z-10 mt-4 text-xs text-gray-500 font-medium">
+      <p className="relative z-10 mt-4 text-xs text-gray-500 dark:text-gray-400 font-medium">
         {stat.footer}
       </p>
     </Card>
@@ -201,7 +201,7 @@ const CategoryDistribution = ({ categories = [] }: CategoryProps) => {
               className="w-1.5 h-1.5 rounded-full flex-shrink-0" 
               style={{ backgroundColor: getCategoryColor(seg.name) }}
             />
-            <span className="text-[10px] text-gray-500 truncate-text">{seg.name}</span>
+            <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate-text">{seg.name}</span>
           </div>
         ))}
       </div>
@@ -210,7 +210,7 @@ const CategoryDistribution = ({ categories = [] }: CategoryProps) => {
 };
 
 const ProgressBar = ({ value = 62 }: { value?: number }) => (
-  <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden relative">
+  <div className="h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden relative">
     <div 
       className="h-full rounded-full relative overflow-hidden"
       style={{ width: `${value}%`, backgroundColor: '#A5A6F6' }}
@@ -252,7 +252,7 @@ const RenewalProgress = ({ data }: RenewalProps) => {
     <div className="flex items-center gap-3 w-full">
       <div className="relative w-9 h-9 flex-shrink-0">
         <svg className="w-full h-full transform -rotate-90">
-          <circle cx="18" cy="18" r="15.5" stroke="#F3E8FF" strokeWidth="3" fill="none" />
+          <circle cx="18" cy="18" r="15.5" className="stroke-gray-100 dark:stroke-gray-700" strokeWidth="3" fill="none" />
           <circle 
             cx="18" cy="18" r="15.5" 
             stroke="#A5A6F6" strokeWidth="3" fill="none" 
@@ -262,12 +262,12 @@ const RenewalProgress = ({ data }: RenewalProps) => {
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-[9px] font-bold text-gray-600">{data.daysRemaining}d</span>
+          <span className="text-[9px] font-bold text-gray-600 dark:text-gray-300">{data.daysRemaining}d</span>
         </div>
       </div>
       <div className="flex flex-col min-w-0">
-        <span className="text-xs font-semibold text-gray-900 truncate">{data.name}</span>
-        <span className="text-[10px] text-gray-500">{data.price.formatted} {data.cycle}</span>
+        <span className="text-xs font-semibold text-gray-900 dark:text-white truncate">{data.name}</span>
+        <span className="text-[10px] text-gray-500 dark:text-gray-400">{data.price.formatted} {data.cycle}</span>
       </div>
     </div>
   );
@@ -321,7 +321,7 @@ export function StatsGrid() {
       },
       icon: BookOpen,
       visual: <CategoryDistribution categories={data?.subscriptions.categories} />,
-      footer: data ? t('stats.footer.active_subs', { count: data.subscriptions.newCount, ns: 'dashboard' }) : '...',
+      footer: data ? t('stats.footer.active_subs', { count: data.subscriptions.categoryCount, ns: 'dashboard' }) : '...',
       isLoading: loading
     },
     {
@@ -358,10 +358,17 @@ export function StatsGrid() {
           border: 1px solid rgba(165, 166, 246, 0.15);
           box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
         }
+        .dark .stat-card {
+           border-color: rgba(165, 166, 246, 0.1);
+           background-color: var(--color-bg-surface);
+        }
         .stat-card:hover {
           transform: translateY(-5px);
           box-shadow: 0 8px 30px rgba(0,0,0,0.12);
           border-color: var(--color-primary);
+        }
+        .dark .stat-card:hover {
+          box-shadow: 0 8px 30px rgba(0,0,0,0.3);
         }
         .stat-card:active {
           transform: scale(0.97) translateY(-5px);
@@ -371,8 +378,15 @@ export function StatsGrid() {
           background-color: #F3F0FF;
           transition: background-color 0.2s linear;
         }
+        .dark .stat-icon-bg {
+          background-color: rgba(139, 92, 246, 0.15);
+          color: #A78BFA;
+        }
         .group:hover .stat-icon-bg {
           background-color: #E6E6FF;
+        }
+        .dark .group:hover .stat-icon-bg {
+          background-color: rgba(139, 92, 246, 0.25);
         }
 
         @keyframes shimmer {

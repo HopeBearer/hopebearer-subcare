@@ -50,22 +50,22 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           'flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 ease group',
-          'hover:bg-primary-pale', // Soft purple background on hover
-          isOpen ? 'bg-primary-soft' : 'bg-transparent'
+          'hover:bg-primary-pale dark:hover:bg-white/5', // Soft purple background on hover
+          isOpen ? 'bg-primary-soft dark:bg-white/5' : 'bg-transparent'
         )}
         aria-label="Switch Language"
         aria-expanded={isOpen}
       >
         <Globe
           className={cn(
-            'w-4 h-4 text-gray-500 transition-colors',
+            'w-4 h-4 text-gray-500 dark:text-gray-400 transition-colors',
             'group-hover:text-primary',
             isOpen ? 'text-primary' : ''
           )}
         />
         <span
           className={cn(
-            'text-sm font-medium text-gray-700 transition-colors',
+            'text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors',
             'group-hover:text-primary',
             isOpen ? 'text-primary' : ''
           )}
@@ -74,7 +74,7 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
         </span>
         <ChevronDown
           className={cn(
-            'w-3 h-3 text-gray-400 transition-transform duration-200',
+            'w-3 h-3 text-gray-400 dark:text-gray-500 transition-transform duration-200',
             isOpen && 'rotate-180 text-primary'
           )}
         />
@@ -83,7 +83,7 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
       {/* Dropdown Menu */}
       <div
         className={cn(
-          'absolute right-0 top-full mt-2 w-32 p-2 bg-white rounded-xl shadow-md ring-1 ring-black/5 py-1 overflow-hidden origin-top-right transition-all duration-200 ease',
+          'absolute right-0 top-full mt-2 w-32 p-2 bg-white dark:bg-gray-800 rounded-xl shadow-md ring-1 ring-black/5 dark:ring-white/10 py-1 overflow-hidden origin-top-right transition-all duration-200 ease',
           isOpen
             ? 'opacity-100 scale-100 translate-y-0 visible'
             : 'opacity-0 scale-95 -translate-y-2 invisible'
@@ -95,10 +95,10 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
             onClick={() => handleLanguageChange(lang.code)}
             className={cn(
               'w-full text-left px-4 py-1 mb-1 text-sm rounded-md flex items-center justify-between transition-colors',
-              'hover:bg-primary-pale',
+              'hover:bg-primary-pale dark:hover:bg-white/5',
               currentLangCode === lang.code
-                ? 'text-primary font-medium bg-primary-pale'
-                : 'text-gray-600'
+                ? 'text-primary font-medium bg-primary-pale dark:bg-primary-pale/10'
+                : 'text-gray-600 dark:text-gray-300'
             )}
           >
             <span>{t(lang.labelKey)}</span>

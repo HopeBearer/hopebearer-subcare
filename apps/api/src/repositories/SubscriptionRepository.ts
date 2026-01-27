@@ -24,7 +24,7 @@ export class SubscriptionRepository {
    * @returns 订阅列表和总数
    */
   async findByUserId(userId: string, filters?: SubscriptionFilterDTO): Promise<{ items: Subscription[]; total: number }> {
-    const { search, status, category, billingCycle, page, limit } = filters || {};
+    const { search, status, category, billingCycle, page, limit, expiringInDays } = filters || {};
     
     const where: Prisma.SubscriptionWhereInput = {
       userId,
@@ -35,6 +35,25 @@ export class SubscriptionRepository {
         name: { contains: search }
       } : {})
     };
+
+    if (expiringInDays) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const futureDate = new Date();
+      futureDate.setDate(today.getDate() + expiringInDays);
+      futureDate.setHours(23, 59, 59, 999);
+
+      where.nextPayment = {
+        gte: today,
+        lte: futureDate
+      };
+      
+      // If filtering by expiration, limit to active subscriptions unless specified otherwise
+      if (!status || status === 'All') {
+          where.status = 'Active';
+      }
+    }
 
     const take = limit || undefined;
     const skip = page && limit ? (page - 1) * limit : undefined;
@@ -74,6 +93,17 @@ export class SubscriptionRepository {
         where: { id },
         data
     })
+  }
+
+  /**
+   * 删除订阅
+   * @param id 订阅 ID
+   * @returns 删除的订阅实体
+   */
+  async delete(id: string): Promise<Subscription> {
+    return prisma.subscription.delete({
+      where: { id },
+    });
   }
 
   /**

@@ -1,26 +1,14 @@
-import {
-  UserRole,
-  UserDTO,
-  LoginParams,
-  RegisterParams,
-  ForgotPasswordParams,
-  AuthResponse,
-  CaptchaResponse,
-  ApiResponse,
-  CreateSubscriptionDTO,
-  UpdateSubscriptionDTO,
-  SubscriptionDTO,
-  Money,
-  ExpenseStats,
-  SubscriptionStats,
-  BudgetStats,
-  RenewalStats,
-  DashboardStatsResponse
-} from './index';
-
 export enum UserRole {
   USER = 'USER',
   ADMIN = 'ADMIN'
+}
+
+export enum SubscriptionUsage {
+  ALMOST_NEVER = 'Almost Never',
+  OCCASIONALLY = 'Occasionally',
+  NORMALLY = 'Normally',
+  FREQUENTLY = 'Frequently',
+  HEAVILY = 'Heavily'
 }
 
 export interface UserDTO {
@@ -85,6 +73,7 @@ export interface CreateSubscriptionDTO {
   notifyDaysBefore?: number;
   website?: string;
   notes?: string;
+  usage?: SubscriptionUsage;
 }
 
 export interface UpdateSubscriptionDTO {
@@ -103,6 +92,7 @@ export interface UpdateSubscriptionDTO {
   notifyDaysBefore?: number;
   website?: string;
   notes?: string;
+  usage?: SubscriptionUsage;
 }
 
 export interface SubscriptionDTO {
@@ -126,6 +116,7 @@ export interface SubscriptionDTO {
   notifyDaysBefore?: number | null;
   website?: string | null;
   notes?: string | null;
+  usage?: SubscriptionUsage | string | null;
 }
 
 export interface SubscriptionFilterDTO {
@@ -135,6 +126,7 @@ export interface SubscriptionFilterDTO {
   billingCycle?: string;
   page?: number;
   limit?: number;
+  expiringInDays?: number;
 }
 
 // Dashboard Stats Types
@@ -157,6 +149,7 @@ export interface ExpenseStats {
 export interface SubscriptionStats {
   activeCount: number;
   newCount: number;
+  categoryCount: number;
   categories: {
     id: string;
     name: string;
