@@ -40,7 +40,7 @@
     "title": "Upcoming Renewals",
     "view_all": "View All",
     "empty_title": "No upcoming renewals",
-    "empty_desc": "You have no subscriptions due for renewal in the next 30 days.",
+    "empty_desc": "You have no subscriptions due for renewal in the next {{days}} days.",
     "today": "Today",
     "days_left": "{{days}} days",
     "amount": "Amount",

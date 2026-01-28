@@ -40,7 +40,7 @@
     "title": "即将续费",
     "view_all": "查看全部",
     "empty_title": "暂无近期续费",
-    "empty_desc": "未来30天内没有即将到期的订阅。",
+    "empty_desc": "未来{{days}}天内没有即将到期的订阅。",
     "today": "今天",
     "days_left": "还有 {{days}} 天",
     "amount": "金额",

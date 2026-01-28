@@ -164,8 +164,11 @@ export class SubscriptionRepository {
    */
   async findUpcomingRenewals(userId: string, days: number): Promise<any[]> {
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day to include items due today
+    
     const futureDate = new Date();
     futureDate.setDate(today.getDate() + days);
+    futureDate.setHours(23, 59, 59, 999); // Set to end of the target day
 
     const items = await prisma.subscription.findMany({
       where: {

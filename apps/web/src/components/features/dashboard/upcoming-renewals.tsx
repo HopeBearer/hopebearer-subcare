@@ -1,35 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useTranslation } from '@/lib/i18n/hooks';
 import { Calendar, Bell, ArrowRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { subscriptionService } from '@/services/subscription.service';
-import { SubscriptionDTO } from '@subcare/types';
 import { cn } from '@/lib/utils';
+import { differenceInCalendarDays } from 'date-fns';
 
 export function UpcomingRenewals() {
   const { t } = useTranslation();
-  const [renewals, setRenewals] = useState<SubscriptionDTO[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchRenewals = async () => {
-      try {
-        // Fetch upcoming renewals for the next 30 days
-        const data = await subscriptionService.getUpcomingRenewals(30);
-        setRenewals(data);
-      } catch (error) {
-        console.error('Failed to fetch upcoming renewals:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRenewals();
-  }, []);
+  const { data: renewals = [], isLoading: loading } = useQuery({
+    queryKey: ['subscriptions', 'upcoming'],
+    queryFn: () => subscriptionService.getUpcomingRenewals(7),
+  });
 
   if (loading) {
     return (
@@ -53,7 +40,7 @@ export function UpcomingRenewals() {
             {t('dashboard:upcoming.title', 'Upcoming Renewals')}
           </h2>
         </div>
-        <Link href="/subscriptions?expiringIn=30">
+        <Link href="/subscriptions?expiringIn=7">
           <Button 
              variant="ghost" 
              className={cn(
@@ -79,14 +66,14 @@ export function UpcomingRenewals() {
             {t('dashboard:upcoming.empty_title', 'No upcoming renewals')}
           </h3>
           <p className="text-sm text-gray-500 max-w-xs">
-            {t('dashboard:upcoming.empty_desc', 'You have no subscriptions due for renewal in the next 30 days.')}
+            {t('dashboard:upcoming.empty_desc', 'You have no subscriptions due for renewal in the next 7 days.', { days: 7 })}
           </p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
           {renewals.slice(0, 5).map((sub) => {
             const nextPayment = sub.nextPayment ? new Date(sub.nextPayment) : new Date();
-            const daysLeft = Math.ceil((nextPayment.getTime() - new Date().setHours(0,0,0,0)) / (1000 * 60 * 60 * 24));
+            const daysLeft = differenceInCalendarDays(nextPayment, new Date());
             const isUrgent = daysLeft <= 3;
 
             return (
@@ -146,17 +133,22 @@ export function UpcomingRenewals() {
                     </span>
                   </div>
 
-                  {/* Days Left Badge */}
-                  <div className={cn(
-                    "px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap min-w-[80px] text-center",
-                    isUrgent 
-                      ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" 
-                      : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
-                  )}>
-                    {daysLeft === 0 
-                      ? t('dashboard:upcoming.today', 'Today')
-                      : t('dashboard:upcoming.days_left', '{{days}} days', { days: daysLeft })
-                    }
+                  {/* Days Left Badge and Date */}
+                  <div className="flex flex-col items-end gap-1">
+                    <div className={cn(
+                      "px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap min-w-[80px] text-center",
+                      isUrgent 
+                        ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" 
+                        : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                    )}>
+                      {daysLeft <= 0 
+                        ? t('dashboard:upcoming.today', 'Today')
+                        : t('dashboard:upcoming.days_left', '{{days}} days', { days: daysLeft })
+                      }
+                    </div>
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
+                      {nextPayment.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </span>
                   </div>
                 </div>
               </div>
