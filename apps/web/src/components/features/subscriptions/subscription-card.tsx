@@ -104,6 +104,13 @@ export function SubscriptionCard({ subscription, onClick }: SubscriptionCardProp
 
       {/* Tags Block - Independent */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
+          {/* Pending Bill Indicator */}
+          {(subscription as any).hasPendingBill && (
+            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
+              {t('status.pending_payment', { defaultValue: 'Pending Payment' })}
+            </span>
+          )}
+          
           <span className={cn(
             "px-2 py-0.5 rounded-full text-xs font-medium",
             statusColors[statusKey] || 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'

@@ -1,0 +1,71 @@
+{
+  "title": "Financial Analysis",
+  "overview_desc": "Track your spending habits, future obligations, and payment history.",
+  "section": {
+    "big_picture": "Spending Overview",
+    "projection": "Future Projection"
+  },
+  "heatmap": {
+    "title": "Spending Intensity",
+    "tooltip_suffix": "transactions"
+  },
+  "projection": {
+    "title": "Projected Spend",
+    "subtitle": "Future 12 months forecast",
+    "monthly": "Monthly Bill",
+    "cumulative": "Cumulative Total"
+  },
+  "simulator": {
+    "title": "What-If Simulator",
+    "toggle_hint": "Toggle subscriptions to see impact",
+    "search_placeholder": "Search subscriptions...",
+    "sort": "Sort",
+    "sort_options": {
+      "price_desc": "Price: High to Low",
+      "price_asc": "Price: Low to High",
+      "name": "Name: A-Z"
+    },
+    "no_results": "No subscriptions found"
+  },
+  "anomalies": {
+    "title": "Anomalies & Changes",
+    "detected": "detected",
+    "empty": "No anomalies detected recently."
+  },
+  "sankey": {
+    "title": "Spending Flow",
+    "subtitle": "Visualize how your budget distributes across categories.",
+    "no_data": "No data available"
+  },
+  "overview": "Overview",
+  "history": "Billing History",
+  "total_expense": "Total Annual Expense",
+  "ytd_expense_actual": "YTD Expense (Actual)",
+  "projected_annual_total": "Projected Annual Total",
+  "no_data": "No data available",
+  "table": {
+    "date": "Date",
+    "subscription": "Subscription",
+    "amount": "Amount",
+    "status": "Status",
+    "cycle": "Cycle"
+  },
+  "status": {
+    "paid": "Paid",
+    "pending": "Pending",
+    "failed": "Failed",
+    "active": "Active",
+    "cancelled": "Cancelled"
+  },
+  "cycle": {
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "weekly": "Weekly",
+    "daily": "Daily"
+  },
+  "pagination": {
+    "prev": "Previous",
+    "next": "Next",
+    "page_info": "Page {{page}} of {{total}}"
+  }
+}

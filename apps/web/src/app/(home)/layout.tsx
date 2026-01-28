@@ -10,11 +10,11 @@ export default function HomeLayout({
 }) {
   return (
     <AuthGuard>
-      <div className="flex min-h-screen bg-bg-page">
+      <div className="flex h-screen overflow-hidden bg-bg-page">
         <Sidebar />
-        <main className="flex-1 ml-72 flex flex-col min-h-screen transition-all duration-300">
+        <main className="flex-1 ml-72 flex flex-col h-full transition-all duration-300">
           <Header />
-          <div className="flex-1 p-8 pt-24 overflow-y-auto">
+          <div className="flex-1 p-8 overflow-y-auto">
             <div className="max-w-7xl mx-auto w-full">
               {children}
             </div>

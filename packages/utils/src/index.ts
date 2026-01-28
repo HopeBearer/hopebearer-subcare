@@ -25,15 +25,13 @@ export function calculateNextPayment(startDate: Date | string, billingCycle: str
     return nextPayment;
   }
 
-  // If start date is in the past or today, calculate the next occurrence
-  let iterations = 0;
-  // We want the first date strictly greater than now? 
-  // Or if today is the payment date, and I already paid, then next is next month.
-  // If I haven't paid today yet, then today is the payment date.
-  // Usually "Next Payment" implies the one coming up.
-  // If I paid today, the next one is in the future.
+  // If start date is in the past, calculate the next occurrence
+  // We want the next payment to be in the future OR today.
+  // If nextPayment < now (strictly in past), we advance it.
+  // If nextPayment == now (today), it is due today, so we keep it.
   
-  while (nextPayment <= now && iterations < 1000) {
+  let iterations = 0;
+  while (nextPayment < now && iterations < 1000) {
     if (billingCycle === 'Monthly') {
       nextPayment.setMonth(nextPayment.getMonth() + 1);
     } else if (billingCycle === 'Yearly') {

@@ -8,6 +8,7 @@ generator client {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
+  relationMode = "prisma"
 }
 
 enum Role {
@@ -33,7 +34,8 @@ model User {
   
   subscriptions Subscription[]
   notifications Notification[]
-  // SystemLogs are linked loosely by userId, no strict relation needed for logging to avoid overhead
+  paymentRecords PaymentRecord[]
+  categories    Category[]
 
   @@map("users")
 }
@@ -47,7 +49,20 @@ model Subscription {
   startDate   DateTime
   nextPayment DateTime?
   status      String   @default("ACTIVE") // ACTIVE, CANCELLED, PAUSED
-  category    String   @default("Other")  // Entertainment, Tools, Cloud, etc.
+  
+  // Category relation
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  // Keep old string for backward compatibility if needed, or migration strategy. 
+  // Ideally this would be deprecated. Using @map to keep column name if needed but for new logic:
+  categoryName    String   @default("Other") @map("category") // Remapped old column to avoid conflict if we want to keep data, or we can just drop it. Let's keep it as `categoryName` but map to `category` column to preserve data if user doesn't migrate column. 
+  // Wait, if I change the model field `category` to `categoryName`, existing code might break.
+  // The user asked to "extract Category model".
+  // Let's keep `category` string for now to avoid breaking too much frontend code immediately, 
+  // but add `categoryId` for the new relation.
+  // Actually, let's just add `categoryId` and `category` relation. 
+  // The existing `category` string field will remain as legacy/fallback.
+
   icon        String?  // Optional icon identifier or url
   description String?  @db.Text
   
@@ -61,12 +76,63 @@ model Subscription {
   usage              String   @default("Normally")
 
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id])
+
+  paymentRecords PaymentRecord[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  @@index([userId])
+  @@index([categoryId])
   @@map("subscriptions")
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String
+  icon        String?
+  color       String?  @default("#94a3b8")
+  budgetLimit Decimal? @db.Decimal(10, 2)
+  
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+
+  subscriptions Subscription[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@map("categories")
+}
+
+model PaymentRecord {
+  id              String   @id @default(uuid())
+  
+  amount          Decimal  @db.Decimal(10, 2)
+  currency        String
+  exchangeRate    Decimal? @db.Decimal(10, 4)
+  
+  billingDate     DateTime
+  periodStart     DateTime?
+  periodEnd       DateTime?
+  
+  status          String   @default("PAID") // PAID, PENDING, FAILED, REFUNDED
+  note            String?  @db.Text
+
+  subscriptionId  String
+  subscription    Subscription @relation(fields: [subscriptionId], references: [id])
+
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId, billingDate])
+  @@index([subscriptionId])
+  @@map("payment_records")
 }
 
 model Notification {
@@ -79,7 +145,7 @@ model Notification {
 
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@map("notifications")

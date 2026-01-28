@@ -6,6 +6,7 @@ import { dashboardRegistry } from './registries/dashboard.registry';
 import { notificationRegistry } from './registries/notification.registry';
 import { systemLogRegistry } from './registries/system-log.registry';
 import { messageTemplateRegistry } from './registries/message-template.registry';
+import { financialRegistry } from './registries/financial.registry'; // Import
 
 export interface RouteImplementation {
   handler: RequestHandler;
@@ -28,4 +29,5 @@ export const routeRegistry: Record<string, RouteVersions> = {
   ...notificationRegistry,
   ...systemLogRegistry,
   ...messageTemplateRegistry,
+  ...financialRegistry, // Add
 };

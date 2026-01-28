@@ -7,7 +7,6 @@ import { Role } from '@subcare/database';
 import { BusinessCode } from '../../constants/BusinessCode';
 import { SubscriptionFilterDTO } from '@subcare/types';
 
-// 创建订阅的验证 schema
 const createSubscriptionSchema = z.object({
   name: z.string().min(1),
   price: z.number().nonnegative(),
@@ -26,17 +25,9 @@ const createSubscriptionSchema = z.object({
 
 const updateSubscriptionSchema = createSubscriptionSchema.partial();
 
-/**
- * 订阅控制器
- * 处理订阅相关的 HTTP 请求
- */
 export class SubscriptionController {
   constructor(private subscriptionService: SubscriptionService) {}
 
-  /**
-   * 创建新的订阅
-   * POST /subscriptions
-   */
   create = async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
@@ -47,7 +38,7 @@ export class SubscriptionController {
       
       const subscription = await this.subscriptionService.createSubscription({
         ...validatedData,
-        startDate: new Date(validatedData.startDate), // Ensure it's a Date object
+        startDate: new Date(validatedData.startDate), 
         userId: req.user.userId,
       });
       
@@ -61,10 +52,6 @@ export class SubscriptionController {
     }
   };
 
-  /**
-   * 获取当前用户的订阅列表
-   * GET /subscriptions
-   */
   list = async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
@@ -101,10 +88,6 @@ export class SubscriptionController {
     }
   };
 
-  /**
-   * 更新订阅
-   * PATCH /subscriptions/:id
-   */
   update = async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
@@ -126,10 +109,6 @@ export class SubscriptionController {
     }
   };
 
-  /**
-   * 删除订阅
-   * DELETE /subscriptions/:id
-   */
   delete = async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
@@ -146,17 +125,12 @@ export class SubscriptionController {
     }
   };
 
-  /**
-   * 获取全局订阅统计信息 (仅管理员)
-   * GET /subscriptions/stats
-   */
   stats = async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
         throw new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'Not authenticated' });
       }
 
-      // 显式检查管理员权限，虽然路由层面应该也有保护
       if (req.user.role !== Role.ADMIN) {
         throw new AppError('FORBIDDEN', StatusCodes.FORBIDDEN, { message: 'Not authorized' });
       }
@@ -173,10 +147,6 @@ export class SubscriptionController {
     }
   };
 
-  /**
-   * 获取即将续费的订阅
-   * GET /subscriptions/upcoming
-   */
   upcoming = async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
@@ -190,6 +160,29 @@ export class SubscriptionController {
         status: 'success',
         code: BusinessCode.SUCCESS,
         data: { subscriptions },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * 获取订阅历史记录
+   * GET /subscriptions/:id/history
+   */
+  history = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.user) {
+        throw new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'Not authenticated' });
+      }
+
+      const { id } = req.params;
+      const history = await this.subscriptionService.getSubscriptionHistory(id, req.user.userId);
+      
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data: { history },
       });
     } catch (error) {
       next(error);

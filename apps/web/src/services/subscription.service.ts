@@ -4,7 +4,8 @@ import {
   SubscriptionDTO, 
   SubscriptionFilterDTO,
   ApiResponse,
-  DashboardStatsResponse
+  DashboardStatsResponse,
+  PaymentRecordDTO
 } from '@subcare/types';
 
 export const subscriptionService = {
@@ -43,5 +44,10 @@ export const subscriptionService = {
       params: { days }
     });
     return response.data.subscriptions;
+  },
+
+  getHistory: async (id: string): Promise<PaymentRecordDTO[]> => {
+    const response = await api.get<any, ApiResponse<{ history: PaymentRecordDTO[] }>>(`/subscriptions/${id}/history`);
+    return response.data.history;
   }
 };

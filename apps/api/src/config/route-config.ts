@@ -22,16 +22,24 @@ export const routeConfig: Record<string, string> = {
   'DELETE /subscriptions/:id': 'v1',
   'GET /subscriptions/stats': 'v1',
   'GET /subscriptions/upcoming': 'v1',
+  'GET /subscriptions/:id/history': 'v1', // New
 
   // Dashboard
   'GET /dashboard/stats': 'v1',
   'GET /dashboard/trend': 'v1',
   'GET /dashboard/distribution': 'v1',
 
+  // Financial Analysis
+  'GET /finance/overview': 'v1', // New
+  'GET /finance/history': 'v1',  // New
+  'GET /finance/pending': 'v1',
+  'PATCH /finance/records/:id/confirm': 'v1',
+  'POST /finance/records/:id/cancel': 'v1',
+
   // Users
-  'GET /users': 'v2', // Switched to v2
-  'PATCH /users/:id/disable': 'v2', // Switched to v2
-  'DELETE /users/:id': 'v2', // Switched to v2
+  'GET /users': 'v2', 
+  'PATCH /users/:id/disable': 'v2', 
+  'DELETE /users/:id': 'v2', 
 
   // Notifications
   'GET /notifications': 'v1',

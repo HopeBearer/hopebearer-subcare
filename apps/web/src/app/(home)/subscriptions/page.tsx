@@ -150,7 +150,7 @@ export default function SubscriptionsPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
       {/* Search and Filter Section */}
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between sticky top-0 z-10 backdrop-blur-xl bg-white/90 dark:bg-gray-800/90">
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between">
         <div className="relative w-full xl:w-80">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input 
@@ -247,13 +247,13 @@ export default function SubscriptionsPage() {
 
       {!isLoading && items.length === 0 && (
         <div className="text-center py-20 text-gray-400">
-          <p>No subscriptions found matching your filters.</p>
+          <p>{t('no_subscriptions_found')}</p>
         </div>
       )}
       
       {!hasNextPage && items.length > 0 && !isFetchingNextPage && (
         <div className="text-center py-8 text-gray-400 text-sm">
-          No more subscriptions to load.
+          {t('no_more_subscriptions')}
         </div>
       )}
       

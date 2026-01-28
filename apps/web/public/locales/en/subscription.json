@@ -7,6 +7,7 @@
   "cycle": "Cycle",
   "billing_date": "Billing Date",
   "first_payment": "First Payment Date",
+  "past_date_info": "You selected a past date. The system will assume previous cycles are already paid and will only generate a bill for the upcoming payment cycle.",
   "next_bill": "Next Bill",
   "details": "Details",
   "website": "Website",
@@ -48,7 +49,8 @@
     "CANCELLED": "Cancelled",
     "Active": "Active",
     "Paused": "Paused",
-    "Cancelled": "Cancelled"
+    "Cancelled": "Cancelled",
+    "pending_payment": "Pending Payment"
   },
   "categories": {
     "entertainment": "Entertainment",
@@ -92,5 +94,7 @@
     "wechat": "WeChat",
     "paypal": "PayPal",
     "other": "Other"
-  }
+  },
+  "no_subscriptions_found": "No subscriptions found matching your filters.",
+  "no_more_subscriptions": "No more subscriptions to load."
 }

@@ -3,12 +3,14 @@ import authEn from '../../../public/locales/en/auth.json';
 import dashboardEn from '../../../public/locales/en/dashboard.json';
 import subscriptionEn from '../../../public/locales/en/subscription.json';
 import settingsEn from '../../../public/locales/en/settings.json';
+import financeEn from '../../../public/locales/en/finance.json';
 
 import commonZh from '../../../public/locales/zh/common.json';
 import authZh from '../../../public/locales/zh/auth.json';
 import dashboardZh from '../../../public/locales/zh/dashboard.json';
 import subscriptionZh from '../../../public/locales/zh/subscription.json';
 import settingsZh from '../../../public/locales/zh/settings.json';
+import financeZh from '../../../public/locales/zh/finance.json';
 
 import commonJa from '../../../public/locales/ja/common.json';
 import authJa from '../../../public/locales/ja/auth.json';
@@ -24,6 +26,7 @@ export const resources = {
     dashboard: dashboardEn,
     subscription: subscriptionEn,
     settings: settingsEn,
+    finance: financeEn,
   },
   zh: {
     common: commonZh,
@@ -31,6 +34,7 @@ export const resources = {
     dashboard: dashboardZh,
     subscription: subscriptionZh,
     settings: settingsZh,
+    finance: financeZh,
   },
   ja: {
     common: commonJa,

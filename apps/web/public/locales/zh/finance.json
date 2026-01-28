@@ -1,0 +1,71 @@
+{
+  "title": "财务分析",
+  "overview_desc": "追踪您的消费习惯、未来支出和支付历史。",
+  "section": {
+    "big_picture": "支出总览",
+    "projection": "未来预测"
+  },
+  "heatmap": {
+    "title": "支出强度",
+    "tooltip_suffix": "笔交易"
+  },
+  "projection": {
+    "title": "支出预测",
+    "subtitle": "基于当前订阅的未来12个月预测",
+    "monthly": "月度账单",
+    "cumulative": "累计支出"
+  },
+  "simulator": {
+    "title": "What-If 模拟器",
+    "toggle_hint": "切换订阅以查看影响",
+    "search_placeholder": "搜索订阅...",
+    "sort": "排序",
+    "sort_options": {
+      "price_desc": "价格: 从高到低",
+      "price_asc": "价格: 从低到高",
+      "name": "名称: A-Z"
+    },
+    "no_results": "未找到相关订阅"
+  },
+  "anomalies": {
+    "title": "异动与变更",
+    "detected": "项检测",
+    "empty": "近期未检测到异动。"
+  },
+  "sankey": {
+    "title": "资金流向",
+    "subtitle": "可视化您的预算在各分类中的分布。",
+    "no_data": "暂无数据"
+  },
+  "overview": "概览",
+  "history": "账单历史",
+  "total_expense": "年度总支出",
+  "ytd_expense_actual": "今年已支出 (实际)",
+  "projected_annual_total": "预计年度总支出",
+  "no_data": "暂无数据",
+  "table": {
+    "date": "日期",
+    "subscription": "订阅",
+    "amount": "金额",
+    "status": "状态",
+    "cycle": "周期"
+  },
+  "status": {
+    "paid": "已支付",
+    "pending": "待支付",
+    "failed": "失败",
+    "active": "活跃",
+    "cancelled": "已取消"
+  },
+  "cycle": {
+    "monthly": "每月",
+    "yearly": "每年",
+    "weekly": "每周",
+    "daily": "每日"
+  },
+  "pagination": {
+    "prev": "上一页",
+    "next": "下一页",
+    "page_info": "第 {{page}} 页，共 {{total}} 页"
+  }
+}

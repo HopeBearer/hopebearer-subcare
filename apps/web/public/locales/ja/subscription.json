@@ -58,5 +58,7 @@
     "alipay": "Alipay",
     "wechat": "WeChat Pay",
     "paypal": "PayPal"
-  }
+  },
+  "no_subscriptions_found": "条件に一致するサブスクリプションは見つかりませんでした。",
+  "no_more_subscriptions": "これ以上読み込むサブスクリプションはありません。"
 }

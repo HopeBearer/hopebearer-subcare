@@ -56,5 +56,18 @@
   },
   "content": {
     "placeholder": "Main Content Placeholder"
+  },
+  "pending_bills": {
+    "title": "Pending Bills",
+    "due_date": "Due Date",
+    "confirm_btn": "Mark as Paid",
+    "confirmed_msg": "Bill marked as paid successfully",
+    "overdue": "Overdue",
+    "confirm_title": "Confirm Payment",
+    "confirm_desc": "Please verify the actual amount paid.",
+    "amount_label": "Actual Amount",
+    "cancel_btn": "Cancel Renewal",
+    "cancelled_msg": "Renewal cancelled successfully",
+    "confirm_cancel": "Are you sure you want to cancel this renewal? This will also cancel the subscription."
   }
 }

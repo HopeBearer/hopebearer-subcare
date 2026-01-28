@@ -7,6 +7,7 @@
   "cycle": "周期",
   "billing_date": "账单日期",
   "first_payment": "首次付款日期",
+  "past_date_info": "您选择了过去的日期。系统将默认之前的周期已完成支付，仅会生成即将到来的那一期账单。",
   "next_bill": "下次续费",
   "details": "详细信息",
   "website": "官方网站",
@@ -48,7 +49,8 @@
     "CANCELLED": "已取消",
     "Active": "活跃",
     "Paused": "已暂停",
-    "Cancelled": "已取消"
+    "Cancelled": "已取消",
+    "pending_payment": "待支付"
   },
   "categories": {
     "entertainment": "娱乐",
@@ -92,5 +94,7 @@
     "wechat": "微信支付",
     "paypal": "PayPal",
     "other": "其他"
-  }
+  },
+  "no_subscriptions_found": "未找到符合条件的订阅。",
+  "no_more_subscriptions": "没有更多订阅了。"
 }

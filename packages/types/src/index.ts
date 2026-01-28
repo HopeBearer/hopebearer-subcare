@@ -187,6 +187,7 @@ export interface ExpenseTrendData {
   labels: string[];
   values: number[];
   currency: string;
+  rules?: any; // Avoiding strict type for now
 }
 
 export interface CategoryDistributionItem {
@@ -199,3 +200,78 @@ export interface CategoryDistributionItem {
 }
 
 export type CategoryDistributionData = CategoryDistributionItem[];
+
+// Financial Analysis Types
+
+export interface PaymentRecordDTO {
+  id: string;
+  amount: number;
+  currency: string;
+  exchangeRate?: number;
+  billingDate: Date | string;
+  periodStart?: Date | string;
+  periodEnd?: Date | string;
+  status: string;
+  note?: string;
+  subscriptionId: string;
+  subscription?: Partial<SubscriptionDTO>; // Including basic info like name/icon
+  userId: string;
+  createdAt: Date | string;
+}
+
+export interface HeatmapItem {
+  date: string; // YYYY-MM-DD
+  count: number; // Amount or frequency intensity
+}
+
+export interface SpendingAnomaly {
+  id: string;
+  subscriptionId?: string; // Optional if not linked directly
+  subscriptionName: string;
+  type: 'PRICE_INCREASE' | 'ABNORMAL_FREQUENCY' | 'DUPLICATE';
+  description: string;
+  date: string | Date;
+  severity: 'low' | 'medium' | 'high';
+  metadata: {
+    oldPrice?: number;
+    newPrice?: number;
+    currency?: string;
+    [key: string]: any;
+  };
+}
+
+export interface MonthlyProjection {
+  month: string; // YYYY-MM or MMM
+  amount: number;
+  currency?: string;
+  items?: Array<{
+    subscriptionId: string;
+    name: string;
+    amount: number;
+  }>;
+}
+
+export interface SankeyNode {
+  name: string;
+}
+
+export interface SankeyLink {
+  source: string;
+  target: string;
+  value: number;
+}
+
+export interface SankeyData {
+  nodes: SankeyNode[];
+  links: SankeyLink[];
+}
+
+export interface FinancialOverviewDTO {
+  heatmap: HeatmapItem[];
+  totalExpense: number; // YTD
+  projectedTotal?: number; // Next 12 months
+  currency?: string;
+  projection: MonthlyProjection[];
+  sankey: SankeyData;
+  anomalies: SpendingAnomaly[];
+}

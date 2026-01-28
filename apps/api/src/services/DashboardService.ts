@@ -1,14 +1,18 @@
 import { SubscriptionRepository } from "../repositories/SubscriptionRepository";
 import { UserRepository } from "../repositories/UserRepository";
 import { CurrencyService } from "../services/CurrencyService";
-import { DashboardStatsResponse, Money, SubscriptionDTO, ExpenseTrendData, CategoryDistributionData } from "@subcare/types";
+import { PaymentRecordRepository } from "../repositories/PaymentRecordRepository";
+import { CategoryRepository } from "../repositories/CategoryRepository";
+import { DashboardStatsResponse, ExpenseTrendData, CategoryDistributionData } from "@subcare/types";
 import { Subscription, User } from "@subcare/database";
 
 export class DashboardService {
   constructor(
     private subscriptionRepository: SubscriptionRepository,
     private userRepository: UserRepository,
-    private currencyService: CurrencyService
+    private currencyService: CurrencyService,
+    private paymentRecordRepository: PaymentRecordRepository = new PaymentRecordRepository(),
+    private categoryRepository: CategoryRepository = new CategoryRepository()
   ) {}
 
   private calculateMonthlyEquivalent(price: number, cycle: string): number {
@@ -43,69 +47,58 @@ export class DashboardService {
     if (!user) throw new Error('User not found');
 
     const userCurrency = user.currency || 'CNY';
-    const activeSubs = await this.subscriptionRepository.findActiveByUserId(userId);
-    
-    // 1. Calculate Total Expenses (Monthly Equivalent)
-    let totalMonthlyAmount = 0;
-    
-    // For trend calculation
     const now = new Date();
     const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    let newSubsAmountThisMonth = 0;
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
-    // Process subscriptions in parallel for currency conversion
-    const subsWithConvertedPrice = await Promise.all(activeSubs.map(async (sub) => {
-      const originalPrice = Number(sub.price);
-      // Convert to user's currency
-      const convertedPrice = await this.currencyService.convert(originalPrice, sub.currency, userCurrency);
-      const monthlyPrice = this.calculateMonthlyEquivalent(convertedPrice, sub.billingCycle);
-      
-      return {
-        ...sub,
-        monthlyPrice,
-        startDate: new Date(sub.startDate)
-      };
-    }));
+    // 1. Calculate Expenses using PaymentRecords
+    const currentMonthRecords = await this.paymentRecordRepository.findByUserIdAndDateRange(
+      userId, startOfCurrentMonth, now
+    );
+    const lastMonthRecords = await this.paymentRecordRepository.findByUserIdAndDateRange(
+      userId, startOfLastMonth, endOfLastMonth
+    );
 
-    subsWithConvertedPrice.forEach(sub => {
-      totalMonthlyAmount += sub.monthlyPrice;
-      if (sub.createdAt >= startOfCurrentMonth) {
-        newSubsAmountThisMonth += sub.monthlyPrice;
+    const sumRecords = async (records: any[]) => {
+      let total = 0;
+      for (const record of records) {
+        let amount = Number(record.amount);
+        if (record.currency !== userCurrency) {
+            // Use historical rate if available (simulated here by just checking if we stored it, 
+            // but for now let's just convert using current service if not same currency)
+            // Real impl would check record.exchangeRate
+             amount = await this.currencyService.convert(amount, record.currency, userCurrency);
+        }
+        total += amount;
       }
-    });
+      return total;
+    };
 
-    // Generate real history data (last 12 months)
-    const historyData: number[] = [];
-    for (let i = 0; i < 12; i++) {
-        const date = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
-        const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-        
-        const monthlyTotal = subsWithConvertedPrice.reduce((sum, sub) => {
-            if (sub.startDate > endOfMonth) return sum;
-            return sum + sub.monthlyPrice;
-        }, 0);
-        historyData.push(Number(monthlyTotal.toFixed(2)));
-    }
+    const currentMonthTotal = await sumRecords(currentMonthRecords);
+    const lastMonthTotal = await sumRecords(lastMonthRecords);
 
-    const previousMonthAmount = totalMonthlyAmount - newSubsAmountThisMonth;
-    const trendDiff = totalMonthlyAmount - previousMonthAmount;
-    const trendPercentage = previousMonthAmount > 0 
-      ? (trendDiff / previousMonthAmount) * 100 
-      : (totalMonthlyAmount > 0 ? 100 : 0);
+    // Trend calculation
+    const trendDiff = currentMonthTotal - lastMonthTotal;
+    const trendPercentage = lastMonthTotal > 0 
+      ? (trendDiff / lastMonthTotal) * 100 
+      : (currentMonthTotal > 0 ? 100 : 0);
 
-    // 2. Active Subscriptions
+    // 2. Active Subscriptions count (still from Subscription table)
+    const activeSubs = await this.subscriptionRepository.findActiveByUserId(userId);
     const activeCount = activeSubs.length;
     const newCount = activeSubs.filter(s => s.createdAt >= startOfCurrentMonth).length;
     
-    // Category Distribution (Count based for summary)
+    // 3. Category Distribution (Simple count for summary, detailed in separate method)
     const categoryMap = new Map<string, number>();
     activeSubs.forEach(sub => {
-      const cat = sub.category || 'Other';
+      // Use category relation name if available, else fallback to old string or 'Other'
+      // Since we just refactored, `sub` might not have populated category relation unless repository updated.
+      // We'll rely on old string `categoryName` (mapped to `category`) for now as fallback.
+      const cat = (sub as any).categoryName || (sub as any).category || 'Other'; 
       categoryMap.set(cat, (categoryMap.get(cat) || 0) + 1);
     });
-    
     const categoryCount = categoryMap.size;
-
     const categories = Array.from(categoryMap.entries()).map(([name, count], index) => ({
       id: name,
       name: name,
@@ -113,12 +106,22 @@ export class DashboardService {
       color: this.getCategoryColor(index)
     })).sort((a, b) => b.percentage - a.percentage);
 
-    // 3. Remaining Budget
-    const budgetLimit = Number(user.monthlyBudget) || 0; // Default 0 if not set
-    const remaining = Math.max(0, budgetLimit - totalMonthlyAmount);
-    const usedPercentage = budgetLimit > 0 ? Math.round((totalMonthlyAmount / budgetLimit) * 100) : 100;
+    // 4. Budget
+    const budgetLimit = Number(user.monthlyBudget) || 0;
+    const remaining = Math.max(0, budgetLimit - currentMonthTotal);
+    const usedPercentage = budgetLimit > 0 ? Math.round((currentMonthTotal / budgetLimit) * 100) : 0;
     
-    // 4. Upcoming Renewals
+    // 5. History Data (Last 12 months)
+    const historyData: number[] = [];
+    for (let i = 11; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const e = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+        const records = await this.paymentRecordRepository.findByUserIdAndDateRange(userId, d, e);
+        const total = await sumRecords(records);
+        historyData.push(Number(total.toFixed(2)));
+    }
+
+    // 6. Renewals
     const upcomingDays = 7;
     const renewals = await this.subscriptionRepository.findUpcomingRenewals(userId, upcomingDays);
     const nextRenewalSub = renewals[0] || null;
@@ -140,7 +143,7 @@ export class DashboardService {
                 currency: nextRenewalSub.currency,
                 formatted: this.formatMoney(Number(nextRenewalSub.price), nextRenewalSub.currency)
             },
-            cycle: '/' + (nextRenewalSub.billingCycle === 'monthly' ? 'Month' : 'Year'), // Simplify
+            cycle: '/' + (nextRenewalSub.billingCycle === 'monthly' ? 'Month' : 'Year'), 
             daysRemaining: diffDays
         };
     }
@@ -148,9 +151,9 @@ export class DashboardService {
     return {
       expenses: {
         total: {
-          amount: totalMonthlyAmount,
+          amount: currentMonthTotal,
           currency: userCurrency,
-          formatted: this.formatMoney(totalMonthlyAmount, userCurrency)
+          formatted: this.formatMoney(currentMonthTotal, userCurrency)
         },
         trend: {
           percentage: Number(trendPercentage.toFixed(1)),
@@ -199,23 +202,10 @@ export class DashboardService {
     const monthsBack = period === '6m' ? 6 : (period === '1y' ? 12 : 24);
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - monthsBack + 1);
-    startDate.setDate(1); // Start from first day of month
+    startDate.setDate(1);
 
-    const subscriptions = await this.subscriptionRepository.findActiveByUserId(userId);
-    
     const labels: string[] = [];
     const values: number[] = [];
-    
-    // Pre-calculate monthly equivalent for all subscriptions in user currency
-    const subsWithConvertedPrice = await Promise.all(subscriptions.map(async (sub) => {
-      const price = Number(sub.price);
-      const convertedPrice = await this.currencyService.convert(price, sub.currency, userCurrency);
-      return {
-        ...sub,
-        monthlyPrice: this.calculateMonthlyEquivalent(convertedPrice, sub.billingCycle),
-        startDate: new Date(sub.startDate)
-      };
-    }));
 
     for (let i = 0; i < monthsBack; i++) {
       const currentMonth = new Date(startDate);
@@ -224,15 +214,18 @@ export class DashboardService {
       
       const monthLabel = `${currentMonth.getMonth() + 1}月`;
       
-      // Calculate total for this month
-      // Assuming 'startDate' determines when the subscription started.
-      // If a subscription was created AFTER this month, it shouldn't be counted.
-      const monthlyTotal = subsWithConvertedPrice.reduce((sum, sub) => {
-        if (sub.startDate > endOfMonth) {
-          return sum;
-        }
-        return sum + sub.monthlyPrice;
-      }, 0);
+      const records = await this.paymentRecordRepository.findByUserIdAndDateRange(
+          userId, currentMonth, endOfMonth
+      );
+
+      let monthlyTotal = 0;
+      for (const record of records) {
+          let amount = Number(record.amount);
+          if (record.currency !== userCurrency) {
+              amount = await this.currencyService.convert(amount, record.currency, userCurrency);
+          }
+          monthlyTotal += amount;
+      }
 
       labels.push(monthLabel);
       values.push(Number(monthlyTotal.toFixed(2)));
@@ -250,21 +243,28 @@ export class DashboardService {
     if (!user) throw new Error('User not found');
     const userCurrency = user.currency || 'CNY';
 
+    // Get active subscriptions to group current expected costs, 
+    // OR should we show actual spent in last month?
+    // User requirement: "Category Distribution"
+    // Usually means "Where is my money going currently?" -> Active Subscriptions
+    // But since we have PaymentRecords, we could show "Last Month's Distribution" which is more accurate.
+    // However, for "Planning", active subscriptions are better. 
+    // Let's stick to Active Subscriptions for "Distribution" visualization but using the new logic if possible.
+    // Actually, sticking to the existing logic for Category Distribution (based on active subs) is safer for "Current Portfolio" view,
+    // while Expense Trend handles the "History".
+    
     const activeSubs = await this.subscriptionRepository.findActiveByUserId(userId);
     let totalAmount = 0;
-    
     const categoryMap = new Map<string, { value: number; count: number }>();
     
+    // We still calculate "Monthly Equivalent" for the distribution pie chart
+    // based on CURRENT active subscriptions.
     await Promise.all(activeSubs.map(async (sub) => {
-      const cat = sub.category || 'Other';
+      const cat = (sub as any).categoryName || (sub as any).category || 'Other';
       const price = Number(sub.price);
       const convertedPrice = await this.currencyService.convert(price, sub.currency, userCurrency);
       const amount = this.calculateMonthlyEquivalent(convertedPrice, sub.billingCycle);
       
-      // Atomic update not needed here as we are inside Promise.all but Map is not thread-safe in other langs, 
-      // JS is single threaded event loop but map set race condition could happen if we yield?
-      // Actually with await inside map, we should be careful. 
-      // Better to calculate all values first then aggregate synchronously.
       return { cat, amount };
     })).then(results => {
       results.forEach(({ cat, amount }) => {

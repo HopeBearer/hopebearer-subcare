@@ -50,7 +50,7 @@ export function Header() {
   };
 
   return (
-    <header className="h-20 px-8 flex items-center justify-between fixed top-0 right-0 left-72 z-40 bg-surface border-b border-base shadow-sm">
+    <header className="h-20 px-8 flex items-center justify-between z-40 bg-surface border-b border-base shadow-sm flex-none">
       <div className="flex flex-col justify-center">
         <div className="flex items-center gap-3">
           {isSettingsPage && (

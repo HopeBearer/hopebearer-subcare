@@ -23,13 +23,15 @@ export class SubscriptionRepository {
    * @param filters 过滤和分页参数
    * @returns 订阅列表和总数
    */
-  async findByUserId(userId: string, filters?: SubscriptionFilterDTO): Promise<{ items: Subscription[]; total: number }> {
+  async findByUserId(userId: string, filters?: SubscriptionFilterDTO): Promise<{ items: any[]; total: number }> {
     const { search, status, category, billingCycle, page, limit, expiringInDays } = filters || {};
     
+    // Note: 'category' column in DB is 'categoryName' in Prisma Client
     const where: Prisma.SubscriptionWhereInput = {
       userId,
-      ...(status && status !== 'All' ? { status: status } : {}), // TODO: Normalize status case if needed
-      ...(category && category !== 'All' ? { category } : {}),
+      ...(status && status !== 'All' ? { status: status } : {}),
+      // Fix: map filter 'category' string to 'categoryName' field
+      ...(category && category !== 'All' ? { categoryName: category } : {}),
       ...(billingCycle && billingCycle !== 'All' ? { billingCycle } : {}),
       ...(search ? {
         name: { contains: search }
@@ -49,7 +51,6 @@ export class SubscriptionRepository {
         lte: futureDate
       };
       
-      // If filtering by expiration, limit to active subscriptions unless specified otherwise
       if (!status || status === 'All') {
           where.status = 'Active';
       }
@@ -58,17 +59,30 @@ export class SubscriptionRepository {
     const take = limit || undefined;
     const skip = page && limit ? (page - 1) * limit : undefined;
 
-    const [items, total] = await Promise.all([
-      prisma.subscription.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take
-      }),
-      prisma.subscription.count({ where })
-    ]);
+    try {
+      const [items, total] = await Promise.all([
+        prisma.subscription.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take
+        }),
+        prisma.subscription.count({ where })
+      ]);
 
-    return { items, total };
+      // MAP BACK FOR FRONTEND COMPATIBILITY
+      // Prisma now returns 'categoryName' instead of 'category' string field.
+      // We map it back to 'category' property so frontend DTO remains valid.
+      const mappedItems = items.map(item => ({
+        ...item,
+        category: item.categoryName
+      }));
+
+      return { items: mappedItems, total };
+    } catch (error) {
+      console.error('Error in SubscriptionRepository.findByUserId:', error);
+      throw error;
+    }
   }
 
   /**
@@ -76,10 +90,15 @@ export class SubscriptionRepository {
    * @param id 订阅 ID
    * @returns 订阅实体或 null
    */
-  async findById(id: string): Promise<Subscription | null> {
-    return prisma.subscription.findUnique({
+  async findById(id: string): Promise<any | null> {
+    const item = await prisma.subscription.findUnique({
       where: { id },
     });
+    if (!item) return null;
+    return {
+      ...item,
+      category: item.categoryName
+    };
   }
   
   /**
@@ -88,11 +107,15 @@ export class SubscriptionRepository {
    * @param data 更新数据
    * @returns 更新后的订阅实体
    */
-  async update(id: string, data: Prisma.SubscriptionUpdateInput): Promise<Subscription> {
-    return prisma.subscription.update({
+  async update(id: string, data: Prisma.SubscriptionUpdateInput): Promise<any> {
+    const item = await prisma.subscription.update({
         where: { id },
         data
-    })
+    });
+    return {
+      ...item,
+      category: item.categoryName
+    };
   }
 
   /**
@@ -119,14 +142,18 @@ export class SubscriptionRepository {
    * @param userId 用户 ID
    * @returns 活跃订阅列表
    */
-  async findActiveByUserId(userId: string): Promise<Subscription[]> {
-    return prisma.subscription.findMany({
+  async findActiveByUserId(userId: string): Promise<any[]> {
+    const items = await prisma.subscription.findMany({
       where: { 
         userId,
         status: 'ACTIVE'
       },
       orderBy: { price: 'desc' },
     });
+    return items.map(item => ({
+      ...item,
+      category: item.categoryName
+    }));
   }
 
   /**
@@ -135,12 +162,12 @@ export class SubscriptionRepository {
    * @param days 天数阈值
    * @returns 订阅列表
    */
-  async findUpcomingRenewals(userId: string, days: number): Promise<Subscription[]> {
+  async findUpcomingRenewals(userId: string, days: number): Promise<any[]> {
     const today = new Date();
     const futureDate = new Date();
     futureDate.setDate(today.getDate() + days);
 
-    return prisma.subscription.findMany({
+    const items = await prisma.subscription.findMany({
       where: {
         userId,
         status: 'ACTIVE',
@@ -151,6 +178,11 @@ export class SubscriptionRepository {
       },
       orderBy: { nextPayment: 'asc' }
     });
+    
+    return items.map(item => ({
+      ...item,
+      category: item.categoryName
+    }));
   }
 
   /**
@@ -164,5 +196,24 @@ export class SubscriptionRepository {
       },
     });
     return result._sum.price?.toNumber() || 0;
+  }
+
+  /**
+   * Find due subscriptions (active and nextPayment <= now)
+   */
+  async findDueSubscriptions(): Promise<any[]> {
+    const now = new Date();
+    const items = await prisma.subscription.findMany({
+      where: {
+        status: 'ACTIVE',
+        nextPayment: {
+          lte: now
+        }
+      }
+    });
+    return items.map(item => ({
+        ...item,
+        category: item.categoryName
+    }));
   }
 }

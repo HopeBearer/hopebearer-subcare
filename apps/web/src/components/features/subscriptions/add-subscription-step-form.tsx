@@ -5,7 +5,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, ChevronLeft, Check, Upload, Calendar as CalendarIcon, Bell, CreditCard, Tag, Link as LinkIcon, StickyNote, Save } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Check, Upload, Calendar as CalendarIcon, Bell, CreditCard, Tag, Link as LinkIcon, StickyNote, Save, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -291,6 +291,19 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
                      error={errors.startDate?.message}
                    />
                 </div>
+                
+                {/* Info message about past dates */}
+                {formData.startDate && new Date(formData.startDate) < new Date() && (
+                  <div className="flex gap-2 p-3 text-sm text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400 rounded-lg animate-in fade-in duration-300">
+                    <Info className="w-5 h-5 shrink-0" />
+                    <p>
+                      {t('past_date_info', { 
+                        ns: 'subscription', 
+                        defaultValue: 'You selected a past date. The system will assume previous cycles are already paid and will only generate a bill for the upcoming payment cycle.' 
+                      })}
+                    </p>
+                  </div>
+                )}
 
                 {/* Live Preview */}
                 <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
