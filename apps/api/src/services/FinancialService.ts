@@ -24,6 +24,13 @@ export class FinancialService {
   }
 
   /**
+   * Preview currency conversion
+   */
+  async previewConversion(amount: number, fromCurrency: string, toCurrency: string): Promise<number> {
+    return this.currencyService.convert(amount, fromCurrency, toCurrency);
+  }
+
+  /**
    * Get financial analysis overview
    */
   async getAnalysisOverview(userId: string, excludedIds: string[] = []) {

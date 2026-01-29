@@ -26,7 +26,13 @@
     "description": "Manage your display and regional preferences",
     "financial": "Financial Settings",
     "currency": "Default Currency",
-    "monthly_budget": "Monthly Budget Target"
+    "monthly_budget": "Monthly Budget Target",
+    "currency_change_title": "Currency Changed",
+    "currency_change_desc": "You changed the currency but kept the budget amount the same. Do you want to convert the budget amount or keep it as is?",
+    "keep_value": "Keep Value",
+    "convert_value": "Convert (Recommended)",
+    "use_original": "Keep {{amount}}",
+    "use_converted": "Use {{amount}}"
   },
   "account": {
     "title": "Account Security",

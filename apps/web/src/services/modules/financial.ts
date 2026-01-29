@@ -24,8 +24,8 @@ export const financialService = {
   },
 
   getPendingBills: async (): Promise<PaymentRecordDTO[]> => {
-    const response = await api.get<any, ApiResponse<PaymentRecordDTO[]>>('/finance/pending');
-    return response.data;
+    const response = await api.get<any, ApiResponse<{ bills: PaymentRecordDTO[] }>>('/finance/pending');
+    return response.data.bills;
   },
 
   confirmPayment: async (id: string, data?: { amount?: number, date?: Date }): Promise<PaymentRecordDTO> => {
@@ -35,6 +35,13 @@ export const financialService = {
 
   cancelRenewal: async (id: string): Promise<PaymentRecordDTO> => {
     const response = await api.post<any, ApiResponse<PaymentRecordDTO>>(`/finance/records/${id}/cancel`);
+    return response.data;
+  },
+
+  previewConversion: async (amount: number, from: string, to: string): Promise<{ amount: number, currency: string }> => {
+    const response = await api.get<any, ApiResponse<{ amount: number, currency: string }>>('/currency/preview-convert', {
+      params: { amount, from, to }
+    });
     return response.data;
   }
 };

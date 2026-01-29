@@ -26,7 +26,13 @@
     "description": "管理您的显示和区域偏好",
     "financial": "财务设置",
     "currency": "默认货币",
-    "monthly_budget": "月度预算目标"
+    "monthly_budget": "月度预算目标",
+    "currency_change_title": "货币变更确认",
+    "currency_change_desc": "您修改了货币但未调整预算数值。您希望按汇率转换预算金额，还是保持数值不变？",
+    "keep_value": "保持数值",
+    "convert_value": "自动转换 (推荐)",
+    "use_original": "保持 {{amount}}",
+    "use_converted": "使用 {{amount}}"
   },
   "account": {
     "title": "账户安全",

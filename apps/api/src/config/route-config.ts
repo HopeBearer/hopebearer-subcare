@@ -40,6 +40,9 @@ export const routeConfig: Record<string, string> = {
   'GET /finance/pending': 'v1',
   'PATCH /finance/records/:id/confirm': 'v1',
   'POST /finance/records/:id/cancel': 'v1',
+  
+  // Currency
+  'GET /currency/preview-convert': 'v1',
 
   // Users
   'GET /users': 'v2', 

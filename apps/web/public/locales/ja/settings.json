@@ -26,7 +26,13 @@
     "description": "表示および地域の好みを管理します",
     "financial": "財務設定",
     "currency": "デフォルト通貨",
-    "monthly_budget": "月次予算目標"
+    "monthly_budget": "月次予算目標",
+    "currency_change_title": "通貨の変更",
+    "currency_change_desc": "通貨を変更しましたが、予算額は同じままです。予算額を換算しますか、それともそのままにしますか？",
+    "keep_value": "値を保持",
+    "convert_value": "換算する (推奨)",
+    "use_original": "{{amount}} を保持",
+    "use_converted": "{{amount}} を使用"
   },
   "account": {
     "title": "アカウントセキュリティ",

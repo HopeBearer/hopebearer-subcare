@@ -8,6 +8,35 @@ export class FinancialController {
   constructor(private financialService: FinancialService) {}
 
   /**
+   * 预览货币转换
+   * GET /currency/preview-convert
+   */
+  previewConversion = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const amount = Number(req.query.amount);
+      const fromCurrency = req.query.from as string;
+      const toCurrency = req.query.to as string;
+
+      if (isNaN(amount) || !fromCurrency || !toCurrency) {
+        throw new AppError('BAD_REQUEST', StatusCodes.BAD_REQUEST, { message: 'Invalid parameters' });
+      }
+
+      const convertedAmount = await this.financialService.previewConversion(amount, fromCurrency, toCurrency);
+
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data: {
+          amount: convertedAmount,
+          currency: toCurrency
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
    * 获取财务分析概览
    * GET /finance/overview
    */
@@ -77,13 +106,12 @@ export class FinancialController {
         throw new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'Not authenticated' });
       }
 
-      const data = await this.financialService.getPendingBills(req.user.userId);
+      const bills = await this.financialService.getPendingBills(req.user.userId);
 
       res.status(StatusCodes.OK).json({
         status: 'success',
         code: BusinessCode.SUCCESS,
-        data,
-        message: 'Pending bills retrieved successfully'
+        data: { bills }
       });
     } catch (error) {
       next(error);
@@ -91,7 +119,7 @@ export class FinancialController {
   };
 
   /**
-   * 确认账单支付
+   * 确认支付
    * PATCH /finance/records/:id/confirm
    */
   confirmPayment = async (req: Request, res: Response, next: NextFunction) => {
@@ -101,14 +129,12 @@ export class FinancialController {
       }
 
       const { id } = req.params;
-      const { amount, date } = req.body;
-
-      const data = await this.financialService.confirmPayment(req.user.userId, id, amount, date);
+      const record = await this.financialService.confirmPayment(id, req.user.userId);
 
       res.status(StatusCodes.OK).json({
         status: 'success',
         code: BusinessCode.SUCCESS,
-        data,
+        data: { record },
         message: 'Payment confirmed successfully'
       });
     } catch (error) {
@@ -117,7 +143,7 @@ export class FinancialController {
   };
 
   /**
-   * 取消续费 (取消账单并取消订阅)
+   * 取消自动续费/跳过本次
    * POST /finance/records/:id/cancel
    */
   cancelRenewal = async (req: Request, res: Response, next: NextFunction) => {
@@ -127,14 +153,16 @@ export class FinancialController {
       }
 
       const { id } = req.params;
+      // const { type } = req.body; // 'skip_once' | 'cancel_subscription'
 
-      const data = await this.financialService.cancelRenewal(req.user.userId, id);
+      // Currently implement skip logic for the record
+      const record = await this.financialService.skipPayment(id, req.user.userId);
 
       res.status(StatusCodes.OK).json({
         status: 'success',
         code: BusinessCode.SUCCESS,
-        data,
-        message: 'Renewal cancelled successfully'
+        data: { record },
+        message: 'Payment skipped successfully'
       });
     } catch (error) {
       next(error);
