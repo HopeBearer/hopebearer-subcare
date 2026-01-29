@@ -2,9 +2,7 @@
 
 import { useTranslation } from '@/lib/i18n/hooks';
 import { 
-  ShieldCheck,
-  ChevronRight,
-  Settings
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSettingsStore } from '@/store/settings.store';
@@ -32,7 +30,17 @@ export function SettingsPageSidebar() {
           return (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={(e) => {
+                e.preventDefault();
+                // Scroll to the element
+                const element = document.getElementById(item.id);
+                if (element) {
+                   // Offset for sticky header if any, usually scroll-mt handles it
+                   element.scrollIntoView({ behavior: 'smooth' });
+                   // We update state immediately for feedback, though observer will confirm it
+                   setActiveTab(item.id);
+                }
+              }}
               className={cn(
                 "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1 text-left",
                 isActive 

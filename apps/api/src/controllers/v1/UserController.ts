@@ -28,6 +28,56 @@ export class UserController {
   };
 
   /**
+   * 获取当前用户详情
+   * GET /users/profile
+   */
+  getProfile = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = (req as any).user?.userId;
+      const user = await this.userService.getUserById(userId);
+      
+      if (!user) {
+         // Should not happen if authenticated properly
+         throw new Error("User not found");
+      }
+
+      res.status(StatusCodes.OK).json({ 
+        status: 'success', 
+        code: BusinessCode.SUCCESS,
+        data: { user } 
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * 更新当前用户资料/偏好
+   * PATCH /users/profile
+   */
+  updateProfile = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = (req as any).user?.userId;
+      const { currency, monthlyBudget, name, bio } = req.body;
+      
+      // Cast to any temporarily until Prisma Client is regenerated with the new field
+      const user = await this.userService.updateUser(userId, { currency, monthlyBudget, name, bio } as any);
+      
+      // Remove sensitive data
+      const { password: _p, refreshToken: _r, ...rest } = user;
+
+      res.status(StatusCodes.OK).json({ 
+        status: 'success', 
+        code: BusinessCode.SUCCESS,
+        data: { user: rest },
+        message: 'Profile updated'
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
    * 禁用用户
    * PATCH /users/:id/disable
    */

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Check, Clock, AlertCircle, HelpCircle } from 'lucide-react';
+import { Check, Clock, AlertCircle, HelpCircle, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ export function PendingBills() {
   const [confirmAmount, setConfirmAmount] = useState<string>('');
   const [confirmDate, setConfirmDate] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   const { data: bills, isLoading } = useQuery({
     queryKey: ['pending-bills'],
@@ -94,24 +95,38 @@ export function PendingBills() {
   return (
     <>
       <Card className="border-orange-200 bg-orange-50/30 dark:border-orange-900/50 dark:bg-orange-900/10">
-        <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-orange-700 dark:text-orange-400">
-          <AlertCircle className="h-5 w-5" />
-          {t('pending_bills.title')}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <HelpCircle className="h-4 w-4 text-orange-600/60 hover:text-orange-600 cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <p className="font-normal text-xs">
-                  {t('pending_bills.explanation', { defaultValue: 'Bills due today or overdue. Confirm payment to update subscription status.' })}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2 text-lg font-semibold text-orange-700 dark:text-orange-400">
+            <AlertCircle className="h-5 w-5" />
+            {t('pending_bills.title')}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-orange-600/60 hover:text-orange-600 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p className="font-normal text-xs">
+                    {t('pending_bills.explanation', { defaultValue: 'Bills due today or overdue. Confirm payment to update subscription status.' })}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <Button
+            variant="ghost"
+            className="h-8 w-8 p-0 text-orange-700 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/30"
+            onClick={() => setIsExpanded(!isExpanded)}
+          >
+            <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+          </Button>
         </div>
-        <div className="space-y-4">
-          {bills.map((bill) => {
+        <div 
+          className={`grid transition-all duration-300 ease-in-out ${
+            isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+          }`}
+        >
+          <div className="overflow-hidden space-y-4">
+            {bills.map((bill) => {
             const overdue = isOverdue(bill.billingDate);
             return (
               <div key={bill.id} className="flex items-center justify-between rounded-lg border bg-background p-3 shadow-sm">
@@ -122,7 +137,7 @@ export function PendingBills() {
                   <div>
                     <p className="font-medium">{bill.subscription?.name || 'Unknown Subscription'}</p>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>{t('pending_bills.due_date')}: {format(new Date(bill.billingDate), 'PP')}</span>
+                      <span>{t('pending_bills.due_date')}: {format(new Date(bill.billingDate), 'yyyy-MM-dd')}</span>
                       {overdue && (
                         <span className="text-red-600 font-medium text-xs border border-red-200 bg-red-50 px-1 rounded">
                           {t('pending_bills.overdue') || 'Overdue'}
@@ -159,7 +174,8 @@ export function PendingBills() {
                 </div>
               </div>
             );
-          })}
+            })}
+          </div>
         </div>
       </Card>
 

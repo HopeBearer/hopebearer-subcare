@@ -3,12 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "turbo build",
     "dev": "turbo dev",
-    "lint": "turbo lint",
-    "type-check": "turbo type-check",
-    "clean": "turbo clean",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "build": "turbo build",      
     "db:push": "pnpm exec prisma db push --schema=packages/database/prisma/schema.prisma",
     "db:studio": "pnpm exec prisma studio --schema=packages/database/prisma/schema.prisma",
     "db:generate": "pnpm exec prisma generate --schema=packages/database/prisma/schema.prisma"

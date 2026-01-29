@@ -4,6 +4,8 @@
   "nav": {
     "profile": "个人资料",
     "profile_desc": "管理您的公开个人资料",
+    "preferences": "偏好设置",
+    "preferences_desc": "显示和区域设置",
     "account": "账户安全",
     "account_desc": "安全和账户设置",
     "notifications": "通知",
@@ -19,6 +21,13 @@
     "bio": "个人简介",
     "bio_placeholder": "介绍一下你自己"
   },
+  "preferences": {
+    "title": "偏好设置",
+    "description": "管理您的显示和区域偏好",
+    "financial": "财务设置",
+    "currency": "默认货币",
+    "monthly_budget": "月度预算目标"
+  },
   "account": {
     "title": "账户安全",
     "description": "管理您的账户安全和偏好",
@@ -26,6 +35,11 @@
     "current_password": "当前密码",
     "new_password": "新密码",
     "confirm_password": "确认新密码",
+    "verification_code": "验证码",
+    "send_code": "发送验证码",
+    "code_sent": "验证码已发送至您的邮箱",
+    "send_failed": "验证码发送失败，请稍后重试",
+    "code_hint": "为了您的账户安全，修改密码需要进行邮箱验证",
     "update_password": "更新密码",
     "danger_zone": "危险区域",
     "delete_account": "删除账户",
@@ -45,5 +59,13 @@
     "push_reminders_desc": "即将付款的即时通知",
     "product_updates": "产品更新",
     "product_updates_desc": "关于新功能和改进的消息"
+  },
+  "messages": {
+    "fill_all_fields": "请填写所有必填项",
+    "passwords_mismatch": "两次输入的密码不一致",
+    "password_too_short": "密码长度不能少于8位",
+    "password_updated": "密码修改成功",
+    "update_failed": "修改失败，请重试",
+    "profile_updated": "个人资料已更新"
   }
 }

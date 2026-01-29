@@ -18,7 +18,7 @@ export class UserService {
   async getAllUsers(): Promise<Omit<User, 'password' | 'refreshToken'>[]> {
     const users = await this.userRepository.findAll();
     return users.map(user => {
-        const { password, refreshToken, ...rest } = user;
+        const { password: _p, refreshToken: _r, ...rest } = user;
         return rest;
     });
   }
@@ -31,6 +31,30 @@ export class UserService {
   async disableUser(id: string): Promise<User> {
     return this.userRepository.update(id, { isActive: false });
   }
+
+  /**
+   * 更新用户信息
+   * @param id 用户 ID
+   * @param data 更新数据
+   */
+  async updateUser(id: string, data: Partial<User>): Promise<User> {
+    // Prevent updating sensitive fields via this method if exposed directly
+    // Ideally, separate methods for password reset etc.
+    const { password: _p, refreshToken: _r, role: _role, ...safeUpdates } = data;
+    return this.userRepository.update(id, safeUpdates);
+  }
+
+  /**
+   * 获取用户详情
+   * @param id 用户 ID
+   */
+  async getUserById(id: string): Promise<Omit<User, 'password' | 'refreshToken'> | null> {
+    const user = await this.userRepository.findById(id);
+    if (!user) return null;
+    const { password: _p, refreshToken: _r, ...rest } = user;
+    return rest;
+  }
+
 
   /**
    * 删除用户 (逻辑自洽版)

@@ -19,6 +19,8 @@
     "complete": "Complete"
   },
   "preview": "Preview",
+  "updating": "Updating...",
+  "verifying": "Verifying...",
   "yes": "Yes",
   "no": "No",
   "edit": "Edit",

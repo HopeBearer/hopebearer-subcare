@@ -3,6 +3,18 @@ import { RouteVersions } from '../route-registry';
 import { Role } from '@subcare/database';
 
 export const userRegistry: Record<string, RouteVersions> = {
+  'GET /users/profile': {
+    v1: { 
+      handler: controllersV1.User.getProfile,
+      middlewares: [authMiddleware.authenticate]
+    }
+  },
+  'PATCH /users/profile': {
+    v1: { 
+      handler: controllersV1.User.updateProfile,
+      middlewares: [authMiddleware.authenticate]
+    }
+  },
   'GET /users': {
     v1: { 
       handler: controllersV1.User.list,

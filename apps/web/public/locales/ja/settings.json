@@ -4,6 +4,8 @@
   "nav": {
     "profile": "プロフィール",
     "profile_desc": "公開プロフィールを管理",
+    "preferences": "環境設定",
+    "preferences_desc": "表示および地域の設定",
     "account": "アカウント",
     "account_desc": "セキュリティとアカウント設定",
     "notifications": "通知",
@@ -18,6 +20,13 @@
     "email": "メールアドレス",
     "bio": "自己紹介",
     "bio_placeholder": "あなたについて教えてください"
+  },
+  "preferences": {
+    "title": "環境設定",
+    "description": "表示および地域の好みを管理します",
+    "financial": "財務設定",
+    "currency": "デフォルト通貨",
+    "monthly_budget": "月次予算目標"
   },
   "account": {
     "title": "アカウントセキュリティ",

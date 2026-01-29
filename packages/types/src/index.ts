@@ -18,6 +18,9 @@ export interface UserDTO {
   role: UserRole;
   createdAt: Date | string;
   updatedAt: Date | string;
+  currency?: string;
+  monthlyBudget?: number | string; // Decimal often comes as string or number
+  bio?: string | null;
 }
 
 export interface LoginParams {
@@ -37,6 +40,21 @@ export interface ForgotPasswordParams {
   email: string;
 }
 
+export interface SendVerificationCodeParams {
+  email: string;
+}
+
+export interface VerifyVerificationCodeParams {
+  email: string;
+  code: string;
+}
+
+export interface ChangePasswordParams {
+  currentPassword: string;
+  newPassword: string;
+  verificationCode: string;
+}
+
 export interface AuthResponse {
   user: UserDTO;
   tokens: {
@@ -48,6 +66,10 @@ export interface AuthResponse {
 export interface CaptchaResponse {
   captchaId: string;
   captchaImage: string; // SVG data or base64
+}
+
+export interface PublicKeyResponse {
+  publicKey: string;
 }
 
 export interface ApiResponse<T = any> {

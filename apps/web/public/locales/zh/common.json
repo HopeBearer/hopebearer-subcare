@@ -19,6 +19,8 @@
     "complete": "完成"
   },
   "preview": "预览",
+  "updating": "更新中...",
+  "verifying": "验证中...",
   "yes": "是",
   "no": "否",
   "edit": "编辑",

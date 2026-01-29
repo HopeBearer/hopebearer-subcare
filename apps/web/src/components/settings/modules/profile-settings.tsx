@@ -1,15 +1,38 @@
 'use client';
 
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n/hooks';
 import { useAuthStore } from '@/store/auth.store';
+import { userService } from '@/services/user.service';
 import { Camera } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function ProfileSettings() {
-  const { t } = useTranslation('settings'); // Assuming 'common' or specific namespace
-  const { user } = useAuthStore();
+  const { t } = useTranslation(['settings', 'common']);
+  const { user, updateUser } = useAuthStore();
+  const [loading, setLoading] = useState(false);
+  const [name, setName] = useState(user?.name || '');
+  const [bio, setBio] = useState(user?.bio || '');
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const res = await userService.updateProfile({ name, bio });
+      
+      if (res.status === 'success') {
+        updateUser(res.data.user);
+        toast.success(t('messages.profile_updated', 'Profile updated successfully'));
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(t('messages.update_failed', 'Failed to update profile'));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -48,7 +71,8 @@ export function ProfileSettings() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Input
               label={t('profile.name', 'Display Name')}
-              defaultValue={user?.name || ''}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               placeholder="Enter your name"
             />
             <Input
@@ -64,13 +88,15 @@ export function ProfileSettings() {
               <textarea
                 className="input-base h-24 py-3 resize-none"
                 placeholder={t('profile.bio_placeholder', 'Tell us about yourself')}
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
               />
             </div>
           </div>
 
           <div className="flex justify-end pt-4 border-t border-base">
-            <Button>
-              {t('button.save_changes', 'Save Changes', { ns: 'common' })}
+            <Button onClick={handleSave} disabled={loading}>
+              {loading ? t('button.saving', 'Saving...', { ns: 'common' }) : t('button.save_changes', 'Save Changes', { ns: 'common' })}
             </Button>
           </div>
         </div>

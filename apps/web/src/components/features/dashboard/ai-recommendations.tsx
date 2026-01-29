@@ -13,7 +13,16 @@ import { useState, useRef, MouseEvent } from 'react';
 export function AIRecommendations() {
   const { t } = useTranslation('dashboard');
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    // Simulate refresh delay - replace with actual query invalidation if needed
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 1000);
+  };
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
@@ -115,12 +124,16 @@ export function AIRecommendations() {
 
         </div>
         <button
+          onClick={handleRefresh}
           className={cn(
             'flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 ease group',
             'hover:bg-primary-pale dark:hover:bg-white/5 bg-transparent'
           )}
         >
-          <RefreshCw className="w-4 h-4 text-gray-500 dark:text-gray-400 transition-colors group-hover:text-primary" />
+          <RefreshCw className={cn(
+            "w-4 h-4 text-gray-500 dark:text-gray-400 transition-colors group-hover:text-primary",
+            isRefreshing && "animate-spin"
+          )} />
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors group-hover:text-primary">
             {t('ai.refresh')}
           </span>

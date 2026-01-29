@@ -4,6 +4,8 @@
   "nav": {
     "profile": "Profile",
     "profile_desc": "Manage your public profile",
+    "preferences": "Preferences",
+    "preferences_desc": "Display and regional settings",
     "account": "Account",
     "account_desc": "Security and account settings",
     "notifications": "Notifications",
@@ -19,6 +21,13 @@
     "bio": "Bio",
     "bio_placeholder": "Tell us about yourself"
   },
+  "preferences": {
+    "title": "Preferences",
+    "description": "Manage your display and regional preferences",
+    "financial": "Financial Settings",
+    "currency": "Default Currency",
+    "monthly_budget": "Monthly Budget Target"
+  },
   "account": {
     "title": "Account Security",
     "description": "Manage your account security and preferences",
@@ -26,6 +35,11 @@
     "current_password": "Current Password",
     "new_password": "New Password",
     "confirm_password": "Confirm New Password",
+    "verification_code": "Verification Code",
+    "send_code": "Send Code",
+    "code_sent": "Verification code sent to your email",
+    "send_failed": "Failed to send verification code",
+    "code_hint": "For your security, please verify your email to change password",
     "update_password": "Update Password",
     "danger_zone": "Danger Zone",
     "delete_account": "Delete Account",
@@ -45,5 +59,13 @@
     "push_reminders_desc": "Instant notifications for upcoming payments",
     "product_updates": "Product Updates",
     "product_updates_desc": "News about new features and improvements"
+  },
+  "messages": {
+    "fill_all_fields": "Please fill in all fields",
+    "passwords_mismatch": "New passwords do not match",
+    "password_too_short": "Password must be at least 8 characters",
+    "password_updated": "Password updated successfully",
+    "update_failed": "Failed to update password",
+    "profile_updated": "Profile updated successfully"
   }
 }

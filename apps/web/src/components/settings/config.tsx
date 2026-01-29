@@ -1,8 +1,9 @@
-import { User, Shield, Bell } from 'lucide-react';
+import { User, Shield, Bell, Settings } from 'lucide-react';
 import { SettingsTab } from './types';
 import { ProfileSettings } from './modules/profile-settings';
 import { AccountSettings } from './modules/account-settings';
 import { NotificationSettings } from './modules/notification-settings';
+import { PreferencesSettings } from './modules/preferences-settings';
 
 export const settingsConfig: SettingsTab[] = [
   {
@@ -11,6 +12,13 @@ export const settingsConfig: SettingsTab[] = [
     icon: User,
     description: 'nav.profile_desc',
     component: ProfileSettings,
+  },
+  {
+    id: 'preferences',
+    label: 'nav.preferences',
+    icon: Settings,
+    description: 'nav.preferences_desc',
+    component: PreferencesSettings,
   },
   {
     id: 'account',

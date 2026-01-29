@@ -24,6 +24,7 @@ model User {
   role      Role     @default(USER)
   isActive  Boolean  @default(true)
   refreshToken String?  @db.Text
+  bio       String?  @db.Text
   
   // User settings
   currency      String  @default("CNY")

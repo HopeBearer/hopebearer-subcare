@@ -106,6 +106,11 @@ export function Sidebar() {
             <p className="text-xs text-gray-500 truncate">
               {user?.email || 'user@example.com'}
             </p>
+            {user?.bio && (
+              <p className="text-[10px] text-gray-400 truncate mt-0.5 font-normal opacity-80">
+                {user.bio}
+              </p>
+            )}
           </div>
           <Settings className={cn("w-4 h-4 transition-colors", isSettingsPage ? "text-primary" : "text-gray-400 group-hover:text-primary")} />
         </Link>

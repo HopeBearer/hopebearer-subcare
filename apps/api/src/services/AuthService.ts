@@ -7,6 +7,8 @@ import * as crypto from "crypto";
 import { User, prisma } from "@subcare/database";
 import { TokenService } from "./TokenService";
 import { CaptchaService } from "./CaptchaService";
+import { VerificationCodeService } from "./VerificationCodeService";
+import { EncryptionService } from "./EncryptionService";
 import { NotificationService } from "../modules/notification/notification.service";
 
 /**
@@ -26,6 +28,8 @@ export interface AuthResponse {
  */
 export class AuthService {
   private captchaService: CaptchaService;
+  private verificationCodeService: VerificationCodeService;
+  private encryptionService: EncryptionService;
 
   constructor(
     private userRepository: UserRepository,
@@ -33,6 +37,15 @@ export class AuthService {
     private notificationService: NotificationService
   ) {
     this.captchaService = new CaptchaService();
+    this.verificationCodeService = new VerificationCodeService();
+    this.encryptionService = new EncryptionService();
+  }
+
+  /**
+   * Get Public Key for encryption
+   */
+  getPublicKey() {
+    return { publicKey: this.encryptionService.getPublicKey() };
   }
 
   /**
@@ -89,6 +102,82 @@ export class AuthService {
    */
   generateCaptcha() {
     return this.captchaService.generate();
+  }
+
+  /**
+   * 发送邮箱验证码
+   * @param email 用户邮箱
+   */
+  async sendEmailVerificationCode(email: string): Promise<void> {
+    const user = await this.userRepository.findByEmail(email);
+    if (!user) {
+      throw new AppError("USER_NOT_FOUND", StatusCodes.NOT_FOUND, { message: "User not found" });
+    }
+
+    const code = this.verificationCodeService.generate(email);
+
+    await this.notificationService.notify({
+      userId: user.id,
+      title: 'Security Verification Code',
+      content: `Your verification code is: ${code}. It expires in 5 minutes.`,
+      type: 'security',
+      channels: ['email']
+    });
+  }
+
+  /**
+   * 修改密码 (Logged in user)
+   * @param userId Current user ID
+   * @param data Change password data
+   */
+  async changePassword(userId: string, data: any): Promise<void> {
+    const { currentPassword, newPassword, verificationCode } = data;
+
+    // Decrypt passwords
+    let decryptedCurrentPassword, decryptedNewPassword;
+    try {
+        decryptedCurrentPassword = this.encryptionService.decrypt(currentPassword);
+        decryptedNewPassword = this.encryptionService.decrypt(newPassword);
+    } catch (e) {
+        throw new AppError("INVALID_ENCRYPTION", StatusCodes.BAD_REQUEST, { message: "Encryption failed" });
+    }
+
+    // 1. Verify User exists
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new AppError("USER_NOT_FOUND", StatusCodes.NOT_FOUND, { message: "User not found" });
+    }
+
+    // 2. Verify Current Password
+    const isPasswordValid = await bcrypt.compare(decryptedCurrentPassword, user.password);
+    if (!isPasswordValid) {
+      throw new AppError("INVALID_PASSWORD", StatusCodes.BAD_REQUEST, { message: "Invalid current password" });
+    }
+
+    // 3. Verify Verification Code
+    const isCodeValid = this.verificationCodeService.verify(user.email, verificationCode);
+    if (!isCodeValid) {
+      throw new AppError("INVALID_VERIFICATION_CODE", StatusCodes.BAD_REQUEST, { message: "Invalid verification code" });
+    }
+
+    // 4. Update Password
+    if (decryptedNewPassword.length < 8) {
+      throw new AppError("INVALID_PASSWORD", StatusCodes.BAD_REQUEST, { message: "New password must be at least 8 characters" });
+    }
+    const hashedPassword = await bcrypt.hash(decryptedNewPassword, 10);
+    
+    await this.userRepository.update(userId, {
+      password: hashedPassword
+    });
+
+    // 5. Notify
+    await this.notificationService.notify({
+      userId: user.id,
+      title: 'Password Changed',
+      content: 'Your password has been changed successfully.',
+      type: 'security',
+      channels: ['email']
+    });
   }
 
   /**

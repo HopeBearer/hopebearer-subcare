@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import { LoginParams, RegisterParams, ForgotPasswordParams, AuthResponse, ApiResponse, CaptchaResponse } from '@subcare/types';
+import { LoginParams, RegisterParams, ForgotPasswordParams, AuthResponse, ApiResponse, CaptchaResponse, SendVerificationCodeParams, VerifyVerificationCodeParams, ChangePasswordParams, PublicKeyResponse } from '@subcare/types';
 
 // 接口版本由后端统一控制，前端只请求 /auth/*
 // 如果需要特定版本，可以在 Header 中指定，或由后端路由配置决定
@@ -27,5 +27,23 @@ export const authService = {
 
   getCaptcha: async (): Promise<ApiResponse<CaptchaResponse>> => {
     return api.get(`/auth/captcha`);
+  },
+
+  getPublicKey: async (): Promise<ApiResponse<PublicKeyResponse>> => {
+    return api.get(`/auth/public-key`);
+  },
+
+  sendVerificationCode: async (email: string): Promise<ApiResponse<void>> => {
+    const params: SendVerificationCodeParams = { email };
+    return api.post(`/auth/verification-code/send`, params);
+  },
+
+  verifyVerificationCode: async (email: string, code: string): Promise<ApiResponse<void>> => {
+    const params: VerifyVerificationCodeParams = { email, code };
+    return api.post(`/auth/verification-code/verify`, params);
+  },
+
+  changePassword: async (params: ChangePasswordParams): Promise<ApiResponse<void>> => {
+    return api.post(`/auth/change-password`, params);
   },
 };

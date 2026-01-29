@@ -40,6 +40,16 @@ const verifyTokenSchema = z.object({
   token: z.string().min(1),
 });
 
+const sendVerificationCodeSchema = z.object({
+  email: z.string().email(),
+});
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string(),
+  newPassword: z.string(), // Min length check moved to after decryption or assume encrypted string is long enough
+  verificationCode: z.string().length(6),
+});
+
 /**
  * 认证控制器
  * 处理所有与认证相关的 HTTP 请求
@@ -86,6 +96,44 @@ export class AuthController {
             captchaId: result.captchaId,
             captchaImage: result.data
         },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * 修改密码
+   * POST /auth/change-password
+   */
+  changePassword = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = (req as any).user?.userId;
+      const validatedData = changePasswordSchema.parse(req.body);
+      
+      await this.authService.changePassword(userId, validatedData);
+
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        message: 'Password changed successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * 获取公钥
+   * GET /auth/public-key
+   */
+  getPublicKey = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = this.authService.getPublicKey();
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data: result,
       });
     } catch (error) {
       next(error);
@@ -195,4 +243,23 @@ export class AuthController {
       next(error);
     }
   }
+
+  /**
+   * 发送验证码
+   * POST /auth/verification-code/send
+   */
+  sendVerificationCode = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { email } = sendVerificationCodeSchema.parse(req.body);
+      await this.authService.sendEmailVerificationCode(email);
+      
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        message: 'Verification code sent',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

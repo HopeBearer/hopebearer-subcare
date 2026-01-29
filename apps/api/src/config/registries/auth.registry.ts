@@ -1,4 +1,4 @@
-import { controllersV1 } from '../../core/container';
+import { controllersV1, authMiddleware } from '../../core/container';
 import { RouteVersions } from '../route-registry';
 
 export const authRegistry: Record<string, RouteVersions> = {
@@ -7,6 +7,9 @@ export const authRegistry: Record<string, RouteVersions> = {
   },
   'GET /auth/captcha': {
     v1: { handler: controllersV1.Auth.getCaptcha }
+  },
+  'GET /auth/public-key': {
+    v1: { handler: controllersV1.Auth.getPublicKey }
   },
   'POST /auth/login': {
     v1: { handler: controllersV1.Auth.login }
@@ -22,5 +25,17 @@ export const authRegistry: Record<string, RouteVersions> = {
   },
   'POST /auth/verify-reset-token': {
     v1: { handler: controllersV1.Auth.verifyResetToken }
+  },
+  'POST /auth/verification-code/send': {
+    v1: { 
+      handler: controllersV1.Auth.sendVerificationCode,
+      middlewares: [authMiddleware.authenticate]
+    }
+  },
+  'POST /auth/change-password': {
+    v1: { 
+      handler: controllersV1.Auth.changePassword,
+      middlewares: [authMiddleware.authenticate]
+    }
   },
 };
