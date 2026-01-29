@@ -6,7 +6,7 @@ import { useTranslation } from '@/lib/i18n/hooks';
 import { Calendar, Bell, ArrowRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { subscriptionService } from '@/services/subscription.service';
+import { subscriptionService } from '@/services';
 import { cn } from '@/lib/utils';
 import { differenceInCalendarDays } from 'date-fns';
 

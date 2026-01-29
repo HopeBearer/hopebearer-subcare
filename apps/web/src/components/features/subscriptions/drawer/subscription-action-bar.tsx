@@ -4,8 +4,8 @@ import { Subscription } from './types';
 import { Trash2, Play, Pause, Pencil, XCircle, HelpCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import { subscriptionService } from '@/services/subscription.service';
-import { useModalStore } from '@/store/modal.store';
+import { subscriptionService } from '@/services';
+import { useModalStore } from '@/store';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import {

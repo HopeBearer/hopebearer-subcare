@@ -3,11 +3,11 @@
 import { cn } from '@/lib/utils';
 import { Calendar, Edit, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/hooks';
-import { getCategoryColor } from '@/lib/category-colors';
+import { getCategoryColor } from '@/lib/constants/colors';
 import { SubscriptionDTO } from '@subcare/types';
 import { ActionDropdown, ActionItem } from '@/components/ui/action-dropdown';
-import { useModalStore } from '@/store/modal.store';
-import { subscriptionService } from '@/services/subscription.service';
+import { useModalStore } from '@/store';
+import { subscriptionService } from '@/services';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 

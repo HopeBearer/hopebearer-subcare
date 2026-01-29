@@ -6,14 +6,14 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuthStore } from '@/store/auth.store';
-import { authService } from '@/services/auth.service';
+import { useAuthStore } from '@/store';
+import { authService } from '@/services';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LoginParams } from '@subcare/types';
 import { RefreshCw } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/hooks';
-import { handleApiError } from '@/lib/error-helper';
+import { handleApiError } from '@/lib/utils/error-helper';
+import { PageMeta } from '@/components/common/page-meta';
 
 const loginSchema = z.object({
   email: z.string().email('auth:form.email.invalid'),
@@ -86,6 +86,7 @@ export default function LoginPage() {
 
   return (
     <>
+      <PageMeta titleKey="metadata.login.title" descriptionKey="metadata.login.description" />
       {/* Header */}
       <div className="text-center lg:text-left">
         <div className="flex justify-center lg:justify-start mb-6 items-center gap-3">

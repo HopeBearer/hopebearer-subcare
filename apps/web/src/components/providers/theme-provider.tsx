@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useThemeStore } from '@/store/theme.store';
+import { useThemeStore } from '@/store';
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { theme, _hasHydrated } = useThemeStore();

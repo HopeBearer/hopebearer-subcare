@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { financialService } from '@/services/financial.service';
+import { financialService } from '@/services';
 import { format, isBefore, subDays } from 'date-fns';
 import { PaymentRecordDTO } from '@subcare/types';
 

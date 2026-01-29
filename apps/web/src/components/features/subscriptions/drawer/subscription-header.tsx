@@ -27,6 +27,7 @@ export function SubscriptionHeader({ subscription }: SubscriptionHeaderProps) {
   const formattedPrice = new Intl.NumberFormat(i18n.language, {
     style: 'currency',
     currency: subscription.currency,
+    currencyDisplay: 'code',
   }).format(subscription.price);
 
   const nextPaymentDate = subscription.nextPayment 

@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { projectionService, ProjectionOptions } from '@/services/finance/projection';
+import { projectionService, ProjectionOptions } from '@/lib/logic/projection';
 import { SubscriptionDTO, HeatmapItem, MonthlyProjection, SpendingAnomaly, SankeyData } from '@subcare/types';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { financialService } from '@/services/financial.service';
+import { financialService } from '@/services';
 
 // --- Shared Overview Hook ---
 export function useFinancialOverview(excludedIds: string[] = []) {

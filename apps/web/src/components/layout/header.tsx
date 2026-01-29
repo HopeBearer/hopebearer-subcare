@@ -1,13 +1,13 @@
 'use client';
 
 import { useTranslation } from '@/lib/i18n/hooks';
-import { useAuthStore } from '@/store/auth.store';
-import { useModalStore } from '@/store/modal.store';
-import { useSettingsStore } from '@/store/settings.store';
+import { useAuthStore } from '@/store';
+import { useModalStore } from '@/store';
+import { useSettingsStore } from '@/store';
 import { useRouter, usePathname } from 'next/navigation';
 import { LogOut, Plus, ArrowLeft } from 'lucide-react';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { LanguageSwitcher } from '@/components/language-switcher';
+import { ThemeToggle } from '@/components/common/theme-toggle';
+import { LanguageSwitcher } from '@/components/common/language-switcher';
 import { cn } from '@/lib/utils';
 import { settingsConfig } from '@/components/settings/config';
 

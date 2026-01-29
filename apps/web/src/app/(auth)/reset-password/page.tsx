@@ -6,12 +6,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { authService } from '@/services/auth.service';
+import { authService } from '@/services';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { handleApiError } from '@/lib/error-helper';
+import { handleApiError } from '@/lib/utils/error-helper';
 import { useTranslation } from '@/lib/i18n/hooks';
 import { toast } from 'sonner';
+import { PageMeta } from '@/components/common/page-meta';
 
 const resetPasswordSchema = z.object({
   password: z.string().min(8, 'auth:form.password.min_length'),
@@ -113,6 +114,7 @@ function ResetPasswordForm() {
 
   return (
     <>
+      <PageMeta titleKey="metadata.reset_password.title" descriptionKey="metadata.reset_password.description" />
       <div className="text-center lg:text-left">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{t('reset_password.title')}</h1>
         <p className="mt-2 text-base text-gray-600 dark:text-gray-400">

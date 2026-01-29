@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { Search, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
-import { subscriptionService } from '@/services/subscription.service';
+import { subscriptionService } from '@/services';
 import { useDebounce } from '@/hooks/use-debounce'; // Assuming this hook exists or I'll implement simple debounce
 
 interface SubscriptionHistoryModalProps {

@@ -1,6 +1,6 @@
-import { AuthSidebar } from '@/components/auth-sidebar';
-import { LanguageSwitcher } from '@/components/language-switcher';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { AuthSidebar } from '@/components/layout/auth-sidebar';
+import { LanguageSwitcher } from '@/components/common/language-switcher';
+import { ThemeToggle } from '@/components/common/theme-toggle';
 
 export default function AuthLayout({
   children,

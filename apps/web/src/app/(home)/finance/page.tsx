@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '@/lib/i18n/hooks';
-import { subscriptionService } from '@/services/subscription.service';
-import { financialService } from '@/services/financial.service';
+import { subscriptionService } from '@/services';
+import { financialService } from '@/services';
 import { useSpendingHeatmap, useProjection, useAnomalies, useSankeyData, useFinancialSummary } from '@/hooks/use-analytics';
 import { SpendingHeatmap } from '@/components/features/finance/big-picture/spending-heatmap';
 import { ProjectionChart } from '@/components/features/finance/projection/projection-chart';
@@ -12,6 +12,7 @@ import { SubscriptionSimulator } from '@/components/features/finance/projection/
 import { TransactionHistoryTable } from '@/components/features/finance/history/transaction-history-table';
 import { PriceChangeTimeline } from '@/components/features/finance/anomalies/price-change-timeline';
 import { SpendingSankey } from '@/components/features/finance/classification/spending-sankey';
+import { PageMeta } from '@/components/common/page-meta';
 import { Card } from '@/components/ui/card';
 
 export default function FinancePage() {
@@ -27,6 +28,7 @@ export default function FinancePage() {
   const { data: subsData } = useQuery({ 
     queryKey: ['subscriptions', 'all'], 
     queryFn: () => subscriptionService.getAll({ limit: 100 }) 
+    
   });
   
   const subscriptions = subsData?.subscriptions || [];
@@ -42,6 +44,7 @@ export default function FinancePage() {
 
   return (
     <div className="container mx-auto p-6 space-y-8 animate-in fade-in duration-500">
+      <PageMeta titleKey="metadata.finance.title" descriptionKey="metadata.finance.description" />
       {/* Module A: Big Picture (Spending Overview) */}
       <section className="space-y-4">
         <h2 className="text-xl font-semibold text-base-content flex items-center gap-2">

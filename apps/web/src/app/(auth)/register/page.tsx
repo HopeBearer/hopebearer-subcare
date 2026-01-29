@@ -6,13 +6,14 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuthStore } from '@/store/auth.store';
-import { authService } from '@/services/auth.service';
+import { useAuthStore } from '@/store';
+import { authService } from '@/services';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RegisterParams } from '@subcare/types';
 import { useTranslation } from '@/lib/i18n/hooks';
-import { handleApiError } from '@/lib/error-helper';
+import { handleApiError } from '@/lib/utils/error-helper';
+import { PageMeta } from '@/components/common/page-meta';
 
 const registerSchema = z.object({
   email: z.string().email('auth:form.email.invalid'),
@@ -92,6 +93,7 @@ export default function RegisterPage() {
 
   return (
     <>
+      <PageMeta titleKey="metadata.register.title" descriptionKey="metadata.register.description" />
       <div className="text-center lg:text-left">
         <div className="flex justify-center lg:justify-start mb-6 items-center gap-3">
           <img src="/images/logo.png" alt="SubCare Logo" className="h-10 w-auto" />

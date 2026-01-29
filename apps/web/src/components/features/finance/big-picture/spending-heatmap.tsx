@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
-import { useThemeStore } from '@/store/theme.store';
+import { useThemeStore } from '@/store';
 import { useTranslation } from '@/lib/i18n/hooks';
 import { HeatmapItem } from '@subcare/types';
 import { Card } from '@/components/ui/card';

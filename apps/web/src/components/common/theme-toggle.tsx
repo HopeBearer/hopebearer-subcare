@@ -1,6 +1,6 @@
 'use client';
 
-import { useThemeStore } from '@/store/theme.store';
+import { useThemeStore } from '@/store';
 import { cn } from '@/lib/utils';
 import { Moon, Sun } from 'lucide-react';
 import { useEffect, useState } from 'react';

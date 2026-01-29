@@ -1,6 +1,6 @@
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
-import AuthGuard from '@/components/auth-guard';
+import AuthGuard from '@/components/guards/auth-guard';
 import { AddSubscriptionModal } from '@/components/features/subscriptions/add-subscription-modal';
 
 export default function HomeLayout({

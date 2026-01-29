@@ -5,12 +5,13 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { authService } from '@/services/auth.service';
+import { authService } from '@/services';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { handleApiError } from '@/lib/error-helper';
+import { handleApiError } from '@/lib/utils/error-helper';
 import { useTranslation } from '@/lib/i18n/hooks';
 import { toast } from 'sonner';
+import { PageMeta } from '@/components/common/page-meta';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('auth:form.email.invalid'),
@@ -69,6 +70,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <>
+      <PageMeta titleKey="metadata.forgot_password.title" descriptionKey="metadata.forgot_password.description" />
       <div className="text-center lg:text-left">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{t('forgot_password.title')}</h1>
         <p className="mt-2 text-base text-gray-600 dark:text-gray-400">

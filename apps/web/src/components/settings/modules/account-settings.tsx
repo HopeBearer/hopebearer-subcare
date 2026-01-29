@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n/hooks';
 import { Lock, Trash2, Mail, CheckCircle2 } from 'lucide-react';
-import { useAuthStore } from '@/store/auth.store';
-import { authService } from '@/services/auth.service';
+import { useAuthStore } from '@/store';
+import { authService } from '@/services';
 import { toast } from 'sonner';
 import JSEncrypt from 'jsencrypt';
 

@@ -63,7 +63,7 @@ export const I18nProvider = ({ children, config }: I18nProviderProps) => {
     };
   }, [config]);
 
-  if (!ready) return null; // 或 Skeleton
+  // if (!ready) return null; // Avoid hydration mismatch by rendering immediately (with default lang) then switching
 
   return <I18nextProvider i18n={i18n}>{children}</I18nextProvider>;
 };

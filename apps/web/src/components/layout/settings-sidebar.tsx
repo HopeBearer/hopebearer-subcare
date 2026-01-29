@@ -5,7 +5,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useSettingsStore } from '@/store/settings.store';
+import { useSettingsStore } from '@/store';
 import { settingsConfig } from '@/components/settings/config';
 import { usePathname } from 'next/navigation';
 

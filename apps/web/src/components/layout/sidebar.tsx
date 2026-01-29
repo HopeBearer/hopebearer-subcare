@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation } from '@/lib/i18n/hooks';
-import { useAuthStore } from '@/store/auth.store';
+import { useAuthStore } from '@/store';
 import { 
   LayoutDashboard, 
   CreditCard, 

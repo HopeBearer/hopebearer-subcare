@@ -8,6 +8,16 @@
     "notifications": "Notifications",
     "settings": "Settings"
   },
+  "metadata": {
+    "dashboard": { "title": "Dashboard", "description": "Overview of your subscriptions and expenses." },
+    "subscriptions": { "title": "Subscriptions", "description": "Manage all your subscription services." },
+    "finance": { "title": "Finance Analysis", "description": "Analyze your spending habits." },
+    "settings": { "title": "Settings", "description": "Configure your application preferences." },
+    "login": { "title": "Login", "description": "Sign in to your account." },
+    "register": { "title": "Register", "description": "Create a new account." },
+    "forgot_password": { "title": "Forgot Password", "description": "Reset your account password." },
+    "reset_password": { "title": "Reset Password", "description": "Set your new password." }
+  },
   "button": {
     "submit": "Submit",
     "cancel": "Cancel",

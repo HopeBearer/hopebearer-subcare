@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { subscriptionService } from '@/services/subscription.service';
+import { subscriptionService } from '@/services';
 import { format } from 'date-fns';
 import { useTranslation } from '@/lib/i18n/hooks';
 import { cn } from '@/lib/utils';

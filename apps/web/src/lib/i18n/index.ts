@@ -22,10 +22,9 @@ export const initI18n = (config: I18nConfig) => {
         escapeValue: false, 
       },
       detection: {
-        order: ['querystring', 'cookie', 'localStorage', 'navigator', 'htmlTag'],
+        order: ['querystring', 'localStorage', 'navigator', 'htmlTag'],
         caches: [], // Disable auto-caching to prevent overwriting user preference on init
         lookupQuerystring: 'lang',
-        lookupCookie: 'i18next',
         lookupLocalStorage: 'i18nextLng',
       },
       react: {

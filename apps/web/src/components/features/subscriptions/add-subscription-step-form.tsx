@@ -14,11 +14,11 @@ import { Select } from '@/components/ui/select';
 import { SubscriptionCard, Subscription } from './subscription-card';
 import { CreateSubscriptionDTO, SubscriptionDTO, SubscriptionUsage } from '@subcare/types';
 import { AutocompleteInput, AutocompleteOption } from '@/components/ui/autocomplete-input';
-import { subscriptionService } from '@/services/subscription.service';
+import { subscriptionService } from '@/services';
 import { useQuery } from '@tanstack/react-query';
 import { Modal } from '@/components/ui/modal';
 import { useRouter } from 'next/navigation';
-import { useModalStore } from '@/store/modal.store';
+import { useModalStore } from '@/store';
 import { calculateNextPayment } from '@subcare/utils';
 import { isBefore, isFuture, isToday, format } from 'date-fns';
 

@@ -10,10 +10,11 @@ import { useTranslation } from '@/lib/i18n/hooks';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { subscriptionService } from '@/services/subscription.service';
+import { subscriptionService } from '@/services';
 import { SubscriptionDTO } from '@subcare/types';
 import { useInView } from 'react-intersection-observer';
 import { useSearchParams } from 'next/navigation';
+import { PageMeta } from '@/components/common/page-meta';
 
 // Constants
 const CATEGORIES = ['Entertainment', 'Tools', 'Productivity', 'Cloud', 'Utility', 'Education'];
@@ -149,6 +150,7 @@ export default function SubscriptionsPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
+      <PageMeta titleKey="metadata.subscriptions.title" descriptionKey="metadata.subscriptions.description" />
       {/* Search and Filter Section */}
       <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between">
         <div className="relative w-full xl:w-80">

@@ -1,4 +1,4 @@
-import { i18n } from './i18n';
+import { i18n } from '../i18n';
 import { toast } from 'sonner';
 import { UseFormReturn } from 'react-hook-form';
 

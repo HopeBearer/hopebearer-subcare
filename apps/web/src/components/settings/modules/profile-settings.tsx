@@ -5,8 +5,8 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n/hooks';
-import { useAuthStore } from '@/store/auth.store';
-import { userService } from '@/services/user.service';
+import { useAuthStore } from '@/store';
+import { userService } from '@/services';
 import { Camera } from 'lucide-react';
 import { toast } from 'sonner';
 

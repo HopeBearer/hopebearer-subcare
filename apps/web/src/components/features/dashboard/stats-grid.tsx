@@ -11,9 +11,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useRef, MouseEvent, ReactNode, useEffect } from 'react';
-import { DashboardService } from '@/services/dashboard.service';
+import { DashboardService } from '@/services';
 import { DashboardStatsResponse } from '@subcare/types';
-import { getCategoryColor } from '@/lib/category-colors';
+import { getCategoryColor } from '@/lib/constants/colors';
 
 interface StatProps {
   label: string;

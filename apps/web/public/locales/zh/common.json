@@ -8,6 +8,16 @@
     "notifications": "通知中心",
     "settings": "设置"
   },
+  "metadata": {
+    "dashboard": { "title": "仪表盘", "description": "概览您的订阅和支出情况。" },
+    "subscriptions": { "title": "订阅管理", "description": "管理您所有的订阅服务。" },
+    "finance": { "title": "财务分析", "description": "分析您的消费习惯。" },
+    "settings": { "title": "设置", "description": "配置应用程序首选项。" },
+    "login": { "title": "登录", "description": "登录到您的账户。" },
+    "register": { "title": "注册", "description": "创建一个新账户。" },
+    "forgot_password": { "title": "忘记密码", "description": "重置您的账户密码。" },
+    "reset_password": { "title": "重置密码", "description": "设置您的新密码。" }
+  },
   "button": {
     "submit": "提交",
     "cancel": "取消",

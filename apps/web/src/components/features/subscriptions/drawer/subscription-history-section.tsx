@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
-import { subscriptionService } from '@/services/subscription.service';
+import { subscriptionService } from '@/services';
 import { useTranslation } from '@/lib/i18n/hooks';
 import { Loader2, History, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
@@ -148,6 +148,7 @@ function formatCurrency(amount: number, currency: string) {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,
+      currencyDisplay: 'code',
     }).format(amount);
   } catch (e) {
     return `${currency} ${amount.toFixed(2)}`;

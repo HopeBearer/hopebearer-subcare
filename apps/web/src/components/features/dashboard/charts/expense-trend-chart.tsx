@@ -4,10 +4,10 @@ import React, { useState, useEffect } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { graphic } from 'echarts';
 import { useTranslation } from '@/lib/i18n/hooks';
-import { DashboardService } from '@/services/dashboard.service';
+import { DashboardService } from '@/services';
 import { ExpenseTrendData } from '@subcare/types';
 
-import { useThemeStore } from '@/store/theme.store';
+import { useThemeStore } from '@/store';
 
 export function ExpenseTrendChart() {
   const { theme } = useThemeStore();
@@ -50,9 +50,9 @@ export function ExpenseTrendChart() {
       formatter: (params: any) => {
         const item = params[0];
         if (!item) return '';
-        // Parse date from YYYY-MM format
-        const [year, month] = item.name.split('-');
-        const dateDisplay = year && month ? `${year}年${parseInt(month)}月` : item.name;
+        
+        // Use YYYY-MM format directly
+        const dateDisplay = item.name;
 
         // Use currency code format (e.g. CNY 1,200)
         const currencyCode = data?.currency || 'CNY';
@@ -85,14 +85,7 @@ export function ExpenseTrendChart() {
         fontSize: 12,
         margin: 20,
         fontFamily: 'inherit',
-        formatter: (value: string) => {
-          // Parse YYYY-MM and return only the month number
-          const parts = value.split('-');
-          if (parts.length === 2) {
-            return parseInt(parts[1]).toString();
-          }
-          return value;
-        }
+        formatter: (value: string) => value // Keep YYYY-MM format
       },
       boundaryGap: false,
     },

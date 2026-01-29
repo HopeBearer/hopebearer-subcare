@@ -50,6 +50,7 @@
     "postcss": "^8.4.35",
     "sass": "^1.97.2",
     "typescript": "^5",
-    "unocss": "0.58.9"
+    "unocss": "0.58.9",
+    "unplugin-auto-import": "^21.0.0"
   }
 }

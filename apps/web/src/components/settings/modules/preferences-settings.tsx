@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { useTranslation } from '@/lib/i18n/hooks';
-import { useAuthStore } from '@/store/auth.store';
-import { userService } from '@/services/user.service';
+import { useAuthStore } from '@/store';
+import { userService } from '@/services';
 import { toast } from 'sonner';
 import { Wallet } from 'lucide-react';
 

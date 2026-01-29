@@ -1,11 +1,11 @@
 'use client';
 
-import { useModalStore } from '@/store/modal.store';
+import { useModalStore } from '@/store';
 import { Modal } from '@/components/ui/modal';
 import { useTranslation } from '@/lib/i18n/hooks';
 import { AddSubscriptionStepForm } from './add-subscription-step-form';
 import { SubscriptionHistory } from './subscription-history';
-import { subscriptionService } from '@/services/subscription.service';
+import { subscriptionService } from '@/services';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';

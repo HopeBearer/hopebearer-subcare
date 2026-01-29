@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { useTranslation } from '@/lib/i18n/hooks';
-import { DashboardService } from '@/services/dashboard.service';
+import { DashboardService } from '@/services';
 import { CategoryDistributionData } from '@subcare/types';
-import { getCategoryColor } from '@/lib/category-colors';
+import { getCategoryColor } from '@/lib/constants/colors';
 
-import { useThemeStore } from '@/store/theme.store';
-import { useAuthStore } from '@/store/auth.store';
+import { useThemeStore } from '@/store';
+import { useAuthStore } from '@/store';
 
 export function CategoryDistributionChart() {
   const { theme } = useThemeStore();

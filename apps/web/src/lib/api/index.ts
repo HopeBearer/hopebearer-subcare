@@ -1,8 +1,8 @@
 import axios from 'axios';
-import { useAuthStore } from '@/store/auth.store';
+import { useAuthStore } from '@/store';
 import { ApiResponse, AuthResponse } from '@subcare/types';
 import { toast } from 'sonner';
-import { getErrorMessage } from './error-helper';
+import { getErrorMessage } from '../utils/error-helper';
 
 export const api = axios.create({
   baseURL: '/api',
