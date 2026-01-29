@@ -212,7 +212,9 @@ export class DashboardService {
       currentMonth.setMonth(startDate.getMonth() + i);
       const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
       
-      const monthLabel = `${currentMonth.getMonth() + 1}月`;
+      const year = currentMonth.getFullYear();
+      const month = String(currentMonth.getMonth() + 1).padStart(2, '0');
+      const monthLabel = `${year}-${month}`;
       
       const records = await this.paymentRecordRepository.findByUserIdAndDateRange(
           userId, currentMonth, endOfMonth

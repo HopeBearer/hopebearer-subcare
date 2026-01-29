@@ -9,8 +9,7 @@ import {
   CreditCard, 
   PieChart, 
   Bell, 
-  Settings, 
-  ShieldCheck
+  Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SettingsPageSidebar } from './settings-sidebar';
@@ -49,11 +48,9 @@ export function Sidebar() {
     <aside className="w-72 h-screen bg-surface border-r border-base flex flex-col fixed left-0 top-0 z-50 transition-all duration-300">
       {/* Logo Section */}
       <div className="p-8 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary-soft flex items-center justify-center text-primary">
-          <ShieldCheck className="w-6 h-6" />
-        </div>
-        <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
-          {isSettingsPage ? t('nav.settings') : t('app_name')}
+        <img src="/images/logo.png" alt="SubCare Logo" className="h-8 w-auto" />
+        <span className="font-logo text-3xl font-normal text-gray-900 dark:text-white tracking-tight">
+          {t('app_name')}
         </span>
       </div>
 

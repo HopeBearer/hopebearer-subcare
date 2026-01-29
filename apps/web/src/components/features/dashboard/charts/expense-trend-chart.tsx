@@ -50,10 +50,14 @@ export function ExpenseTrendChart() {
       formatter: (params: any) => {
         const item = params[0];
         if (!item) return '';
+        // Parse date from YYYY-MM format
+        const [year, month] = item.name.split('-');
+        const dateDisplay = year && month ? `${year}年${parseInt(month)}月` : item.name;
+
         // Use currency code format (e.g. CNY 1,200)
         const currencyCode = data?.currency || 'CNY';
         return `
-          <div class="font-medium ${isDark ? 'text-white' : 'text-gray-900'} mb-2">${item.name}</div>
+          <div class="font-medium ${isDark ? 'text-white' : 'text-gray-900'} mb-2">${dateDisplay}</div>
           <div class="flex items-center justify-between gap-6">
             <div class="flex items-center gap-2">
               <span class="w-2.5 h-2.5 rounded-full bg-[#A5A6F6]"></span>
@@ -81,6 +85,14 @@ export function ExpenseTrendChart() {
         fontSize: 12,
         margin: 20,
         fontFamily: 'inherit',
+        formatter: (value: string) => {
+          // Parse YYYY-MM and return only the month number
+          const parts = value.split('-');
+          if (parts.length === 2) {
+            return parseInt(parts[1]).toString();
+          }
+          return value;
+        }
       },
       boundaryGap: false,
     },

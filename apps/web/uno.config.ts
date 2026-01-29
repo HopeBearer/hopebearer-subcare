@@ -8,6 +8,9 @@ export default defineConfig({
     presetIcons(),
   ],
   theme: {
+    fontFamily: {
+      logo: 'var(--font-logo-dynamic)',
+    },
     colors: {
       lavender: {
         DEFAULT: '#A5A6F6',

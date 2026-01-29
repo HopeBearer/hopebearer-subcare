@@ -303,11 +303,11 @@ $halves: 0.5, 1.5, 2.5, 3.5;
 
 /* Gradients */
 .bg-gradient-to-br { background-image: linear-gradient(to bottom right, var(--tw-gradient-stops)); }
-.from-\[\#FDFDFF\] { --tw-gradient-from: #FDFDFF; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.to-\[\#EAEAFE\] { --tw-gradient-to: #EAEAFE; }
-.via-\[\#F2F3FF\] { --tw-gradient-stops: var(--tw-gradient-from), #F2F3FF, var(--tw-gradient-to); }
-.from-\[\#FFFFFF\] { --tw-gradient-from: #FFFFFF; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.to-\[\#F8F9FF\] { --tw-gradient-to: #F8F9FF; }
+// .from-\[\#FDFDFF\] { --tw-gradient-from: #FDFDFF; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+// .to-\[\#EAEAFE\] { --tw-gradient-to: #EAEAFE; }
+// .via-\[\#F2F3FF\] { --tw-gradient-stops: var(--tw-gradient-from), #F2F3FF, var(--tw-gradient-to); }
+// .from-\[\#FFFFFF\] { --tw-gradient-from: #FFFFFF; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+// .to-\[\#F8F9FF\] { --tw-gradient-to: #F8F9FF; }
 
 /* Custom Input */
 .input-base {

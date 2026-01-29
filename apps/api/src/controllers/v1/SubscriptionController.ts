@@ -57,9 +57,7 @@ export class SubscriptionController {
             throw new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'Not authenticated' });
         }
         
-        console.log('[DEBUG] Controller getNames called for userId:', req.user.userId);
         const names = await this.subscriptionService.getSubscriptionNames(req.user.userId);
-        console.log('[DEBUG] Controller getNames result count:', names.length);
         
         res.status(StatusCodes.OK).json({
             status: 'success',
@@ -67,7 +65,6 @@ export class SubscriptionController {
             data: { names }
         });
     } catch (error) {
-        console.error('[DEBUG] Controller getNames error:', error);
         next(error);
     }
   };

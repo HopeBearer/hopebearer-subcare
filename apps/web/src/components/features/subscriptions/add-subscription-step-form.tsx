@@ -89,7 +89,6 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
     queryKey: ['subscription-names'],
     queryFn: async () => {
         const names = await subscriptionService.getNames();
-        console.log('[DEBUG] Fetched existing names:', names);
         return names;
     },
   });
@@ -99,8 +98,6 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
       icon: item.icon
   }));
   
-  console.log('[DEBUG] Autocomplete options:', autocompleteOptions);
-
   const defaultStartDate = initialValues?.startDate ? new Date(initialValues.startDate).toISOString().split('T')[0] : '';
 
   const form = useForm<FormData>({
@@ -157,14 +154,11 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
          if (!name) return; 
 
          try {
-             console.log('[DEBUG] Checking conflict for:', name);
              const result = await subscriptionService.checkConflict(name);
-             console.log('[DEBUG] Check conflict result:', result);
              
              if (result.conflict && result.existingSubscription) {
-                 console.log('[DEBUG] Conflict detected, opening modal');
                  setConflictModal({ 
-                     isOpen: true, 
+                     isOpen: true,  
                      name, 
                      existing: result.existingSubscription,
                      onContinue: () => {
@@ -173,8 +167,6 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
                      }
                  });
                  return; 
-             } else {
-                 console.log('[DEBUG] No conflict found');
              }
          } catch (e) {
              console.error("Check conflict failed", e);

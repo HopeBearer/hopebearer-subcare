@@ -129,7 +129,6 @@ export class FinancialService {
         if (actualAmount !== undefined) {
             const currentPrice = subscription.price?.toNumber ? subscription.price.toNumber() : Number(subscription.price);
             if (Math.abs(currentPrice - actualAmount) > 0.001) {
-                console.log(`[FinancialService] Updating subscription ${subscription.id} price from ${currentPrice} to ${actualAmount}`);
                 await this.subscriptionRepository.update(subscription.id, {
                     price: actualAmount
                 });

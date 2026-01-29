@@ -17,7 +17,7 @@ export const initI18n = (config: I18nConfig) => {
       lng: config.defaultLanguage, // Force initial language to match server to avoid hydration mismatch
       fallbackLng: config.fallbackLanguage || config.defaultLanguage,
       defaultNS: config.defaultNS || 'common',
-      debug: config.debug || process.env.NODE_ENV === 'development',
+      debug: false,
       interpolation: {
         escapeValue: false, 
       },

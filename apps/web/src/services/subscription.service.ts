@@ -72,10 +72,8 @@ export const subscriptionService = {
 
   getNames: async (): Promise<{ name: string, icon: string | null }[]> => {
     const response = await api.get<any, ApiResponse<{ names: { name: string, icon: string | null }[] }>>('/subscriptions/names');
-    console.log('[DEBUG] Service getNames raw response:', response);
     // Safety check
     if (!response || !response.data || !response.data.names) {
-        console.error('[DEBUG] Invalid response structure:', response);
         return [];
     }
     return response.data.names;

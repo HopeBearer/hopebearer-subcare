@@ -30,27 +30,21 @@ export class SubscriptionService {
    */
   async checkNameConflict(userId: string, name: string): Promise<{ conflict: boolean; existingSubscription?: Subscription }> {
     const normalized = this.normalizeName(name);
-    console.log(`[DEBUG] checkNameConflict: name="${name}", normalized="${normalized}"`);
     
     // First try finding by normalizedName
     let existing = await this.subscriptionRepository.findByNormalizedName(userId, normalized);
-    console.log(`[DEBUG] checkNameConflict: db match via normalizedName? ${!!existing}`);
     
     // Fallback: If not found, check legacy data manually
     if (!existing) {
         const allSubscriptions = await this.subscriptionRepository.findAllNames(userId);
-        console.log(`[DEBUG] checkNameConflict: allNames count=${allSubscriptions.length}`);
         
         const match = allSubscriptions.find(s => this.normalizeName(s.name) === normalized);
-        console.log(`[DEBUG] checkNameConflict: memory match found? ${match ? match.name : 'no'}`);
 
         if (match) {
             // Found a match in legacy data. Fetch full object.
             const fullMatch = await this.subscriptionRepository.findByUserId(userId, { search: match.name });
-            console.log(`[DEBUG] checkNameConflict: search by name "${match.name}" found ${fullMatch.items.length} items`);
             
             const exactMatch = fullMatch.items.find(item => this.normalizeName(item.name) === normalized);
-            console.log(`[DEBUG] checkNameConflict: exact match found? ${!!exactMatch}`);
             
             if (exactMatch) {
                 existing = exactMatch;
@@ -134,7 +128,6 @@ export class SubscriptionService {
         while (isBefore(historyIterator, now) && historyIterator.toDateString() !== now.toDateString()) {
              
              // 1. Generate PAID record for this past date
-             console.log(`[Backfill] Creating PAID record for ${subscription.id} at ${historyIterator}`);
              await this.paymentRecordRepository.create({
                 amount: subscription.price,
                 currency: subscription.currency,

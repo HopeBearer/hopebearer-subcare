@@ -2,6 +2,14 @@
 @use 'utilities';
 @use 'reset';
 
+:root {
+  --font-logo-dynamic: var(--font-sour-gummy);
+}
+
+:root[lang^="zh"] {
+  --font-logo-dynamic: var(--font-zhimang);
+}
+
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background-color: var(--color-bg-page);

@@ -4,6 +4,21 @@ import './globals.scss'
 import { I18nProvider } from '@/lib/i18n/provider';
 import QueryProvider from '@/components/providers/query-provider';
 import { Toaster } from 'sonner';
+import localFont from 'next/font/local';
+
+const zhimang = localFont({
+  src: '../../public/fonts/ZhiMangXing-Regular.ttf',
+  variable: '--font-zhimang',
+  display: 'swap',
+  weight: '400',
+  style: 'normal',
+});
+
+const sourGummy = localFont({
+  src: '../../public/fonts/SourGummy-VariableFont_wdth,wght.ttf',
+  variable: '--font-sour-gummy',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: "SubCare - Subscription Management",
@@ -22,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh" suppressHydrationWarning>
+    <html lang="zh" suppressHydrationWarning className={`${zhimang.variable} ${sourGummy.variable}`}>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -46,6 +61,10 @@ export default function RootLayout({
                   root.classList.remove('light', 'dark');
                   root.classList.add(theme);
                   root.style.colorScheme = theme;
+
+                  // Language initialization
+                  var lang = localStorage.getItem('i18nextLng') || 'zh';
+                  root.lang = lang;
                 } catch (e) {}
               })()
             `,

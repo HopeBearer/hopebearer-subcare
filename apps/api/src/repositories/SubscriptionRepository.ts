@@ -23,14 +23,12 @@ export class SubscriptionRepository {
    * Modified to perform unique filtering in application code to handle legacy data where normalizedName might be empty
    */
   async findAllNames(userId: string): Promise<{ name: string, icon: string | null }[]> {
-    console.log('[DEBUG] findAllNames querying for userId:', userId);
     
     try {
       const items = await prisma.subscription.findMany({
         where: { userId },
         select: { name: true, icon: true }, 
       });
-      console.log('[DEBUG] findAllNames found raw items count:', items.length);
 
       // Application-level distinct by normalized name
       const seen = new Set<string>();
@@ -45,10 +43,8 @@ export class SubscriptionRepository {
           }
       }
       
-      console.log('[DEBUG] findAllNames unique count:', uniqueItems.length);
       return uniqueItems;
     } catch (e) {
-      console.error('[DEBUG] findAllNames error:', e);
       throw e;
     }
   }

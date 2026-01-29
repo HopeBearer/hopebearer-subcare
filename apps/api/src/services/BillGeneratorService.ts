@@ -11,9 +11,7 @@ export class BillGeneratorService {
   ) {}
 
   async generateDailyBills() {
-    console.log("Starting daily bill generation...");
     const dueSubscriptions = await this.subscriptionRepository.findDueSubscriptions();
-    console.log(`Found ${dueSubscriptions.length} due subscriptions.`);
 
     let generatedCount = 0;
 
@@ -23,8 +21,6 @@ export class BillGeneratorService {
         generatedCount++;
       }
     }
-
-    console.log(`Generated ${generatedCount} new bills.`);
   }
 
   /**
@@ -52,7 +48,6 @@ export class BillGeneratorService {
         // Actually, for the "Daily Job", if it sees a PAID bill for 'nextPayment', it means 'nextPayment' wasn't advanced.
         // So we advance it.
         if (existingBill.status === 'PAID') {
-            console.log(`Bill already exists and PAID for ${sub.name} on ${sub.nextPayment}, advancing date.`);
             await this.advanceSubscriptionDate(sub);
             // After advancing, we should check AGAIN if the NEW nextPayment is due.
             // Recursive call? Or just return false and let the next cycle handle it?

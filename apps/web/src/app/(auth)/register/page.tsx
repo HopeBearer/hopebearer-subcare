@@ -34,7 +34,7 @@ export default function RegisterPage() {
   const setAuth = useAuthStore((state) => state.setAuth);
   const [isLoading, setIsLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
-  const { t } = useTranslation('auth');
+  const { t } = useTranslation(['auth', 'common']);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -93,10 +93,11 @@ export default function RegisterPage() {
   return (
     <>
       <div className="text-center lg:text-left">
-        <div className="flex justify-center lg:justify-start mb-6">
-          <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-md shadow-primary/20">
-            <span className="text-white font-bold text-2xl">S</span>
-          </div>
+        <div className="flex justify-center lg:justify-start mb-6 items-center gap-3">
+          <img src="/images/logo.png" alt="SubCare Logo" className="h-10 w-auto" />
+          <span className="text-3xl text-gray-900 dark:text-white font-logo">
+            {t('app_name', { ns: 'common' })}
+          </span>
         </div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('register.title')}</h1>
         <p className="text-gray-600 dark:text-gray-400">{t('register.subtitle')}</p>

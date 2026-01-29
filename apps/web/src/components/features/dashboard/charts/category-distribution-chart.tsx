@@ -8,9 +8,12 @@ import { CategoryDistributionData } from '@subcare/types';
 import { getCategoryColor } from '@/lib/category-colors';
 
 import { useThemeStore } from '@/store/theme.store';
+import { useAuthStore } from '@/store/auth.store';
 
 export function CategoryDistributionChart() {
   const { theme } = useThemeStore();
+  const { user } = useAuthStore();
+  const currency = user?.currency || 'CNY';
   const isDark = theme === 'dark';
   const { t } = useTranslation(['subscription', 'dashboard']);
   const [data, setData] = useState<CategoryDistributionData>([]);
@@ -70,7 +73,7 @@ export function CategoryDistributionChart() {
           </div>
           <div class="flex items-center justify-between gap-8">
              <span class="${isDark ? 'text-gray-400' : 'text-gray-500'} pl-4.5">${t('charts.category_distribution.amount', { ns: 'dashboard' })}</span>
-             <span class="font-bold ${isDark ? 'text-white' : 'text-gray-900'} font-mono">CNY ${dataItem.formattedValue}</span>
+             <span class="font-bold ${isDark ? 'text-white' : 'text-gray-900'} font-mono">${currency} ${dataItem.formattedValue}</span>
           </div>
         `;
       }

@@ -1,7 +1,7 @@
 export default {
   plugins: {
     '@unocss/postcss': {
-      content: ['./app/**/*.{html,js,ts,jsx,tsx}'],
+      content: ['./src/**/*.{html,js,ts,jsx,tsx}'],
     },
   },
 }

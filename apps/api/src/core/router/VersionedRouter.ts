@@ -46,7 +46,6 @@ export class VersionedRouter {
         // 这里的 handler 已经绑定了正确的 this 上下文，无需手动 bind。
         
         (this.router as any)[routerMethod](path, ...middlewares, handler);
-        console.log(`Mapped [${method}] ${path} -> ${version}`);
       }
     });
   }
