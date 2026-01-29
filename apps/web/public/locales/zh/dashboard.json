@@ -8,6 +8,8 @@
     "total_expenses": "本月总支出",
     "active_subs": "活跃订阅",
     "remaining_budget": "剩余预算",
+    "over_budget": "超出预算",
+    "total_budget": "总预算",
     "upcoming_renewals": "即将续费",
     "no_upcoming_renewals": "暂无近期续费",
     "growth_last_month": "较上月",

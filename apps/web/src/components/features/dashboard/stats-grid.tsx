@@ -325,15 +325,20 @@ export function StatsGrid() {
       isLoading: loading
     },
     {
-      label: t('stats.remaining_budget'),
-      value: data ? data.budget.remaining.formatted : '...',
+      label: (data?.budget.remaining.amount || 0) < 0 ? t('stats.over_budget') : t('stats.remaining_budget'),
+      value: data ? ((data.budget.remaining.amount || 0) < 0 
+        ? `${data.budget.remaining.currency} ${Math.abs(data.budget.remaining.amount).toFixed(2)}`
+        : data.budget.remaining.formatted) : '...',
       badge: { 
         text: data ? `${data.budget.usedPercentage}%` : '...', 
-        style: { backgroundColor: '#F3E8FF', color: '#9333EA' }
+        style: { 
+          backgroundColor: (data?.budget.remaining.amount || 0) < 0 ? '#FEF2F2' : '#F3E8FF', 
+          color: (data?.budget.remaining.amount || 0) < 0 ? '#EF4444' : '#9333EA' 
+        }
       },
       icon: Shield,
-      visual: <ProgressBar value={data?.budget.usedPercentage} />,
-      footer: t('stats.footer.remaining_budget', { ns: 'dashboard' }),
+      visual: <ProgressBar value={Math.min(data?.budget.usedPercentage || 0, 100)} />,
+      footer: data ? `${t('stats.footer.remaining_budget', { ns: 'dashboard' })} / ${t('stats.total_budget', { ns: 'dashboard' })}: ${data.budget.totalLimit.formatted}` : '...',
       isLoading: loading
     },
     {

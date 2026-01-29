@@ -8,6 +8,8 @@
     "total_expenses": "Total Expenses This Month",
     "active_subs": "Active Subscriptions",
     "remaining_budget": "Remaining Budget",
+    "over_budget": "Over Budget",
+    "total_budget": "Total Budget",
     "upcoming_renewals": "Upcoming Renewals",
     "no_upcoming_renewals": "No upcoming renewals",
     "growth_last_month": "vs last month",

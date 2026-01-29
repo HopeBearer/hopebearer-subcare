@@ -108,7 +108,7 @@ export class DashboardService {
 
     // 4. Budget
     const budgetLimit = Number(user.monthlyBudget) || 0;
-    const remaining = Math.max(0, budgetLimit - currentMonthTotal);
+    const remaining = budgetLimit - currentMonthTotal;
     const usedPercentage = budgetLimit > 0 ? Math.round((currentMonthTotal / budgetLimit) * 100) : 0;
     
     // 5. History Data (Last 12 months)
