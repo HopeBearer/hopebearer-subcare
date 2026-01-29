@@ -10,7 +10,8 @@ import { Search, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { subscriptionService } from '@/services';
-import { useDebounce } from '@/hooks/use-debounce'; // Assuming this hook exists or I'll implement simple debounce
+import { useDebounce } from '@/hooks/use-debounce';
+import { useAuthStore } from '@/store';
 
 interface SubscriptionHistoryModalProps {
   isOpen: boolean;
@@ -22,6 +23,17 @@ interface SubscriptionHistoryModalProps {
 
 const ITEMS_PER_PAGE = 10;
 
+// Exchange rates (Base: CNY) - Should ideally come from API/Context
+const EXCHANGE_RATES: Record<string, number> = {
+  'USD': 7.23,
+  'CNY': 1,
+  'EUR': 7.86,
+  'JPY': 0.048,
+  'HKD': 0.92,
+  'GBP': 9.15,
+  'TWD': 0.23,
+};
+
 export function SubscriptionHistoryModal({
   isOpen,
   onClose,
@@ -30,6 +42,8 @@ export function SubscriptionHistoryModal({
   currency,
 }: SubscriptionHistoryModalProps) {
   const { t } = useTranslation(['subscription', 'common']);
+  const { user } = useAuthStore();
+  const userCurrency = user?.currency || 'CNY';
   
   // State
   const [searchTerm, setSearchTerm] = useState('');
@@ -61,41 +75,28 @@ export function SubscriptionHistoryModal({
 
   const historyItems = data?.items || [];
   const pagination = data?.pagination || { total: 0, page: 1, limit: ITEMS_PER_PAGE, totalPages: 1 };
+  const totalAmount = data?.stats?.totalAmount || 0;
 
-  // Chart Data Preparation - We might want to fetch ALL data for chart, or just show current page?
-  // Ideally, charts show trends over time, so pagination breaks it. 
-  // For now, let's keep it simple: The chart shows the same data as the table (the filtered results).
-  // OR, better: The backend could return a separate 'stats' or 'allData' for chart? 
-  // Given the current backend implementation only returns paginated data, the chart will only show the current page's data if we use `data.items`.
-  // This is suboptimal for a "Trend" chart.
-  // 
-  // However, the user asked for filters to affect the chart.
-  // If we want a full trend chart with filters, we might need a separate API endpoint or fetch ALL matching records for the chart.
-  // 
-  // Let's stick to using the returned items for now, but acknowledge this limitation. 
-  // Actually, wait. If I search for "2023", I expect to see all 2023 data in the chart.
-  // But if pagination limits to 10 items, the chart is useless.
-  // 
-  // Quick fix: The backend `getSubscriptionHistory` returns filtered results. 
-  // If we want the chart to be useful, we might need to fetch MORE data for the chart, or ask backend for aggregation.
-  // 
-  // Let's try to fetch a larger limit for the chart? No, that's complex.
-  // Let's assume for now the user is filtering enough to see relevant data, or we accept the chart shows the current "view".
-  // 
-  // Re-reading user request: "在这个弹框中展示的比较多。首先是柱状图趋势变化...下方是历史记录表格...这个筛选同样会改变上方柱状图的变化"
-  // 
-  // To support a proper chart, I'll update the backend to potentially return ALL matching items for chart if requested, or just use the current paginated items for now and maybe suggest a 'chart' endpoint later.
-  // 
-  // Actually, typically you'd fetch "chart data" separately from "table data".
-  // Let's implement it such that the chart reflects the *current page* for now, to ensure performance and correctness with current API.
-  // 
-  // Wait, if I have 100 records and page size 10, the chart showing only 10 bars is weird if I want to see "Trend".
-  // 
-  // Let's check `SubscriptionService.ts`. I can pass a large limit if I want all data?
-  // But the table needs pagination.
-  // 
-  // Let's keep it simple: Use the paginated data for both. It's a "History View".
-  
+  // Conversion Helper
+  const convert = (amount: number, from: string, to: string) => {
+    if (from === to) return amount;
+    const fromRate = EXCHANGE_RATES[from] || 1;
+    const toRate = EXCHANGE_RATES[to] || 1;
+    return (amount * fromRate) / toRate;
+  };
+
+  const renderDualCurrency = (amount: number, sourceCurrency: string, targetCurrency: string) => {
+    const original = formatCurrency(amount, sourceCurrency);
+    if (sourceCurrency === targetCurrency) return original;
+    
+    const converted = convert(amount, sourceCurrency, targetCurrency);
+    return (
+      <span>
+        {original} <span className="text-zinc-400 font-normal">({formatCurrency(converted, targetCurrency)})</span>
+      </span>
+    );
+  };
+
   const chartOption = useMemo(() => {
     // Sort chronologically for the chart
     const sortedForChart = [...historyItems].sort(
@@ -166,6 +167,8 @@ export function SubscriptionHistoryModal({
       ]
     };
   }, [historyItems, currency]);
+
+  const pageTotal = historyItems.reduce((acc, item) => acc + Number(item.amount), 0);
 
   return (
     <Modal
@@ -254,13 +257,18 @@ export function SubscriptionHistoryModal({
           )}
           {/* Table Header */}
           <div className="bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 font-medium border-b border-zinc-200 dark:border-zinc-800 shrink-0">
-             <div className="flex items-center justify-between px-4 py-2 bg-zinc-100/50 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700">
+             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 py-2 bg-zinc-100/50 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700 gap-2">
                <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
                  {t('total_records', { count: pagination.total, defaultValue: 'Total: {{count}}' })}
                </span>
-               <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-                 {t('total_amount', { defaultValue: 'Page Total' })}: <span className="text-zinc-900 dark:text-white">{formatCurrency(historyItems.reduce((acc, item) => acc + Number(item.amount), 0), currency)}</span>
-               </span>
+               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs">
+                 <div className="font-semibold text-zinc-600 dark:text-zinc-300">
+                   {t('page_total', { defaultValue: 'Page Total' })}: <span className="text-zinc-900 dark:text-white">{renderDualCurrency(pageTotal, currency, userCurrency)}</span>
+                 </div>
+                 <div className="font-semibold text-zinc-600 dark:text-zinc-300">
+                   {t('grand_total', { defaultValue: 'Grand Total' })}: <span className="text-zinc-900 dark:text-white">{renderDualCurrency(totalAmount, currency, userCurrency)}</span>
+                 </div>
+               </div>
              </div>
             <div className="grid grid-cols-[1fr_1fr_1fr_1.5fr] text-sm text-left">
                 <div className="px-4 py-3">{t('billing_date', { defaultValue: 'Billing Date' })}</div>
@@ -349,11 +357,10 @@ function StatusBadge({ status, t }: { status: string, t: any }) {
 
 function formatCurrency(amount: number, currency: string) {
   try {
-    // 强制使用货币代码作为显示部分，而不是符号
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,
-      currencyDisplay: 'code', // Change from default (symbol) to 'code' (e.g. USD, CNY)
+      currencyDisplay: 'code',
     }).format(amount);
   } catch (e) {
     return `${currency} ${amount.toFixed(2)}`;

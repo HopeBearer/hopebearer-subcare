@@ -224,7 +224,7 @@ export class SubscriptionController {
       const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
 
-      const { items, total } = await this.subscriptionService.getSubscriptionHistory(id, req.user.userId, {
+      const { items, total, totalAmount } = await this.subscriptionService.getSubscriptionHistory(id, req.user.userId, {
         page,
         limit,
         search,
@@ -242,6 +242,9 @@ export class SubscriptionController {
                 page,
                 limit,
                 totalPages: Math.ceil(total / limit)
+            },
+            stats: {
+                totalAmount
             }
         },
       });

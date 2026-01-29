@@ -43,7 +43,7 @@ export class PaymentRecordRepository {
   async findBySubscriptionId(
     subscriptionId: string, 
     filter: PaymentRecordFilter = {}
-  ): Promise<{ items: PaymentRecord[], total: number }> {
+  ): Promise<{ items: PaymentRecord[], total: number, totalAmount: number }> {
     const { page = 1, limit = 20, search, startDate, endDate } = filter;
     const skip = (page - 1) * limit;
 
@@ -68,17 +68,23 @@ export class PaymentRecordRepository {
       if (endDate) where.billingDate.lte = endDate;
     }
 
-    const [items, total] = await Promise.all([
+    const [items, total, aggregate] = await Promise.all([
       prisma.paymentRecord.findMany({
         where,
         orderBy: { billingDate: 'desc' },
         skip,
         take: limit
       }),
-      prisma.paymentRecord.count({ where })
+      prisma.paymentRecord.count({ where }),
+      prisma.paymentRecord.aggregate({
+        where,
+        _sum: {
+          amount: true
+        }
+      })
     ]);
 
-    return { items, total };
+    return { items, total, totalAmount: Number(aggregate._sum.amount || 0) };
   }
   
   /**

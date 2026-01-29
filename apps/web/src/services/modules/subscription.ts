@@ -49,15 +49,20 @@ export const subscriptionService = {
   getHistory: async (
     id: string, 
     params?: { page?: number; limit?: number; search?: string; startDate?: string; endDate?: string }
-  ): Promise<{ items: PaymentRecordDTO[], pagination: { total: number, page: number, limit: number, totalPages: number } }> => {
+  ): Promise<{ items: PaymentRecordDTO[], pagination: { total: number, page: number, limit: number, totalPages: number }, stats?: { totalAmount: number } }> => {
     const response = await api.get<any, ApiResponse<{ 
         history: PaymentRecordDTO[], 
-        pagination: { total: number, page: number, limit: number, totalPages: number } 
+        pagination: { total: number, page: number, limit: number, totalPages: number },
+        stats?: { totalAmount: number }
     }>>(`/subscriptions/${id}/history`, { params });
     
     // Backward compatibility for old API structure if needed, or normalize response
     if (response.data.pagination) {
-        return { items: response.data.history, pagination: response.data.pagination };
+        return { 
+            items: response.data.history, 
+            pagination: response.data.pagination,
+            stats: response.data.stats
+        };
     }
     // Fallback if backend returns array directly (shouldn't happen with new backend code)
     return { items: response.data.history as any, pagination: { total: response.data.history.length, page: 1, limit: 1000, totalPages: 1 } };
