@@ -28,6 +28,50 @@ const updateSubscriptionSchema = createSubscriptionSchema.partial();
 export class SubscriptionController {
   constructor(private subscriptionService: SubscriptionService) {}
 
+  checkConflict = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.user) {
+        throw new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'Not authenticated' });
+      }
+      
+      const name = req.query.name as string;
+      if (!name) {
+          throw new AppError('BAD_REQUEST', StatusCodes.BAD_REQUEST, { message: 'Name is required' });
+      }
+
+      const result = await this.subscriptionService.checkNameConflict(req.user.userId, name);
+      
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getNames = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        if (!req.user) {
+            throw new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'Not authenticated' });
+        }
+        
+        console.log('[DEBUG] Controller getNames called for userId:', req.user.userId);
+        const names = await this.subscriptionService.getSubscriptionNames(req.user.userId);
+        console.log('[DEBUG] Controller getNames result count:', names.length);
+        
+        res.status(StatusCodes.OK).json({
+            status: 'success',
+            code: BusinessCode.SUCCESS,
+            data: { names }
+        });
+    } catch (error) {
+        console.error('[DEBUG] Controller getNames error:', error);
+        next(error);
+    }
+  };
+
   create = async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
@@ -177,12 +221,32 @@ export class SubscriptionController {
       }
 
       const { id } = req.params;
-      const history = await this.subscriptionService.getSubscriptionHistory(id, req.user.userId);
+      const page = req.query.page ? parseInt(req.query.page as string) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const search = req.query.search as string;
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+
+      const { items, total } = await this.subscriptionService.getSubscriptionHistory(id, req.user.userId, {
+        page,
+        limit,
+        search,
+        startDate,
+        endDate
+      });
       
       res.status(StatusCodes.OK).json({
         status: 'success',
         code: BusinessCode.SUCCESS,
-        data: { history },
+        data: { 
+            history: items,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit)
+            }
+        },
       });
     } catch (error) {
       next(error);

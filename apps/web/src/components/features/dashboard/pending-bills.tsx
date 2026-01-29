@@ -3,18 +3,19 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Check, Clock, AlertCircle } from 'lucide-react';
+import { Check, Clock, AlertCircle, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { financialService } from '@/services/financial.service';
 import { format, isBefore, subDays } from 'date-fns';
 import { PaymentRecordDTO } from '@subcare/types';
 
 export function PendingBills() {
-  const { t } = useTranslation('dashboard');
+  const { t } = useTranslation(['dashboard', 'common']);
   const queryClient = useQueryClient();
   
   const [selectedBill, setSelectedBill] = useState<PaymentRecordDTO | null>(null);
@@ -35,6 +36,7 @@ export function PendingBills() {
       queryClient.invalidateQueries({ queryKey: ['pending-bills'] });
       queryClient.invalidateQueries({ queryKey: ['financial-history'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
       handleCloseModal();
     },
     onError: () => {
@@ -95,6 +97,18 @@ export function PendingBills() {
         <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-orange-700 dark:text-orange-400">
           <AlertCircle className="h-5 w-5" />
           {t('pending_bills.title')}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-4 w-4 text-orange-600/60 hover:text-orange-600 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p className="font-normal text-xs">
+                  {t('pending_bills.explanation', { defaultValue: 'Bills due today or overdue. Confirm payment to update subscription status.' })}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         <div className="space-y-4">
           {bills.map((bill) => {
@@ -176,14 +190,14 @@ export function PendingBills() {
 
           <div className="flex justify-end gap-3 mt-6">
             <Button variant="outline" onClick={handleCloseModal}>
-              {t('common.cancel') || 'Cancel'}
+              {t('button.cancel', { ns: 'common' }) || 'Cancel'}
             </Button>
             <Button 
               onClick={handleConfirm}
               isLoading={confirmMutation.isPending}
               className="bg-orange-600 hover:bg-orange-700 text-white"
             >
-              {t('common.confirm') || 'Confirm'}
+              {t('button.confirm', { ns: 'common' }) || 'Confirm'}
             </Button>
           </div>
         </div>

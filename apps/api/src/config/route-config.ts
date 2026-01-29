@@ -22,6 +22,8 @@ export const routeConfig: Record<string, string> = {
   'DELETE /subscriptions/:id': 'v1',
   'GET /subscriptions/stats': 'v1',
   'GET /subscriptions/upcoming': 'v1',
+  'GET /subscriptions/check-conflict': 'v1',
+  'GET /subscriptions/names': 'v1',
   'GET /subscriptions/:id/history': 'v1', // New
 
   // Dashboard

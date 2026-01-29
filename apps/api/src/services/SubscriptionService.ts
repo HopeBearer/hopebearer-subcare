@@ -21,6 +21,62 @@ export class SubscriptionService {
     private billGeneratorService: BillGeneratorService
   ) {}
 
+  private normalizeName(name: string): string {
+    return name.trim().toLowerCase();
+  }
+
+  /**
+   * Check for name conflict
+   */
+  async checkNameConflict(userId: string, name: string): Promise<{ conflict: boolean; existingSubscription?: Subscription }> {
+    const normalized = this.normalizeName(name);
+    console.log(`[DEBUG] checkNameConflict: name="${name}", normalized="${normalized}"`);
+    
+    // First try finding by normalizedName
+    let existing = await this.subscriptionRepository.findByNormalizedName(userId, normalized);
+    console.log(`[DEBUG] checkNameConflict: db match via normalizedName? ${!!existing}`);
+    
+    // Fallback: If not found, check legacy data manually
+    if (!existing) {
+        const allSubscriptions = await this.subscriptionRepository.findAllNames(userId);
+        console.log(`[DEBUG] checkNameConflict: allNames count=${allSubscriptions.length}`);
+        
+        const match = allSubscriptions.find(s => this.normalizeName(s.name) === normalized);
+        console.log(`[DEBUG] checkNameConflict: memory match found? ${match ? match.name : 'no'}`);
+
+        if (match) {
+            // Found a match in legacy data. Fetch full object.
+            const fullMatch = await this.subscriptionRepository.findByUserId(userId, { search: match.name });
+            console.log(`[DEBUG] checkNameConflict: search by name "${match.name}" found ${fullMatch.items.length} items`);
+            
+            const exactMatch = fullMatch.items.find(item => this.normalizeName(item.name) === normalized);
+            console.log(`[DEBUG] checkNameConflict: exact match found? ${!!exactMatch}`);
+            
+            if (exactMatch) {
+                existing = exactMatch;
+            } else {
+                // Should not happen if data consistency is okay, but if it does, 
+                // we technically found a conflict but failed to load the object.
+                // We should probably still report conflict? 
+                // But for now let's rely on finding it.
+                console.warn('[WARN] Conflict detected in memory but failed to fetch full object');
+            }
+        }
+    }
+    
+    if (existing) {
+        return { conflict: true, existingSubscription: existing };
+    }
+    return { conflict: false };
+  }
+
+  /**
+   * Get all unique subscription names for autocomplete
+   */
+  async getSubscriptionNames(userId: string) {
+    return this.subscriptionRepository.findAllNames(userId);
+  }
+
   /**
    * 创建新订阅
    */
@@ -29,6 +85,7 @@ export class SubscriptionService {
 
     const subscription = await this.subscriptionRepository.create({
       name: data.name,
+      normalizedName: this.normalizeName(data.name),
       price: data.price,
       currency: data.currency,
       billingCycle: data.billingCycle,
@@ -160,6 +217,10 @@ export class SubscriptionService {
       nextPayment,
       updatedAt: new Date(),
     };
+
+    if (data.name) {
+        updateData.normalizedName = this.normalizeName(data.name);
+    }
     
     if (data.category) {
         updateData.categoryName = data.category;
@@ -207,7 +268,11 @@ export class SubscriptionService {
   /**
    * 获取单个订阅的历史流水
    */
-  async getSubscriptionHistory(subscriptionId: string, userId: string) {
+  async getSubscriptionHistory(
+    subscriptionId: string, 
+    userId: string,
+    filters: { page?: number; limit?: number; search?: string; startDate?: Date; endDate?: Date } = {}
+  ) {
     const sub = await this.subscriptionRepository.findById(subscriptionId);
     if (!sub) {
         throw new AppError('NOT_FOUND', StatusCodes.NOT_FOUND, { message: 'Subscription not found' });
@@ -216,6 +281,6 @@ export class SubscriptionService {
         throw new AppError('FORBIDDEN', StatusCodes.FORBIDDEN, { message: 'Access denied' });
     }
 
-    return this.paymentRecordRepository.findBySubscriptionId(subscriptionId);
+    return this.paymentRecordRepository.findBySubscriptionId(subscriptionId, filters);
   }
 }

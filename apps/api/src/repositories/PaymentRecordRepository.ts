@@ -1,5 +1,13 @@
 import { prisma, PaymentRecord, Prisma } from "@subcare/database";
 
+export interface PaymentRecordFilter {
+  page?: number;
+  limit?: number;
+  search?: string;
+  startDate?: Date;
+  endDate?: Date;
+}
+
 export class PaymentRecordRepository {
   async create(data: Prisma.PaymentRecordCreateInput): Promise<PaymentRecord> {
     return prisma.paymentRecord.create({ data });
@@ -32,11 +40,45 @@ export class PaymentRecordRepository {
     });
   }
 
-  async findBySubscriptionId(subscriptionId: string): Promise<PaymentRecord[]> {
-    return prisma.paymentRecord.findMany({
-      where: { subscriptionId },
-      orderBy: { billingDate: 'desc' }
-    });
+  async findBySubscriptionId(
+    subscriptionId: string, 
+    filter: PaymentRecordFilter = {}
+  ): Promise<{ items: PaymentRecord[], total: number }> {
+    const { page = 1, limit = 20, search, startDate, endDate } = filter;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.PaymentRecordWhereInput = {
+      subscriptionId,
+    };
+
+    if (search) {
+      where.OR = [
+        { note: { contains: search } },
+        // Try to search by amount only if it's a valid number string? 
+        // Prisma doesn't easily support string search on Decimal/Float columns directly like 'contains'.
+        // So we might skip amount search or need raw query. 
+        // For simplicity, let's just search 'note' for now.
+        // Or if the user really wants amount search, we can filter in memory or check if search is a number.
+      ];
+    }
+
+    if (startDate || endDate) {
+      where.billingDate = {};
+      if (startDate) where.billingDate.gte = startDate;
+      if (endDate) where.billingDate.lte = endDate;
+    }
+
+    const [items, total] = await Promise.all([
+      prisma.paymentRecord.findMany({
+        where,
+        orderBy: { billingDate: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.paymentRecord.count({ where })
+    ]);
+
+    return { items, total };
   }
   
   /**

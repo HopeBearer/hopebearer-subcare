@@ -1,4 +1,5 @@
 {
+  "loading": "Loading...",
   "app_name": "SubCare",
   "nav": {
     "dashboard": "Dashboard",

@@ -43,6 +43,7 @@ model User {
 model Subscription {
   id          String   @id @default(uuid())
   name        String
+  normalizedName String @default("") // Normalized name for duplicate detection (lowercase, trimmed)
   price       Decimal  @db.Decimal(10, 2)
   currency    String   @default("CNY")
   billingCycle String  // monthly, yearly, weekly, daily
@@ -85,6 +86,7 @@ model Subscription {
 
   @@index([userId])
   @@index([categoryId])
+  @@index([userId, normalizedName])
   @@map("subscriptions")
 }
 

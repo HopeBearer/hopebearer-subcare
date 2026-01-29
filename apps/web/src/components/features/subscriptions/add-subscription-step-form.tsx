@@ -13,7 +13,15 @@ import { Switch } from '@/components/ui/switch';
 import { Select } from '@/components/ui/select';
 import { SubscriptionCard, Subscription } from './subscription-card';
 import { CreateSubscriptionDTO, SubscriptionDTO, SubscriptionUsage } from '@subcare/types';
+import { AutocompleteInput, AutocompleteOption } from '@/components/ui/autocomplete-input';
+import { subscriptionService } from '@/services/subscription.service';
+import { useQuery } from '@tanstack/react-query';
+import { Modal } from '@/components/ui/modal';
+import { useRouter } from 'next/navigation';
+import { useModalStore } from '@/store/modal.store';
 import { calculateNextPayment } from '@subcare/utils';
+import { isBefore, isFuture, isToday, format } from 'date-fns';
+
 // --- Validation Schemas ---
 
 const step1Schema = z.object({
@@ -61,6 +69,37 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
   const { t } = useTranslation(['subscription', 'common']);
   const [step, setStep] = useState(1);
   const [logoPreview, setLogoPreview] = useState<string | undefined>(initialValues?.icon || undefined);
+  const router = useRouter();
+  const { closeAddSubscription, openAddSubscription } = useModalStore();
+
+  const [conflictModal, setConflictModal] = useState<{ 
+    isOpen: boolean; 
+    name: string; 
+    existing: any | null;
+    onContinue?: () => void;
+  }>({
+    isOpen: false,
+    name: '',
+    existing: null
+  });
+
+  const [confirmedConflictName, setConfirmedConflictName] = useState<string | null>(null);
+
+  const { data: existingNames = [] } = useQuery({ // Use default value instead of initialData
+    queryKey: ['subscription-names'],
+    queryFn: async () => {
+        const names = await subscriptionService.getNames();
+        console.log('[DEBUG] Fetched existing names:', names);
+        return names;
+    },
+  });
+
+  const autocompleteOptions: AutocompleteOption[] = existingNames.map(item => ({
+      name: item.name,
+      icon: item.icon
+  }));
+  
+  console.log('[DEBUG] Autocomplete options:', autocompleteOptions);
 
   const defaultStartDate = initialValues?.startDate ? new Date(initialValues.startDate).toISOString().split('T')[0] : '';
 
@@ -112,6 +151,35 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
     let isStepValid = false;
     if (step === 1) {
       isStepValid = await trigger(['name', 'price', 'currency', 'cycle', 'startDate']);
+      
+      if (isStepValid && !isEditMode) {
+         const name = formData.name;
+         if (!name) return; 
+
+         try {
+             console.log('[DEBUG] Checking conflict for:', name);
+             const result = await subscriptionService.checkConflict(name);
+             console.log('[DEBUG] Check conflict result:', result);
+             
+             if (result.conflict && result.existingSubscription) {
+                 console.log('[DEBUG] Conflict detected, opening modal');
+                 setConflictModal({ 
+                     isOpen: true, 
+                     name, 
+                     existing: result.existingSubscription,
+                     onContinue: () => {
+                        setConfirmedConflictName(name);
+                        setStep((prev) => Math.min(prev + 1, 3));
+                     }
+                 });
+                 return; 
+             } else {
+                 console.log('[DEBUG] No conflict found');
+             }
+         } catch (e) {
+             console.error("Check conflict failed", e);
+         }
+      }
     } else if (step === 2) {
       isStepValid = await trigger(['category', 'paymentMethod', 'autoRenewal', 'usage']);
     }
@@ -119,6 +187,34 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
     if (isStepValid) {
       setStep((prev) => Math.min(prev + 1, 3));
     }
+  };
+  
+  const handleResolveConflict = (action: 'use_existing' | 'create_new') => {
+      setConflictModal(prev => ({ ...prev, isOpen: false }));
+      if (action === 'create_new') {
+          if (conflictModal.onContinue) {
+              conflictModal.onContinue();
+          } else {
+             setStep((prev) => Math.min(prev + 1, 3));
+          }
+      } else {
+          // Use existing: Open edit for the existing one?
+          // We need to close current modal and open edit modal.
+          // Assuming useModalStore has openEditSubscription or we just set subscriptionToEdit
+          if (conflictModal.existing) {
+              // This is a bit hacky depending on how the store works, 
+              // but typically we'd call openAddSubscription with the existing item to edit it.
+              // Let's assume openAddSubscription(existing) works or similar.
+              // Actually useModalStore usually has `openAddSubscription(subscriptionToEdit?)`.
+              // Let's check imports. `useModalStore` is imported.
+              
+              closeAddSubscription();
+              // Small timeout to allow close animation or state reset
+              setTimeout(() => {
+                  openAddSubscription(conflictModal.existing);
+              }, 100);
+          }
+      }
   };
 
   const handleBack = () => {
@@ -134,7 +230,7 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
     }
   };
 
-  const onFormSubmit = (data: FormData) => {
+  const onFormSubmit = async (data: FormData) => {
     // Transform FormData to CreateSubscriptionDTO
     const payload: CreateSubscriptionDTO = {
       name: data.name,
@@ -154,6 +250,27 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
       // TODO: Handle Logo Upload separately if needed, or pass as base64/url if API supports it
       // For now, we are skipping the file object as it can't be JSON serialized directly in the DTO
     };
+
+    // Check conflict if creating new and not already confirmed
+    if (!isEditMode && data.name && data.name !== confirmedConflictName) {
+         try {
+             const result = await subscriptionService.checkConflict(data.name);
+             if (result.conflict && result.existingSubscription) {
+                 setConflictModal({ 
+                     isOpen: true, 
+                     name: data.name, 
+                     existing: result.existingSubscription,
+                     onContinue: () => {
+                         setConfirmedConflictName(data.name);
+                         onSubmit(payload as any);
+                     }
+                 });
+                 return; 
+             }
+         } catch (e) {
+             console.error("Check conflict failed during save", e);
+         }
+    }
     
     onSubmit(payload as any); // Type assertion needed because userId is required in DTO but injected by backend
   };
@@ -220,12 +337,20 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
                     <span className="text-[10px] text-gray-400 text-center block mt-1">Logo</span>
                    </div>
                    <div className="flex-1 space-y-4">
-                     <Input 
-                        label={t('name', { ns: 'subscription' })} 
-                        placeholder="e.g. Netflix" 
-                        {...register('name')} 
-                        error={errors.name?.message}
-                      />
+                     <Controller
+                        control={control}
+                        name="name"
+                        render={({ field }) => (
+                           <AutocompleteInput
+                              label={t('name', { ns: 'subscription' })}
+                              placeholder="e.g. Netflix"
+                              options={autocompleteOptions}
+                              value={field.value}
+                              onChange={field.onChange}
+                              error={errors.name?.message}
+                           />
+                        )}
+                     />
                    </div>
                 </div>
 
@@ -292,24 +417,50 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
                    />
                 </div>
                 
-                {/* Info message about past dates */}
-                {formData.startDate && new Date(formData.startDate) < new Date() && (
-                  <div className="flex gap-2 p-3 text-sm text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400 rounded-lg animate-in fade-in duration-300">
-                    <Info className="w-5 h-5 shrink-0" />
-                    <p>
-                      {t('past_date_info', { 
-                        ns: 'subscription', 
-                        defaultValue: 'You selected a past date. The system will assume previous cycles are already paid and will only generate a bill for the upcoming payment cycle.' 
-                      })}
-                    </p>
-                  </div>
-                )}
+                {/* Info message about dates */}
+                {formData.startDate && (() => {
+                  const date = new Date(formData.startDate);
+                  const isDateToday = isToday(date);
+                  const isDateFuture = isFuture(date);
+                  const isDatePast = isBefore(date, new Date()) && !isDateToday;
+
+                  return (
+                    <div className={cn(
+                      "flex gap-2 p-3 text-xs sm:text-sm rounded-lg animate-in fade-in duration-300",
+                      isDateToday ? "bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400" :
+                      isDateFuture ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400" :
+                      "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                    )}>
+                      <Info className="w-5 h-5 shrink-0 mt-0.5" />
+                      <div>
+                        {isDateToday && (
+                          <p>{t('date_info.today', { defaultValue: 'Since it starts today, a bill will be generated immediately for you to confirm.' })}</p>
+                        )}
+                        {isDatePast && (
+                          <p>
+                            {t('past_date_info', { 
+                              defaultValue: 'Past date selected. The system will assume previous cycles are paid. The next bill will be generated for the upcoming cycle.' 
+                            })}
+                          </p>
+                        )}
+                        {isDateFuture && (
+                          <p>
+                            {t('date_info.future', { 
+                              defaultValue: 'Future start date. Your first bill will appear on {{date}}.',
+                              date: format(date, 'MMM d, yyyy')
+                            })}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Live Preview */}
                 <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
                   <h4 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-4">{t('preview', { ns: 'common' })}</h4>
                   <div className="max-w-sm mx-auto transform hover:scale-105 transition-transform duration-300">
-                    <SubscriptionCard subscription={previewSubscription} />
+                    <SubscriptionCard subscription={previewSubscription} readonly={true} />
                   </div>
                 </div>
               </div>
@@ -509,6 +660,39 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
            )}
          </div>
       </div>
+
+      <Modal
+        isOpen={conflictModal.isOpen}
+        onClose={() => setConflictModal(prev => ({ ...prev, isOpen: false }))}
+        title={t('duplicate_warning', { defaultValue: 'Duplicate Subscription Detected' })}
+        className="z-[70] max-w-md"
+      >
+         <div className="space-y-4">
+            <p className="text-gray-600 dark:text-gray-300">
+               {t('duplicate_message', { 
+                   defaultValue: 'You already have a subscription named "{{name}}". Do you want to use the existing one or create a new one?',
+                   name: conflictModal.name
+               })}
+            </p>
+            
+            <div className="grid grid-cols-2 gap-4 mt-8">
+               <Button 
+                 variant="outline"
+                 onClick={() => handleResolveConflict('use_existing')}
+                 className="h-12 hover:border-primary/50 hover:bg-primary/5 dark:hover:bg-primary/10 transition-all duration-300 group font-medium text-base"
+               >
+                 <span className="group-hover:text-primary transition-colors">{t('edit', { ns: 'common', defaultValue: 'Edit' })}</span>
+               </Button>
+               
+               <Button 
+                 onClick={() => handleResolveConflict('create_new')}
+                 className="h-12 bg-primary text-white hover:bg-primary-hover shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all duration-300 font-medium text-base"
+               >
+                 {t('create', { ns: 'common', defaultValue: 'Create' })}
+               </Button>
+            </div>
+         </div>
+      </Modal>
     </div>
   );
 }

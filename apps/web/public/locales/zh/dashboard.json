@@ -59,13 +59,15 @@
   },
   "pending_bills": {
     "title": "待处理账单",
+    "explanation": "今天到期或已逾期的账单。请确认支付以更新订阅状态。",
     "due_date": "应付日期",
     "confirm_btn": "确认已付",
     "confirmed_msg": "已成功标记为已支付",
     "overdue": "已逾期",
     "confirm_title": "确认支付",
-    "confirm_desc": "请核对实际支付金额。",
+    "confirm_desc": "请核对实际支付金额和日期。",
     "amount_label": "实付金额",
+    "date_label": "支付日期",
     "cancel_btn": "取消续费",
     "cancelled_msg": "已成功取消续费",
     "confirm_cancel": "确定要取消此次续费吗？这也将同时取消该订阅。"

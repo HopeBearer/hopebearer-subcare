@@ -27,6 +27,18 @@ export const subscriptionRegistry: Record<string, RouteVersions> = {
       middlewares: [authMiddleware.authenticate]
     }
   },
+  'GET /subscriptions/check-conflict': {
+    v1: {
+        handler: controllersV1.Subscription.checkConflict,
+        middlewares: [authMiddleware.authenticate]
+    }
+  },
+  'GET /subscriptions/names': {
+    v1: {
+        handler: controllersV1.Subscription.getNames,
+        middlewares: [authMiddleware.authenticate]
+    }
+  },
   'PATCH /subscriptions/:id': {
     v1: {
       handler: controllersV1.Subscription.update,

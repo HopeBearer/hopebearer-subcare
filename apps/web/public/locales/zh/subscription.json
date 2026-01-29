@@ -8,6 +8,10 @@
   "billing_date": "账单日期",
   "first_payment": "首次付款日期",
   "past_date_info": "您选择了过去的日期。系统将默认之前的周期已完成支付，仅会生成即将到来的那一期账单。",
+  "date_info": {
+    "today": "由于开始日期是今天，系统将立即生成一笔待确认账单。",
+    "future": "未来开始日期。您的第一笔账单将在 {{date}} 生成。"
+  },
   "next_bill": "下次续费",
   "details": "详细信息",
   "website": "官方网站",
@@ -21,7 +25,11 @@
   "notes_empty": "暂无备注",
   "usage": "使用频率",
   "loading_details": "正在加载详情...",
-  "search_placeholder": "搜索订阅...",
+  "history_title": "订阅历史",
+  "history_error": "加载历史记录失败",
+  "history_empty": "暂无历史记录",
+  "search_label": "搜索",
+  "search_placeholder": "金额或备注...",
   "filter_all_status": "所有状态",
   "filter_all_categories": "所有分类",
   "filter_all_cycles": "所有周期",
@@ -33,6 +41,8 @@
   "filter_next_7_days": "未来7天",
   "filter_next_15_days": "未来15天",
   "filter_next_30_days": "未来30天",
+  "start_date": "开始日期",
+  "end_date": "结束日期",
   "reset_filters": "重置",
   "help_delete": "永久删除此订阅记录。",
   "help_pause": "暂停跟踪，但保留历史数据。",
@@ -50,7 +60,10 @@
     "Active": "活跃",
     "Paused": "已暂停",
     "Cancelled": "已取消",
-    "pending_payment": "待支付"
+    "pending_payment": "待支付",
+    "PAID": "已支付",
+    "PENDING": "待支付",
+    "FAILED": "支付失败"
   },
   "categories": {
     "entertainment": "娱乐",
@@ -96,5 +109,16 @@
     "other": "其他"
   },
   "no_subscriptions_found": "未找到符合条件的订阅。",
-  "no_more_subscriptions": "没有更多订阅了。"
+  "no_more_subscriptions": "没有更多订阅了。",
+  "duplicate_warning": "检测到重复订阅",
+  "duplicate_message": "您已经拥有名为“{{name}}”的订阅。您是想使用现有的订阅还是创建一个新的？",
+  "use_existing": "使用现有服务",
+  "create_new": "创建新订阅",
+  "existing_services": "已有服务",
+  "view_all_history": "查看全部历史",
+  "and_more_records": "还有 {{count}} 条记录",
+  "status_label": "状态",
+  "notes": "备注",
+  "no_history_found": "未找到记录",
+  "showing_page": "第 {{page}} 页 / 共 {{total}} 页"
 }

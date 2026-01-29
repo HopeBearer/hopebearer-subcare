@@ -34,11 +34,10 @@ export function Modal({ isOpen, onClose, title, children, className, headerClass
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{title}</h2>
           <Button
             variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="h-8 w-8 p-0 rounded-full bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition-colors"
             onClick={onClose}
           >
-            <X className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+            <X className="w-5 h-5 text-zinc-900 dark:text-zinc-100" />
           </Button>
         </div>
         

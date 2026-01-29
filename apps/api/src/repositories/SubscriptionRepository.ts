@@ -7,6 +7,53 @@ import { SubscriptionFilterDTO } from "@subcare/types";
  */
 export class SubscriptionRepository {
   /**
+   * Check if a subscription with the same normalized name exists for the user
+   */
+  async findByNormalizedName(userId: string, normalizedName: string): Promise<Subscription | null> {
+    return prisma.subscription.findFirst({
+      where: {
+        userId,
+        normalizedName
+      }
+    });
+  }
+
+  /**
+   * Find all subscription names for a user (for autocomplete)
+   * Modified to perform unique filtering in application code to handle legacy data where normalizedName might be empty
+   */
+  async findAllNames(userId: string): Promise<{ name: string, icon: string | null }[]> {
+    console.log('[DEBUG] findAllNames querying for userId:', userId);
+    
+    try {
+      const items = await prisma.subscription.findMany({
+        where: { userId },
+        select: { name: true, icon: true }, 
+      });
+      console.log('[DEBUG] findAllNames found raw items count:', items.length);
+
+      // Application-level distinct by normalized name
+      const seen = new Set<string>();
+      const uniqueItems: { name: string, icon: string | null }[] = [];
+
+      for (const item of items) {
+          if (!item.name) continue; 
+          const normalized = item.name.trim().toLowerCase();
+          if (!seen.has(normalized)) {
+              seen.add(normalized);
+              uniqueItems.push(item);
+          }
+      }
+      
+      console.log('[DEBUG] findAllNames unique count:', uniqueItems.length);
+      return uniqueItems;
+    } catch (e) {
+      console.error('[DEBUG] findAllNames error:', e);
+      throw e;
+    }
+  }
+
+  /**
    * 创建新的订阅
    * @param data 订阅创建数据
    * @returns 创建的订阅实体

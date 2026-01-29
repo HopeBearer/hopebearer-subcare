@@ -59,6 +59,7 @@
   },
   "pending_bills": {
     "title": "Pending Bills",
+    "explanation": "Bills due today or overdue. Confirm payment to update subscription status.",
     "due_date": "Due Date",
     "confirm_btn": "Mark as Paid",
     "confirmed_msg": "Bill marked as paid successfully",
@@ -66,6 +67,7 @@
     "confirm_title": "Confirm Payment",
     "confirm_desc": "Please verify the actual amount paid.",
     "amount_label": "Actual Amount",
+    "date_label": "Payment Date",
     "cancel_btn": "Cancel Renewal",
     "cancelled_msg": "Renewal cancelled successfully",
     "confirm_cancel": "Are you sure you want to cancel this renewal? This will also cancel the subscription."

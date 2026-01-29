@@ -30,6 +30,9 @@ export function AddSubscriptionModal() {
       
       // Invalidate queries to refresh the list
       queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['subscription-names'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-bills'] });
       
       closeAddSubscription();
     } catch (error) {

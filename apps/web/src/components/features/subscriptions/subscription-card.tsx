@@ -19,9 +19,10 @@ export type Subscription = SubscriptionDTO;
 interface SubscriptionCardProps {
   subscription: Subscription;
   onClick?: (id: string) => void;
+  readonly?: boolean;
 }
 
-export function SubscriptionCard({ subscription, onClick }: SubscriptionCardProps) {
+export function SubscriptionCard({ subscription, onClick, readonly }: SubscriptionCardProps) {
   const { t } = useTranslation(['subscription', 'common']);
   const { openAddSubscription } = useModalStore();
   const queryClient = useQueryClient();
@@ -30,11 +31,11 @@ export function SubscriptionCard({ subscription, onClick }: SubscriptionCardProp
   const statusKey = subscription.status; // e.g., 'ACTIVE', 'Active'
   
   const statusColors: Record<string, string> = {
-    'Active': 'bg-green-100 text-green-700',
-    'ACTIVE': 'bg-green-100 text-green-700',
-    'Paused': 'bg-gray-100 text-gray-700',
-    'PAUSED': 'bg-gray-100 text-gray-700',
-    'Renewal Soon': 'bg-orange-100 text-orange-700', // Backend might not have this state directly
+    'Active': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+    'ACTIVE': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+    'Paused': 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+    'PAUSED': 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+    'Renewal Soon': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300', // Backend might not have this state directly
   };
 
   const categoryColor = getCategoryColor(subscription.category);
@@ -97,9 +98,11 @@ export function SubscriptionCard({ subscription, onClick }: SubscriptionCardProp
         </div>
         
         {/* Action Menu */}
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={(e) => e.stopPropagation()}>
-          <ActionDropdown items={actionItems} />
-        </div>
+        {!readonly && (
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={(e) => e.stopPropagation()}>
+            <ActionDropdown items={actionItems} />
+          </div>
+        )}
       </div>
 
       {/* Tags Block - Independent */}

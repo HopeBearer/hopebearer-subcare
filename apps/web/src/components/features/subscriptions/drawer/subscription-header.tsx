@@ -16,12 +16,12 @@ export function SubscriptionHeader({ subscription }: SubscriptionHeaderProps) {
   const statusKey = subscription.status;
   
   const statusStyles: Record<string, string> = {
-    'ACTIVE': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200',
-    'Active': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200',
-    'PAUSED': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200',
-    'Paused': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200',
-    'CANCELLED': 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 border-zinc-200',
-    'Cancelled': 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 border-zinc-200',
+    'ACTIVE': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+    'Active': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+    'PAUSED': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+    'Paused': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+    'CANCELLED': 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400',
+    'Cancelled': 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400',
   };
 
   const formattedPrice = new Intl.NumberFormat(i18n.language, {
@@ -49,9 +49,14 @@ export function SubscriptionHeader({ subscription }: SubscriptionHeaderProps) {
               {subscription.name}
             </h2>
             <div className="flex items-center gap-2 mt-1">
+              {(subscription as any).hasPendingBill && (
+                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
+                  {t('status.pending_payment', { defaultValue: 'Pending Payment' })}
+                </span>
+              )}
               <span 
                 className={cn(
-                  "px-2 py-0.5 rounded-full text-xs font-medium border",
+                  "px-2 py-0.5 rounded-full text-xs font-medium",
                   statusStyles[statusKey] || 'bg-gray-100 text-gray-700'
                 )}
               >

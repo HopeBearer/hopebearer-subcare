@@ -46,8 +46,38 @@ export const subscriptionService = {
     return response.data.subscriptions;
   },
 
-  getHistory: async (id: string): Promise<PaymentRecordDTO[]> => {
-    const response = await api.get<any, ApiResponse<{ history: PaymentRecordDTO[] }>>(`/subscriptions/${id}/history`);
-    return response.data.history;
+  getHistory: async (
+    id: string, 
+    params?: { page?: number; limit?: number; search?: string; startDate?: string; endDate?: string }
+  ): Promise<{ items: PaymentRecordDTO[], pagination: { total: number, page: number, limit: number, totalPages: number } }> => {
+    const response = await api.get<any, ApiResponse<{ 
+        history: PaymentRecordDTO[], 
+        pagination: { total: number, page: number, limit: number, totalPages: number } 
+    }>>(`/subscriptions/${id}/history`, { params });
+    
+    // Backward compatibility for old API structure if needed, or normalize response
+    if (response.data.pagination) {
+        return { items: response.data.history, pagination: response.data.pagination };
+    }
+    // Fallback if backend returns array directly (shouldn't happen with new backend code)
+    return { items: response.data.history as any, pagination: { total: response.data.history.length, page: 1, limit: 1000, totalPages: 1 } };
+  },
+
+  checkConflict: async (name: string): Promise<{ conflict: boolean; existingSubscription?: SubscriptionDTO }> => {
+    const response = await api.get<any, ApiResponse<{ conflict: boolean; existingSubscription?: SubscriptionDTO }>>('/subscriptions/check-conflict', {
+      params: { name }
+    });
+    return response.data;
+  },
+
+  getNames: async (): Promise<{ name: string, icon: string | null }[]> => {
+    const response = await api.get<any, ApiResponse<{ names: { name: string, icon: string | null }[] }>>('/subscriptions/names');
+    console.log('[DEBUG] Service getNames raw response:', response);
+    // Safety check
+    if (!response || !response.data || !response.data.names) {
+        console.error('[DEBUG] Invalid response structure:', response);
+        return [];
+    }
+    return response.data.names;
   }
 };

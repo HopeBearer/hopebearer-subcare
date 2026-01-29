@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { SubscriptionHeader } from './subscription-header';
 import { SubscriptionInfoSection } from './subscription-info-section';
 import { SubscriptionNotifySection } from './subscription-notify-section';
+import { SubscriptionHistorySection } from './subscription-history-section';
 import { SubscriptionActionBar } from './subscription-action-bar';
 import { useTranslation } from 'react-i18next';
 
@@ -79,6 +80,12 @@ export function SubscriptionDetailDrawer({ isOpen, onClose, subscription }: Draw
                 <SubscriptionInfoSection subscription={subscription} />
                 <SubscriptionNotifySection subscription={subscription} />
                 
+                <SubscriptionHistorySection 
+                  subscriptionId={subscription.id} 
+                  currency={subscription.currency} 
+                  subscriptionName={subscription.name}
+                />
+
                 {(subscription.notes || subscription.usage) && (
                   <div className="space-y-4">
                     <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">

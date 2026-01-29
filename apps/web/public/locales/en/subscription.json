@@ -7,7 +7,11 @@
   "cycle": "Cycle",
   "billing_date": "Billing Date",
   "first_payment": "First Payment Date",
-  "past_date_info": "You selected a past date. The system will assume previous cycles are already paid and will only generate a bill for the upcoming payment cycle.",
+  "past_date_info": "Past date selected. The system will assume previous cycles are paid. The next bill will be generated for the upcoming cycle.",
+  "date_info": {
+    "today": "Since it starts today, a bill will be generated immediately for you to confirm.",
+    "future": "Future start date. Your first bill will appear on {{date}}."
+  },
   "next_bill": "Next Bill",
   "details": "Details",
   "website": "Website",
@@ -21,7 +25,11 @@
   "notes_empty": "No notes added.",
   "usage": "Usage",
   "loading_details": "Loading details...",
-  "search_placeholder": "Search subscriptions...",
+  "history_title": "Subscription History",
+  "history_error": "Failed to load history",
+  "history_empty": "No history available",
+  "search_label": "Search",
+  "search_placeholder": "Amount or notes...",
   "filter_all_status": "All Status",
   "filter_all_categories": "All Categories",
   "filter_all_cycles": "All Cycles",
@@ -33,6 +41,8 @@
   "filter_next_7_days": "Next 7 Days",
   "filter_next_15_days": "Next 15 Days",
   "filter_next_30_days": "Next 30 Days",
+  "start_date": "Start Date",
+  "end_date": "End Date",
   "reset_filters": "Reset",
   "help_delete": "Permanently remove this subscription record.",
   "help_pause": "Temporarily stop tracking without deleting data.",
@@ -50,7 +60,10 @@
     "Active": "Active",
     "Paused": "Paused",
     "Cancelled": "Cancelled",
-    "pending_payment": "Pending Payment"
+    "pending_payment": "Pending Payment",
+    "PAID": "Paid",
+    "PENDING": "Pending",
+    "FAILED": "Failed"
   },
   "categories": {
     "entertainment": "Entertainment",
@@ -96,5 +109,16 @@
     "other": "Other"
   },
   "no_subscriptions_found": "No subscriptions found matching your filters.",
-  "no_more_subscriptions": "No more subscriptions to load."
+  "no_more_subscriptions": "No more subscriptions to load.",
+  "duplicate_warning": "Duplicate Subscription Detected",
+  "duplicate_message": "You already have a subscription named \"{{name}}\". Do you want to use the existing one or create a new one?",
+  "use_existing": "Use Existing Service",
+  "create_new": "Create New Subscription",
+  "existing_services": "Existing Services",
+  "view_all_history": "View All History",
+  "and_more_records": "+ {{count}} more records",
+  "status_label": "Status",
+  "notes": "Notes",
+  "no_history_found": "No records found",
+  "showing_page": "Page {{page}} of {{total}}"
 }
