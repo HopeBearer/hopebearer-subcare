@@ -7,7 +7,7 @@
   "cycle": "周期",
   "billing_date": "账单日期",
   "first_payment": "首次付款日期",
-  "past_date_info": "您选择了过去的日期。系统将默认之前的周期已完成支付，仅会生成即将到来的那一期账单。",
+  "past_date_info": "您选择了过去的日期。系统会默认认为中间并未断过订阅，并自动补全所有历史周期的已支付记录。",
   "date_info": {
     "today": "由于开始日期是今天，系统将立即生成一笔待确认账单。",
     "future": "未来开始日期。您的第一笔账单将在 {{date}} 生成。"
@@ -120,5 +120,7 @@
   "status_label": "状态",
   "notes": "备注",
   "no_history_found": "未找到记录",
-  "showing_page": "第 {{page}} 页 / 共 {{total}} 页"
+  "showing_page": "第 {{page}} 页 / 共 {{total}} 页",
+  "total_records": "共 {{count}} 条",
+  "total_amount": "本页合计"
 }

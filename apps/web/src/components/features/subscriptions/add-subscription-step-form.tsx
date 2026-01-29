@@ -439,7 +439,7 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
                         {isDatePast && (
                           <p>
                             {t('past_date_info', { 
-                              defaultValue: 'Past date selected. The system will assume previous cycles are paid. The next bill will be generated for the upcoming cycle.' 
+                              defaultValue: 'Past date selected. The system assumes the subscription has been active without interruption. Historical payment records will be automatically generated as \'Paid\'.' 
                             })}
                           </p>
                         )}

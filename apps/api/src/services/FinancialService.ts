@@ -124,6 +124,18 @@ export class FinancialService {
     // Advance subscription nextPayment date
     const subscription = await this.subscriptionRepository.findById(record.subscriptionId);
     if (subscription) {
+        // If actualAmount is provided and differs from subscription price, update the subscription price
+        // This ensures future bills reflect the new confirmed amount
+        if (actualAmount !== undefined) {
+            const currentPrice = subscription.price?.toNumber ? subscription.price.toNumber() : Number(subscription.price);
+            if (Math.abs(currentPrice - actualAmount) > 0.001) {
+                console.log(`[FinancialService] Updating subscription ${subscription.id} price from ${currentPrice} to ${actualAmount}`);
+                await this.subscriptionRepository.update(subscription.id, {
+                    price: actualAmount
+                });
+            }
+        }
+
         await this.advanceSubscriptionDate(subscription);
 
         // Check if we need to generate the NEXT bill immediately (e.g. catch-up logic)

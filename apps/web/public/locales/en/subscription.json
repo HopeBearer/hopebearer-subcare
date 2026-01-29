@@ -7,7 +7,7 @@
   "cycle": "Cycle",
   "billing_date": "Billing Date",
   "first_payment": "First Payment Date",
-  "past_date_info": "Past date selected. The system will assume previous cycles are paid. The next bill will be generated for the upcoming cycle.",
+  "past_date_info": "Past date selected. The system assumes the subscription has been active without interruption. Historical payment records will be automatically generated as 'Paid'.",
   "date_info": {
     "today": "Since it starts today, a bill will be generated immediately for you to confirm.",
     "future": "Future start date. Your first bill will appear on {{date}}."
@@ -120,5 +120,7 @@
   "status_label": "Status",
   "notes": "Notes",
   "no_history_found": "No records found",
-  "showing_page": "Page {{page}} of {{total}}"
+  "showing_page": "Page {{page}} of {{total}}",
+  "total_records": "Total: {{count}}",
+  "total_amount": "Page Total"
 }

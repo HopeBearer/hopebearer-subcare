@@ -41,9 +41,7 @@ export function Modal({ isOpen, onClose, title, children, className, headerClass
           </Button>
         </div>
         
-        <div>
-          {children}
-        </div>
+        {children}
       </div>
     </div>
   );

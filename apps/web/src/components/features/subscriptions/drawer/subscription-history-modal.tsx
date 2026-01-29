@@ -173,11 +173,11 @@ export function SubscriptionHistoryModal({
       onClose={onClose}
       title={`${subscriptionName} - ${t('history_title', { defaultValue: 'History' })}`}
       className="max-w-4xl w-[90vw] h-[85vh] flex flex-col p-0"
-      headerClassName="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 m-0"
+      headerClassName="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 m-0 shrink-0"
     >
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-6 space-y-6">
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end shrink-0">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
               {t('search_label', { defaultValue: 'Search' })}
@@ -230,7 +230,7 @@ export function SubscriptionHistoryModal({
         </div>
 
         {/* Chart */}
-        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-800 p-4 h-[300px]">
+        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-800 p-4 h-[250px] shrink-0">
            {isLoading && historyItems.length === 0 ? (
              <div className="h-full flex items-center justify-center text-zinc-400">
                <Loader2 className="w-6 h-6 animate-spin mr-2" />
@@ -245,56 +245,64 @@ export function SubscriptionHistoryModal({
            )}
         </div>
 
-        {/* Table */}
-        <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden relative min-h-[200px]">
+        {/* Table Container */}
+        <div className="flex-1 min-h-0 flex flex-col border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden relative">
           {isLoading && (
               <div className="absolute inset-0 bg-white/50 dark:bg-zinc-900/50 flex items-center justify-center z-10 backdrop-blur-[1px]">
                   <Loader2 className="w-6 h-6 animate-spin text-zinc-500" />
               </div>
           )}
-          <table className="w-full text-sm text-left">
-            <thead className="bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 font-medium border-b border-zinc-200 dark:border-zinc-800">
-              <tr>
-                <th className="px-4 py-3">{t('billing_date', { defaultValue: 'Billing Date' })}</th>
-                <th className="px-4 py-3">{t('cost', { defaultValue: 'Amount' })}</th>
-                <th className="px-4 py-3">{t('status_label', { defaultValue: 'Status' })}</th>
-                <th className="px-4 py-3 w-1/3">{t('notes', { defaultValue: 'Notes' })}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          {/* Table Header */}
+          <div className="bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 font-medium border-b border-zinc-200 dark:border-zinc-800 shrink-0">
+             <div className="flex items-center justify-between px-4 py-2 bg-zinc-100/50 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700">
+               <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                 {t('total_records', { count: pagination.total, defaultValue: 'Total: {{count}}' })}
+               </span>
+               <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                 {t('total_amount', { defaultValue: 'Page Total' })}: <span className="text-zinc-900 dark:text-white">{formatCurrency(historyItems.reduce((acc, item) => acc + Number(item.amount), 0), currency)}</span>
+               </span>
+             </div>
+            <div className="grid grid-cols-[1fr_1fr_1fr_1.5fr] text-sm text-left">
+                <div className="px-4 py-3">{t('billing_date', { defaultValue: 'Billing Date' })}</div>
+                <div className="px-4 py-3">{t('cost', { defaultValue: 'Amount' })}</div>
+                <div className="px-4 py-3">{t('status_label', { defaultValue: 'Status' })}</div>
+                <div className="px-4 py-3">{t('notes', { defaultValue: 'Notes' })}</div>
+            </div>
+          </div>
+          {/* Table Body - Scrollable */}
+          <div className="flex-1 overflow-y-auto">
+             <div className="grid grid-cols-[1fr_1fr_1fr_1.5fr] text-sm text-left divide-y divide-zinc-100 dark:divide-zinc-800 auto-rows-min">
               {historyItems.length > 0 ? (
                 historyItems.map((record) => (
-                  <tr key={record.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors">
-                    <td className="px-4 py-3 text-zinc-900 dark:text-zinc-200">
+                  <React.Fragment key={record.id}>
+                    <div className="px-4 py-3 text-zinc-900 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800">
                       {format(new Date(record.billingDate), 'yyyy-MM-dd')}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
+                    </div>
+                    <div className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100 border-b border-zinc-100 dark:border-zinc-800">
                       {formatCurrency(Number(record.amount), currency)}
-                    </td>
-                    <td className="px-4 py-3">
+                    </div>
+                    <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800">
                       <StatusBadge status={record.status} t={t} />
-                    </td>
-                    <td className="px-4 py-3 text-zinc-500 truncate max-w-[200px]" title={record.note || ''}>
+                    </div>
+                    <div className="px-4 py-3 text-zinc-500 truncate border-b border-zinc-100 dark:border-zinc-800" title={record.note || ''}>
                       {record.note || '-'}
-                    </td>
-                  </tr>
+                    </div>
+                  </React.Fragment>
                 ))
               ) : (
                 !isLoading && (
-                    <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-zinc-400">
+                    <div className="col-span-4 px-4 py-8 text-center text-zinc-400">
                         {t('no_history_found', { defaultValue: 'No records found' })}
-                    </td>
-                    </tr>
+                    </div>
                 )
               )}
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
 
-        {/* Pagination */}
+        {/* Pagination - Fixed at bottom */}
         {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center justify-between pt-0 shrink-0">
                 <span className="text-xs text-zinc-500">
                     {t('showing_page', { page: pagination.page, total: pagination.totalPages, defaultValue: `Page ${pagination.page} of ${pagination.totalPages}` })}
                 </span>
@@ -340,12 +348,14 @@ function StatusBadge({ status, t }: { status: string, t: any }) {
 }
 
 function formatCurrency(amount: number, currency: string) {
-    try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: currency,
-      }).format(amount);
-    } catch (e) {
-      return `${currency} ${amount.toFixed(2)}`;
-    }
+  try {
+    // 强制使用货币代码作为显示部分，而不是符号
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+      currencyDisplay: 'code', // Change from default (symbol) to 'code' (e.g. USD, CNY)
+    }).format(amount);
+  } catch (e) {
+    return `${currency} ${amount.toFixed(2)}`;
+  }
 }

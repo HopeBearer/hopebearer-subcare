@@ -110,37 +110,49 @@ export class SubscriptionService {
     const now = new Date();
     
     // Logic Improvement:
-    // If user adds a subscription from the past, we assume past cycles are "Done" (implicitly PAID).
-    // We do NOT generate backfilled PAID records to avoid dirty data.
-    // We only want to generate a PENDING bill if the *next* payment is due NOW (or very soon).
+    // If user adds a subscription from the past, we check past cycles from the startDate.
+    // We generate backfilled PAID records to reflect accurate history.
     
-    // However, calculateNextPayment usually returns the NEXT valid date from startDate.
-    // If startDate is 2020-01-01 and today is 2023-01-01, calculateNextPayment might return 2020-02-01 (if simplistic)
-    // or 2023-01-01 (if smart).
-    // Let's assume calculateNextPayment is simple (startDate + cycle).
-    // So we need to advance the nextPayment to be >= today (or close to today).
+    // We iterate from startDate up until (but not including) today.
+    let historyIterator = new Date(data.startDate);
     
-    // Re-calculate the "Real" Next Payment relative to NOW.
-    let realNextPayment = new Date(subscription.nextPayment);
-    if (isBefore(realNextPayment, now)) {
-        // Loop to advance until it's in the future (or today)
-        while (isBefore(realNextPayment, now) && realNextPayment.toDateString() !== now.toDateString()) {
-             // Advance logic
-             switch (subscription.billingCycle.toLowerCase()) {
-                case 'monthly': realNextPayment = addMonths(realNextPayment, 1); break;
-                case 'yearly': realNextPayment = addYears(realNextPayment, 1); break;
-                case 'weekly': realNextPayment = addWeeks(realNextPayment, 1); break;
-                case 'daily': realNextPayment = addDays(realNextPayment, 1); break;
-                default: realNextPayment = addMonths(realNextPayment, 1);
-            }
+    // Helper to advance date based on cycle
+    const advanceDate = (date: Date, cycle: string) => {
+        switch (cycle.toLowerCase()) {
+            case 'monthly': return addMonths(date, 1);
+            case 'yearly': return addYears(date, 1);
+            case 'weekly': return addWeeks(date, 1);
+            case 'daily': return addDays(date, 1);
+            default: return addMonths(date, 1);
         }
-        
-        // Update the subscription with this new "Real" Next Payment
-        await this.subscriptionRepository.update(subscription.id, {
-            nextPayment: realNextPayment
-        });
-        subscription.nextPayment = realNextPayment;
+    };
+
+    // Check if we need to backfill
+    if (isBefore(historyIterator, now)) {
+        // Loop while the iterator is strictly in the past (before today)
+        // If it lands ON today, we stop, because that will be handled by the "Immediate Check" below for a PENDING bill.
+        while (isBefore(historyIterator, now) && historyIterator.toDateString() !== now.toDateString()) {
+             
+             // 1. Generate PAID record for this past date
+             console.log(`[Backfill] Creating PAID record for ${subscription.id} at ${historyIterator}`);
+             await this.paymentRecordRepository.create({
+                amount: subscription.price,
+                currency: subscription.currency,
+                billingDate: new Date(historyIterator), // Copy date
+                status: 'PAID', // Backfilled as PAID
+                subscription: { connect: { id: subscription.id } },
+                user: { connect: { id: subscription.userId } },
+                note: 'Backfilled history'
+             }).catch(err => console.error(`[WARN] Failed to backfill history for ${subscription.id} at ${historyIterator}`, err));
+
+             // 2. Advance iterator
+             historyIterator = advanceDate(historyIterator, subscription.billingCycle);
+        }
     }
+    
+    // Note: subscription.nextPayment is already calculated correctly by calculateNextPayment (it returns future date)
+    // So we don't need to update subscription.nextPayment here unless we want to be super precise about hours, 
+    // but calculateNextPayment handles that.
 
     await this.notificationService.notify({
       userId: data.userId,
