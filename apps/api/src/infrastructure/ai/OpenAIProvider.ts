@@ -55,8 +55,22 @@ export class OpenAIProvider implements LLMProvider {
         max_tokens: 1
       });
       return true;
-    } catch (error) {
+    } catch (_error) {
       return false;
+    }
+  }
+
+  async getModels(): Promise<string[]> {
+    try {
+      const response = await this.client.get('/models');
+      const data = response.data;
+      if (Array.isArray(data.data)) {
+        return data.data.map((m: any) => m.id);
+      }
+      return [];
+    } catch (error) {
+      console.error('[OpenAIProvider] Failed to fetch models:', error);
+      return [];
     }
   }
 }

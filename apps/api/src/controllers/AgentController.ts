@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AgentService } from '../services/AgentService';
 import { StatusCodes } from 'http-status-codes';
 import { BusinessCode } from '../constants/BusinessCode';
+import { AppError } from '../utils/AppError';
 import { z } from 'zod';
 
 const configSchema = z.object({
@@ -59,18 +60,46 @@ export class AgentController {
   };
 
   /**
+   * Get Available Models
+   * POST /api/v1/agent/models
+   */
+  getModels = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = (req as any).user?.userId;
+      const { provider, apiKey, baseUrl } = req.body;
+      
+      // Validation handled in service now to allow stored config usage
+      const models = await this.agentService.getModels({
+        userId,
+        provider,
+        apiKey,
+        baseUrl
+      });
+      
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data: models
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
    * Get AI Recommendations
    * GET /api/v1/agent/recommendations
    */
   getRecommendations = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = (req as any).user?.userId;
-      const { focus, forceRefresh } = req.query;
+      const { focus, forceRefresh, model } = req.query;
 
       const result = await this.agentService.getRecommendations({
         userId,
         focus: focus as string,
-        forceRefresh: forceRefresh === 'true'
+        forceRefresh: forceRefresh === 'true',
+        model: model as string
       });
       
       res.status(StatusCodes.OK).json({

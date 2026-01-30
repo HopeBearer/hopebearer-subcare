@@ -47,6 +47,7 @@ export const routeConfig: Record<string, string> = {
 
   // Agent (AI)
   'POST /agent/config': 'v1',
+  'POST /agent/models': 'v1',
   'GET /agent/config': 'v1',
   'GET /agent/recommendations': 'v1',
 

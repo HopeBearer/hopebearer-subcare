@@ -14,10 +14,16 @@ export const agentService = {
   },
 
   // Get AI Recommendations
-  getRecommendations: async (focus?: string, forceRefresh?: boolean): Promise<RecommendationResponse> => {
+  getRecommendations: async (focus?: string, forceRefresh?: boolean, model?: string): Promise<RecommendationResponse> => {
     const response = await api.get<any, ApiResponse<RecommendationResponse>>('/agent/recommendations', {
-      params: { focus, forceRefresh }
+      params: { focus, forceRefresh, model }
     });
+    return response.data;
+  },
+
+  // Get available models
+  getModels: async (provider?: string, apiKey?: string, baseUrl?: string): Promise<string[]> => {
+    const response = await api.post<any, ApiResponse<string[]>>('/agent/models', { provider, apiKey, baseUrl });
     return response.data;
   }
 };

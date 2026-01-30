@@ -63,9 +63,49 @@ export class AgentService {
   }
 
   /**
+   * Fetch available models from the provider
+   */
+  async getModels(data: { provider?: string, apiKey?: string, baseUrl?: string, userId?: string }) {
+    let { provider, apiKey, baseUrl, userId } = data;
+    let isEncrypted = false;
+
+    // If userId provided but no apiKey/provider, try to load from saved config
+    if (userId && (!apiKey || !provider)) {
+       const activeConfig = await prisma.userAIConfig.findFirst({
+         where: { userId, isActive: true }
+       });
+       if (activeConfig) {
+          if (!provider) provider = activeConfig.provider;
+          if (!apiKey) {
+            apiKey = activeConfig.apiKey; // This is encrypted!
+            isEncrypted = true;
+          }
+          if (!baseUrl) baseUrl = activeConfig.baseUrl || undefined;
+       }
+    }
+
+    if (!provider || !apiKey) {
+        throw new AppError('MISSING_CREDENTIALS', StatusCodes.BAD_REQUEST, {
+            message: 'Provider and API Key are required (or configure them in settings)'
+         });
+    }
+
+    // LLMFactory expects ENCRYPTED key because it decrypts it internally.
+    const finalApiKey = isEncrypted ? apiKey : EncryptionUtil.encrypt(apiKey);
+    
+    const llmProvider = LLMFactory.createProvider({
+      provider: provider,
+      apiKey: finalApiKey,
+      baseUrl: baseUrl
+    });
+
+    return await llmProvider.getModels();
+  }
+
+  /**
    * Generate Subscription Recommendations
    */
-  async getRecommendations(req: AIRecommendationRequest) {
+  async getRecommendations(req: AIRecommendationRequest & { model?: string }) {
     // 1. Check Cache if not forcing refresh
     if (!req.forceRefresh) {
       const cached = await prisma.aIRecommendation.findUnique({
@@ -187,7 +227,7 @@ Please analyze and provide recommendations.
     const provider = LLMFactory.createProvider({
       provider: config.provider,
       apiKey: config.apiKey, // Factory handles decryption
-      model: config.model || undefined,
+      model: req.model || config.model || undefined,
       baseUrl: config.baseUrl || undefined
     });
 

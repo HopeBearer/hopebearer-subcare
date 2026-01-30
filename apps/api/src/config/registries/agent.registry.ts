@@ -19,5 +19,11 @@ export const agentRegistry: Record<string, RouteVersions> = {
       handler: controllersV1.Agent.getRecommendations,
       middlewares: [authMiddleware.authenticate]
     }
+  },
+  'POST /agent/models': {
+    v1: { 
+      handler: controllersV1.Agent.getModels,
+      middlewares: [authMiddleware.authenticate]
+    }
   }
 };

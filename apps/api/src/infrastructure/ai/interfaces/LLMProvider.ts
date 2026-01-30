@@ -31,4 +31,9 @@ export interface LLMProvider {
    * 检查 API Key 是否有效
    */
   checkHealth(): Promise<boolean>;
+
+  /**
+   * 获取可用模型列表
+   */
+  getModels(): Promise<string[]>;
 }

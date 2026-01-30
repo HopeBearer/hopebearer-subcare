@@ -9,7 +9,29 @@
     "account": "アカウント",
     "account_desc": "セキュリティとアカウント設定",
     "notifications": "通知",
-    "notifications_desc": "メールとプッシュ通知"
+    "notifications_desc": "メールとプッシュ通知",
+    "api": "API設定",
+    "api_desc": "AIプロバイダーを設定"
+  },
+  "api": {
+    "title": "API設定",
+    "description": "スマートな推奨機能のためにAIプロバイダーを設定します。",
+    "provider_settings": "プロバイダー設定",
+    "provider_settings_desc": "希望するAIプロバイダーを選択し、APIキーを入力してください。",
+    "provider_label": "AIプロバイダー",
+    "apikey_label": "APIキー",
+    "apikey_placeholder": "APIキーを入力してください",
+    "apikey_note": "APIキーは安全に保管され、推奨の取得のみに使用されます。",
+    "save_btn": "設定を保存",
+    "saving": "保存中...",
+    "success_config": "設定が正常に保存されました",
+    "error_config": "設定の保存に失敗しました",
+    "model_label": "モデル",
+    "load_models": "モデルを読み込む",
+    "models_fetched": "モデルの読み込みに成功しました",
+    "no_models_found": "モデルが見つかりません",
+    "error_fetch_models": "モデルの読み込みに失敗しました",
+    "model_manual_hint": "APIキーを入力し、「モデルを読み込む」をクリックして特定のモデルを選択してください。"
   },
   "profile": {
     "title": "公開プロフィール",

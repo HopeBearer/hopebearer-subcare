@@ -33,6 +33,8 @@ export function AIRecommendations() {
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<RecommendationResponse | null>(null);
   const [config, setConfig] = useState<AgentConfigDTO | null>(null);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [selectedModel, setSelectedModel] = useState<string>('');
   const containerRef = useRef<HTMLDivElement>(null);
   
   // Config Modal State
@@ -65,18 +67,28 @@ export function AIRecommendations() {
       const active = configs.find(c => c.isActive);
       setConfig(active || null);
       if (active) {
+        if (active.model) setSelectedModel(active.model);
+
+        // Load models for this active config
+        try {
+            const models = await agentService.getModels();
+            setAvailableModels(models);
+        } catch (e) {
+            console.warn('Failed to fetch models for dashboard', e);
+        }
+
         // Initial load: no force refresh, use cache if available
-        fetchRecommendations(false);
+        fetchRecommendations(false, active.model);
       }
     } catch (e) {
       console.error('Failed to check AI config', e);
     }
   };
 
-  const fetchRecommendations = async (force: boolean = false) => {
+  const fetchRecommendations = async (force: boolean = false, modelOverride?: string) => {
     setIsLoading(true);
     try {
-      const result = await agentService.getRecommendations(undefined, force);
+      const result = await agentService.getRecommendations(undefined, force, modelOverride || selectedModel);
       setData(result);
       if (force) {
         toast.success(t('common.updated', { defaultValue: 'Updated' }));
@@ -240,6 +252,17 @@ export function AIRecommendations() {
         </div>
         
         <div className="flex items-center gap-2">
+            {config && availableModels.length > 0 && (
+                <div className="w-[160px]">
+                    <Select 
+                        options={availableModels.map(m => ({ label: m, value: m }))}
+                        value={selectedModel}
+                        onChange={(val) => setSelectedModel(val)}
+                        className="h-10 text-xs py-1"
+                        placeholder={t('ai.model_label') || 'Model'}
+                    />
+                </div>
+            )}
             <button
             onClick={() => fetchRecommendations(true)}
             disabled={isLoading}
