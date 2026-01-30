@@ -39,6 +39,8 @@ model User {
   notificationSettings NotificationSetting[]
   paymentRecords PaymentRecord[]
   categories    Category[]
+  aiConfigs     UserAIConfig[]
+  aiRecommendation AIRecommendation?
 
   @@map("users")
 }
@@ -226,6 +228,41 @@ model MessageTemplate {
   deletedAt DateTime?
 
   @@map("message_templates")
+}
+
+model UserAIConfig {
+  id        String   @id @default(uuid())
+  userId    String
+  
+  provider  String   // "openai", "deepseek", "anthropic"
+  apiKey    String   @db.Text // Encrypted
+  model     String?  // e.g. "gpt-4-turbo", "deepseek-chat"
+  baseUrl   String?  // Optional: for custom proxies or local LLMs
+  
+  isActive  Boolean  @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime? // Add this for soft-delete compatibility
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@map("user_ai_configs")
+}
+
+model AIRecommendation {
+  id        String   @id @default(uuid())
+  userId    String
+  content   Json     // Stores the full recommendation JSON
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
+  @@map("ai_recommendations")
 }
 
 model PasswordResetToken {

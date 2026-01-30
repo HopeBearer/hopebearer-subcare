@@ -33,7 +33,8 @@ export interface LoginParams {
 export interface RegisterParams {
   email: string;
   password: string;
-  name?: string;
+  name: string;
+  verificationCode: string;
 }
 
 export interface ForgotPasswordParams {
@@ -357,4 +358,45 @@ export interface NotificationPayload {
 
 export interface NotificationStats {
   unreadCount: number;
+}
+
+// --- AI Agent Types ---
+
+export interface AgentConfigDTO {
+  provider: 'openai' | 'deepseek' | 'anthropic';
+  apiKey: string;
+  model?: string;
+  baseUrl?: string;
+  isActive: boolean;
+  isConfigured?: boolean; // Frontend helper
+}
+
+export interface LocalizedString {
+  en: string;
+  zh: string;
+}
+
+export interface RecommendationItem {
+  name: string;
+  reason: LocalizedString;
+  price: LocalizedString;
+  link?: string;
+  icon?: string;
+}
+
+export interface AIInsight {
+  type: 'warning' | 'suggestion' | 'praise';
+  title: LocalizedString;
+  description: LocalizedString;
+  potentialSavings?: number;
+}
+
+export interface RecommendationResponse {
+  summary: LocalizedString;
+  insights: AIInsight[];
+  recommendations: RecommendationItem[];
+}
+
+export interface RecommendationRequest {
+  focus?: 'save_money' | 'discover_tools' | 'general_audit';
 }

@@ -52,6 +52,12 @@ export class AuthService {
    * @returns 认证响应（用户数据和 Tokens）
    */
   async register(data: CreateUserDTO): Promise<AuthResponse> {
+    // 验证验证码
+    const isCodeValid = this.verificationCodeService.verify(data.email, data.verificationCode);
+    if (!isCodeValid) {
+      throw new AppError("INVALID_VERIFICATION_CODE", StatusCodes.BAD_REQUEST, { message: "Invalid verification code" });
+    }
+
     // 检查邮箱是否已存在
     const existingUser = await this.userRepository.findByEmail(data.email);
     if (existingUser) {
@@ -61,9 +67,12 @@ export class AuthService {
     // 密码加密
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { verificationCode, ...userData } = data;
+
     // 创建用户
     let user = await this.userRepository.create({
-      ...data,
+      ...userData,
       password: hashedPassword,
     });
 
@@ -102,6 +111,25 @@ export class AuthService {
    */
   generateCaptcha() {
     return this.captchaService.generate();
+  }
+
+  /**
+   * 发送注册验证码
+   * @param email 用户邮箱
+   */
+  async sendRegisterVerificationCode(email: string): Promise<void> {
+    const existingUser = await this.userRepository.findByEmail(email);
+    if (existingUser) {
+      throw new AppError("USER_ALREADY_EXISTS", StatusCodes.CONFLICT, { message: "User already exists" });
+    }
+
+    const code = this.verificationCodeService.generate(email);
+    
+    await this.notificationService.sendInstantEmail(
+      email,
+      '注册验证码',
+      `您的验证码是: ${code}。该验证码将在 5 分钟后过期。`
+    );
   }
 
   /**

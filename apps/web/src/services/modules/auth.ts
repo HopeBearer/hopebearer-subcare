@@ -33,6 +33,10 @@ export const authService = {
     return api.get(`/auth/public-key`);
   },
 
+  sendRegisterVerificationCode: async (email: string): Promise<ApiResponse<void>> => {
+    return api.post(`/auth/verification-code/register`, { email });
+  },
+
   sendVerificationCode: async (email: string): Promise<ApiResponse<void>> => {
     const params: SendVerificationCodeParams = { email };
     return api.post(`/auth/verification-code/send`, params);

@@ -48,6 +48,10 @@ export const useSocket = () => {
     });
 
     socket.on('connect_error', (err) => {
+      // Suppress authentication errors as requested to keep console clean
+      if (err.message && (err.message.includes('Authentication error') || err.message.includes('Invalid token'))) {
+        return;
+      }
       console.error('[useSocket] Socket connection error:', err);
     });
 

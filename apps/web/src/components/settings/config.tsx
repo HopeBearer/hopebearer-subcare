@@ -1,9 +1,10 @@
-import { User, Shield, Bell, Settings } from 'lucide-react';
+import { User, Shield, Bell, Settings, BrainCircuit } from 'lucide-react';
 import { SettingsTab } from './types';
 import { ProfileSettings } from './modules/profile-settings';
 import { AccountSettings } from './modules/account-settings';
 import { NotificationSettings } from './modules/notification-settings';
 import { PreferencesSettings } from './modules/preferences-settings';
+import { ApiSettings } from './modules/api-settings';
 
 export const settingsConfig: SettingsTab[] = [
   {
@@ -33,5 +34,12 @@ export const settingsConfig: SettingsTab[] = [
     icon: Bell,
     description: 'nav.notifications_desc',
     component: NotificationSettings,
+  },
+  {
+    id: 'api',
+    label: 'nav.api',
+    icon: BrainCircuit,
+    description: 'nav.api_desc',
+    component: ApiSettings,
   },
 ];

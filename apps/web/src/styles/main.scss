@@ -47,3 +47,9 @@ body {
     background-color: var(--color-gray-500);
   }
 }
+
+/* Auto Scroll Animation */
+@keyframes auto-scroll {
+  0%, 15% { transform: translateX(0); }
+  85%, 100% { transform: translateX(var(--scroll-offset)); }
+}

@@ -41,6 +41,10 @@ export class NotificationService {
     return content.replace(/\{\{(\w+)\}\}/g, (_, key) => data[key] !== undefined ? String(data[key]) : '');
   }
 
+  async sendInstantEmail(email: string, title: string, content: string): Promise<void> {
+    await this.emailProvider.sendEmail(email, title, content);
+  }
+
   async notify(payload: CreateNotificationPayload): Promise<void> {
     const { 
         userId, 

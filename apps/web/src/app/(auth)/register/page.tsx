@@ -10,13 +10,16 @@ import { useAuthStore } from '@/store';
 import { authService } from '@/services';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { RegisterParams } from '@subcare/types';
 import { useTranslation } from '@/lib/i18n/hooks';
 import { handleApiError } from '@/lib/utils/error-helper';
 import { PageMeta } from '@/components/common/page-meta';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 const registerSchema = z.object({
+  name: z.string().min(1, 'auth:form.name.required'),
   email: z.string().email('auth:form.email.invalid'),
+  verificationCode: z.string().length(6, 'auth:form.verification_code.length'),
   password: z.string()
     .min(8, 'auth:form.password.min_length')
     .regex(/[A-Z]/, 'auth:form.password.uppercase_required')
@@ -34,6 +37,8 @@ export default function RegisterPage() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
   const [isLoading, setIsLoading] = useState(false);
+  const [sendingCode, setSendingCode] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const { t } = useTranslation(['auth', 'common']);
 
@@ -45,6 +50,8 @@ export default function RegisterPage() {
     handleSubmit,
     formState: { errors },
     watch,
+    trigger,
+    getValues,
   } = form;
 
   const password = watch('password');
@@ -70,6 +77,37 @@ export default function RegisterPage() {
 
     setPasswordStrength(strength);
   }, [password]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (cooldown > 0) {
+      interval = setInterval(() => {
+        setCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [cooldown]);
+
+  const handleSendCode = async () => {
+    const email = getValues('email');
+    const isValid = await trigger('email');
+    
+    if (!isValid || !email) {
+      toast.error(t('auth:form.email.invalid'));
+      return;
+    }
+
+    setSendingCode(true);
+    try {
+      await authService.sendRegisterVerificationCode(email);
+      setCooldown(60);
+      toast.success(t('auth:verification_code_sent', { defaultValue: 'Verification code sent' }));
+    } catch (err) {
+      handleApiError(err, form);
+    } finally {
+      setSendingCode(false);
+    }
+  };
 
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
@@ -105,21 +143,63 @@ export default function RegisterPage() {
         <p className="text-gray-600 dark:text-gray-400">{t('register.subtitle')}</p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-7" noValidate>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-2" noValidate autoComplete="off">
+        
+        <Input
+          id="name"
+          label={t('form.name.label', { defaultValue: 'Username' })}
+          type="text"
+          placeholder={t('form.name.placeholder', { defaultValue: 'Enter your username' })}
+          error={errors.name?.message}
+          autoComplete="off"
+          {...register('name', { required: 'auth:form.name.required' })}
+        />
+
+        <div className="flex gap-4 items-start">
+          <div className="flex-1">
+            <Input
+              id="email"
+              label={t('form.email.label')}
+              type="email"
+              placeholder={t('form.email.placeholder')}
+              error={errors.email?.message}
+              autoComplete="off"
+              {...register('email', {
+                required: 'auth:form.email.required',
+                pattern: {
+                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                  message: 'auth:form.email.invalid'
+                }
+              })}
+            />
+          </div>
+          <div className="pt-7">
+            <button
+              type="button"
+              onClick={handleSendCode}
+              disabled={cooldown > 0 || sendingCode}
+              className={cn(
+                "flex items-center justify-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 ease group w-32 border border-gray-200 dark:border-gray-600 hover:border-[#A5A6F6]/30",
+                "bg-transparent hover:bg-primary-pale dark:hover:bg-white/5",
+                (cooldown > 0 || sendingCode) && "opacity-50 cursor-not-allowed"
+              )}
+            >
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors group-hover:text-primary whitespace-nowrap">
+                {sendingCode ? '...' : cooldown > 0 ? `${cooldown}s` : t('auth:send_code', { defaultValue: 'Send Code' })}
+              </span>
+            </button>
+          </div>
+        </div>
 
         <Input
-          id="email"
-          label={t('form.email.label')}
-          type="email"
-          placeholder={t('form.email.placeholder')}
-          error={errors.email?.message}
-          {...register('email', {
-            required: 'auth:form.email.required',
-            pattern: {
-              value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-              message: 'auth:form.email.invalid'
-            }
-          })}
+          id="verificationCode"
+          label={t('form.verification_code.label', { defaultValue: 'Verification Code' })}
+          type="text"
+          placeholder={t('form.verification_code.placeholder', { defaultValue: 'Enter 6-digit code' })}
+          error={errors.verificationCode?.message}
+          maxLength={6}
+          autoComplete="off"
+          {...register('verificationCode', { required: 'auth:form.verification_code.required' })}
         />
 
         <div className="space-y-3">
@@ -129,6 +209,7 @@ export default function RegisterPage() {
             type="password"
             placeholder={t('form.password.create_placeholder')}
             error={errors.password?.message}
+            autoComplete="new-password"
             {...register('password', {
               required: 'auth:form.password.required',
               minLength: {
@@ -140,7 +221,7 @@ export default function RegisterPage() {
 
           {/* Password Strength Meter */}
           {password && (
-            <div className="flex gap-1 h-1.5 mt-2">
+            <div className="flex gap-1 h-1.5">
               <div className={`flex-1 rounded-full transition-colors duration-300 ${passwordStrength >= 1 ? 'bg-red-400' : 'bg-gray-200 dark:bg-gray-700'
                 }`} />
               <div className={`flex-1 rounded-full transition-colors duration-300 ${passwordStrength >= 2 ? 'bg-yellow-400' : 'bg-gray-200 dark:bg-gray-700'
@@ -157,13 +238,14 @@ export default function RegisterPage() {
           type="password"
           placeholder={t('form.confirm_password.placeholder')}
           error={errors.confirmPassword?.message}
+          autoComplete="new-password"
           {...register('confirmPassword', {
             required: 'auth:form.confirm_password.required',
             validate: (val) => val === password || 'auth:form.confirm_password.mismatch'
           })}
         />
 
-        <Button type="submit" className="w-full py-3 mt-6 shadow-primary-sm" isLoading={isLoading}>
+        <Button type="submit" className="w-full py-3 mt-4 shadow-primary-sm" isLoading={isLoading}>
           {t('register.submit')}
         </Button>
 

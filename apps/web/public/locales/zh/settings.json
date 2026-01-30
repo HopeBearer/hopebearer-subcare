@@ -9,7 +9,23 @@
     "account": "账户安全",
     "account_desc": "安全和账户设置",
     "notifications": "通知",
-    "notifications_desc": "邮件和推送通知"
+    "notifications_desc": "邮件和推送通知",
+    "api": "API 设置",
+    "api_desc": "配置 AI 推荐服务"
+  },
+  "api": {
+    "title": "API 设置",
+    "description": "配置您的 AI 服务提供商以启用智能推荐功能。",
+    "provider_settings": "服务商配置",
+    "provider_settings_desc": "选择您偏好的 AI 服务商并输入 API 密钥。",
+    "provider_label": "AI 服务商",
+    "apikey_label": "API 密钥",
+    "apikey_placeholder": "请输入您的 API Key",
+    "apikey_note": "您的 API 密钥将安全存储，仅用于获取推荐建议。",
+    "save_btn": "保存配置",
+    "saving": "保存中...",
+    "success_config": "配置保存成功",
+    "error_config": "配置保存失败"
   },
   "profile": {
     "title": "公开资料",

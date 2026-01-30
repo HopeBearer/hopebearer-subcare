@@ -7,6 +7,7 @@ export interface CreateUserDTO {
   email: string;
   password: string;
   name?: string;
+  verificationCode: string;
   role?: UserRole; // 可选，数据库默认为 USER
 }
 

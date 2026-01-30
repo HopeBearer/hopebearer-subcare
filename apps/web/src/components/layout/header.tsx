@@ -22,7 +22,8 @@ export function Header() {
 
   const handleLogout = () => {
     logout();
-    router.push('/login');
+    // Force a full page reload to clear all states and cancel pending requests
+    window.location.replace('/login');
   };
 
   const isSettingsPage = pathname?.includes('/settings');

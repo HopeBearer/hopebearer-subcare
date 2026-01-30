@@ -26,6 +26,11 @@ export const authRegistry: Record<string, RouteVersions> = {
   'POST /auth/verify-reset-token': {
     v1: { handler: controllersV1.Auth.verifyResetToken }
   },
+  'POST /auth/verification-code/register': {
+    v1: { 
+      handler: controllersV1.Auth.sendRegisterVerificationCode 
+    }
+  },
   'POST /auth/verification-code/send': {
     v1: { 
       handler: controllersV1.Auth.sendVerificationCode,

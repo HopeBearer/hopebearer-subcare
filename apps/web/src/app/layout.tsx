@@ -5,6 +5,7 @@ import { I18nProvider } from '@/lib/i18n/provider';
 import QueryProvider from '@/components/providers/query-provider';
 import { Toaster } from 'sonner';
 import localFont from 'next/font/local';
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const zhimang = localFont({
   src: '../../public/fonts/ZhiMangXing-Regular.ttf',
@@ -21,7 +22,7 @@ const sourGummy = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "SubCare - Subscription Management",
+  title: "SubCare - Subscription Manager",
   description: "Manage your subscriptions efficiently",
 };
 
@@ -75,8 +76,10 @@ export default function RootLayout({
         <QueryProvider>
           <I18nProvider config={i18nConfig}>
             <ThemeProvider>
-              {children}
-              <Toaster />
+              <TooltipProvider>
+                {children}
+                <Toaster />
+              </TooltipProvider>
             </ThemeProvider>
           </I18nProvider>
         </QueryProvider>

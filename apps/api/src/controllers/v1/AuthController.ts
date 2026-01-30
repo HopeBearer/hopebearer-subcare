@@ -8,7 +8,8 @@ import { BusinessCode } from '../../constants/BusinessCode';
 const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
-  name: z.string().optional(),
+  name: z.string().min(1),
+  verificationCode: z.string().length(6),
 });
 
 // 登录请求验证 schema
@@ -242,6 +243,25 @@ export class AuthController {
       next(error);
     }
   }
+
+  /**
+   * 发送注册验证码
+   * POST /auth/verification-code/register
+   */
+  sendRegisterVerificationCode = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { email } = sendVerificationCodeSchema.parse(req.body);
+      await this.authService.sendRegisterVerificationCode(email);
+      
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        message: 'Verification code sent',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 
   /**
    * 发送验证码

@@ -26,6 +26,7 @@ import { AuthMiddleware } from '../middleware/auth.middleware';
 import { NodemailerProvider } from '../infrastructure/email/nodemailer.provider';
 import { NotificationService } from '../modules/notification/notification.service';
 import { BillGeneratorService } from '../services/BillGeneratorService';
+import { AgentController } from '../controllers/AgentController';
 
 // Services & Repositories
 const userRepository = new UserRepository();
@@ -82,7 +83,8 @@ export const controllersV1 = {
   Notification: new NotificationController(notificationService),
   SystemLog: new SystemLogController(systemLogService),
   MessageTemplate: new MessageTemplateController(messageTemplateService),
-  Financial: new FinancialController(financialService)
+  Financial: new FinancialController(financialService),
+  Agent: new AgentController()
 };
 
 // V2 Controllers

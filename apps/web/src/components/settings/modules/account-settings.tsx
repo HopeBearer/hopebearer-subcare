@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n/hooks';
+import { cn } from '@/lib/utils';
 import { Lock, Trash2, Mail, CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '@/store';
 import { authService } from '@/services';
@@ -142,14 +143,20 @@ export function AccountSettings() {
                 onChange={(e) => setVerificationCode(e.target.value)}
                 className="flex-1"
               />
-              <Button 
-                variant="outline" 
+              <button
+                type="button"
                 onClick={handleSendCode}
                 disabled={isSendingCode || countdown > 0}
-                className="mb-[2px] w-32"
+                className={cn(
+                    "flex items-center justify-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 ease group mb-[2px] w-32 border border-gray-200 dark:border-gray-600 hover:border-[#A5A6F6]/30",
+                    "bg-transparent hover:bg-primary-pale dark:hover:bg-white/5",
+                    (isSendingCode || countdown > 0) && "opacity-50 cursor-not-allowed"
+                )}
               >
-                {countdown > 0 ? `${countdown}s` : t('account.send_code', 'Send Code')}
-              </Button>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors group-hover:text-primary whitespace-nowrap">
+                   {countdown > 0 ? `${countdown}s` : t('account.send_code', 'Send Code')}
+                </span>
+              </button>
             </div>
             <p className="text-xs text-secondary">
               {t('account.code_hint', 'For your security, please verify your email to change password.')}

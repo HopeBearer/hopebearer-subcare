@@ -13,6 +13,7 @@ export const routeConfig: Record<string, string> = {
   'POST /auth/forgot-password': 'v1',
   'POST /auth/reset-password': 'v1',
   'POST /auth/verify-reset-token': 'v1',
+  'POST /auth/verification-code/register': 'v1',
   'POST /auth/verification-code/send': 'v1',
   'POST /auth/change-password': 'v1',
   'GET /auth/captcha': 'v1',
@@ -43,6 +44,11 @@ export const routeConfig: Record<string, string> = {
   
   // Currency
   'GET /currency/preview-convert': 'v1',
+
+  // Agent (AI)
+  'POST /agent/config': 'v1',
+  'GET /agent/config': 'v1',
+  'GET /agent/recommendations': 'v1',
 
   // Users
   'GET /users': 'v2', 

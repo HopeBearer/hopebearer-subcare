@@ -59,13 +59,13 @@ export function UpcomingRenewals() {
 
       {renewals.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+          <div className="w-16 h-16 flex items-center justify-center mb-4">
             <Bell className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="text-gray-900 font-medium mb-1">
+          <h3 className="text-gray-900 dark:text-gray-100 font-medium mb-1">
             {t('dashboard:upcoming.empty_title', 'No upcoming renewals')}
           </h3>
-          <p className="text-sm text-gray-500 max-w-xs">
+          <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
             {t('dashboard:upcoming.empty_desc', 'You have no subscriptions due for renewal in the next 7 days.', { days: 7 })}
           </p>
         </div>

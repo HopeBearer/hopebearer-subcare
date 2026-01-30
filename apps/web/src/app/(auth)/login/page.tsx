@@ -29,6 +29,7 @@ export default function LoginPage() {
   const setAuth = useAuthStore((state) => state.setAuth);
   const [isLoading, setIsLoading] = useState(false);
   const [captchaImage, setCaptchaImage] = useState<string | null>(null);
+  const [captchaError, setCaptchaError] = useState(false);
   const [rotation, setRotation] = useState(0);
   const { t } = useTranslation(['auth', 'common']);
 
@@ -43,6 +44,8 @@ export default function LoginPage() {
   } = form;
 
   const fetchCaptcha = useCallback(async () => {
+    setCaptchaError(false);
+    setCaptchaImage(null);
     try {
       const response = await authService.getCaptcha();
       if (response.data) {
@@ -51,6 +54,7 @@ export default function LoginPage() {
       }
     } catch (err) {
       console.error('Failed to fetch captcha', err);
+      setCaptchaError(true);
     }
   }, [setValue]);
 
@@ -146,6 +150,14 @@ export default function LoginPage() {
                     title="Click to refresh"
                     dangerouslySetInnerHTML={{ __html: captchaImage }}
                   />
+                ) : captchaError ? (
+                  <div
+                    className="h-12 w-32 bg-red-50 dark:bg-red-900/10 rounded overflow-hidden border border-red-200 dark:border-red-800 flex items-center justify-center cursor-pointer text-xs text-red-500"
+                    onClick={handleRefreshCaptcha}
+                    title={t('common.retry')}
+                  >
+                    {t('common.retry', { defaultValue: 'Retry' })}
+                  </div>
                 ) : (
                   <div className="h-12 w-32 bg-gray-100 dark:bg-gray-700 rounded animate-pulse" />
                 )}
