@@ -7,6 +7,7 @@ import { AddSubscriptionModal } from '@/components/features/subscriptions/add-su
 import { useLayoutStore } from '@/store';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
+import { useSocket } from '@/hooks/use-socket';
 
 export default function HomeLayout({
   children,
@@ -15,6 +16,9 @@ export default function HomeLayout({
 }) {
   const { isSidebarCollapsed } = useLayoutStore();
   const [mounted, setMounted] = useState(false);
+  
+  // Initialize socket connection for real-time updates
+  useSocket();
 
   useEffect(() => {
     setMounted(true);

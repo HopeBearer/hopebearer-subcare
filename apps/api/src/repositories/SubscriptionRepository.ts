@@ -262,4 +262,64 @@ export class SubscriptionRepository {
         category: item.categoryName
     }));
   }
+
+  /**
+   * Find subscriptions that need renewal reminders
+   * Logic: 
+   * - Status is ACTIVE
+   * - notification enabled
+   * - notifyDaysBefore is set
+   * - nextPayment matches the reminder date (Today + notifyDaysBefore)
+   */
+  async findSubscriptionsForRenewalReminder(): Promise<any[]> {
+     // We need to find subscriptions where:
+     // nextPayment DATE == (Today + notifyDaysBefore) DATE
+     // Since Prisma doesn't support complex field arithmetic in where clause easily without raw query,
+     // we might need to fetch potential candidates or use raw query.
+     // Or, simpler: we fetch all active subscriptions with notifications enabled, 
+     // and filter in code. Given user base size, this is safer than complex raw SQL for now.
+     // Alternatively, we can assume a max limit of days (e.g. 30) and fetch only those in that range.
+
+     const today = new Date();
+     const maxFuture = new Date();
+     maxFuture.setDate(today.getDate() + 31); // Look ahead 31 days max
+
+     const candidates = await prisma.subscription.findMany({
+        where: {
+            status: 'ACTIVE',
+            enableNotification: true,
+            notifyDaysBefore: { gt: 0 },
+            nextPayment: {
+                gte: today,
+                lte: maxFuture
+            }
+        },
+        include: {
+            user: {
+                select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                    role: true
+                }
+            }
+        }
+     });
+
+     // Now filter in memory for exact match
+     // date(nextPayment) == date(today + notifyDaysBefore)
+     const reminders = candidates.filter(sub => {
+         if (!sub.nextPayment || !sub.notifyDaysBefore) return false;
+         
+         const targetDate = new Date();
+         targetDate.setDate(today.getDate() + sub.notifyDaysBefore);
+         
+         return sub.nextPayment.toDateString() === targetDate.toDateString();
+     });
+
+     return reminders.map(item => ({
+        ...item,
+        category: item.categoryName
+     }));
+  }
 }

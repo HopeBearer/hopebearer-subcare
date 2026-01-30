@@ -7,8 +7,10 @@ export type CreateNotificationPayload = {
   userId: string;
   title?: string;
   content?: string;
-  templateKey?: string;
-  templateData?: Record<string, string>;
+  key?: string;            // i18n key
+  data?: Record<string, any>; // i18n variables
+  templateKey?: string;    // @deprecated use key
+  templateData?: Record<string, string>; // @deprecated use data
   type: 'system' | 'billing' | 'security' | 'marketing';
   channels?: ('in-app' | 'email')[];
   link?: string;
@@ -31,43 +33,67 @@ export class NotificationService {
     this.socketService = socketService;
   }
 
-  private replaceTemplateVariables(content: string, data: Record<string, string>): string {
-    return content.replace(/\{\{(\w+)\}\}/g, (_, key) => data[key] || '');
+  private replaceTemplateVariables(content: string, data: Record<string, any>): string {
+    return content.replace(/\{\{(\w+)\}\}/g, (_, key) => data[key] !== undefined ? String(data[key]) : '');
   }
 
   async notify(payload: CreateNotificationPayload): Promise<void> {
-    let { userId, title, content, templateKey, templateData, type, channels = ['in-app'] } = payload;
+    let { 
+        userId, 
+        title, 
+        content, 
+        templateKey, 
+        templateData, 
+        key, 
+        data, 
+        type, 
+        channels = ['in-app'] 
+    } = payload;
 
-    // Resolve Template if provided
-    if (templateKey) {
-      const template = await this.messageTemplateRepository.findByKey(templateKey);
+    // Unify parameters
+    const finalKey = key || templateKey;
+    const finalData = data || templateData || {};
+
+    // Resolve Template for Email/Push Text Fallback if provided
+    if (finalKey) {
+      const template = await this.messageTemplateRepository.findByKey(finalKey);
       if (template) {
-        title = template.title;
-        content = template.content;
+        // Only override if not explicitly provided (or always override?)
+        // Let's assume template is the source of truth for text.
+        let resolvedTitle = template.title;
+        let resolvedContent = template.content;
         
-        if (templateData) {
-          title = this.replaceTemplateVariables(title, templateData);
-          content = this.replaceTemplateVariables(content, templateData);
+        if (finalData) {
+          resolvedTitle = this.replaceTemplateVariables(resolvedTitle, finalData);
+          resolvedContent = this.replaceTemplateVariables(resolvedContent, finalData);
         }
+        
+        // If caller didn't provide title/content, use resolved ones.
+        if (!title) title = resolvedTitle;
+        if (!content) content = resolvedContent;
+
       } else {
+         // If template not found, we might still want to proceed if title/content were manually provided.
+         // Or just use the key as fallback to avoid crashing DB if title/content required.
+         if (!title) title = finalKey; 
+         if (!content) content = finalKey; 
+
          logger.warn({
             domain: 'NOTIFICATION',
             action: 'template_not_found',
             userId,
-            metadata: { templateKey }
+            metadata: { key: finalKey }
          });
-         // Fallback or just continue with potentially empty title/content? 
-         // If title/content provided as fallback, fine.
       }
     }
     
-    // Ensure title and content are available
+    // Ensure title and content are available (DB constraint)
     if (!title || !content) {
         logger.error({
             domain: 'NOTIFICATION',
             action: 'missing_content',
             userId,
-            metadata: { templateKey }
+            metadata: { key: finalKey }
         });
         return;
     }
@@ -75,8 +101,7 @@ export class NotificationService {
     // 1. In-App Notification
     if (channels.includes('in-app')) {
       try {
-        const notification = await prisma.notification.create({
-          data: {
+        const notificationData: any = {
             userId,
             title,
             content,
@@ -84,13 +109,21 @@ export class NotificationService {
             link: payload.link,
             metadata: payload.metadata,
             priority: payload.priority || 'NORMAL',
-            actionLabel: payload.actionLabel
-          },
+            actionLabel: payload.actionLabel,
+            key: finalKey,
+            data: finalData
+        };
+
+        const notification = await prisma.notification.create({
+          data: notificationData,
         });
 
         // Push via Socket
         if (this.socketService) {
             this.socketService.sendNotification(userId, notification);
+            logger.debug({ domain: 'NOTIFICATION', action: 'socket_push', userId, notificationId: notification.id });
+        } else {
+             logger.warn({ domain: 'NOTIFICATION', action: 'socket_service_not_initialized', userId, reason: 'socketService is null' });
         }
 
       } catch (error) {
@@ -158,6 +191,11 @@ export class NotificationService {
         isRead: true,
       },
     });
+
+    // Notify other clients
+    if (this.socketService) {
+        this.socketService.sendNotificationRead(userId, notificationId);
+    }
   }
 
   async markAllAsRead(userId: string): Promise<void> {
@@ -170,6 +208,11 @@ export class NotificationService {
         isRead: true,
       },
     });
+
+    // Notify other clients
+    if (this.socketService) {
+        this.socketService.sendNotificationRead(userId);
+    }
   }
   
   async getUnreadCount(userId: string): Promise<number> {
@@ -181,12 +224,27 @@ export class NotificationService {
     });
   }
 
-  async getUserNotifications(userId: string, page = 1, limit = 20, filter?: string) {
+  async getUserNotifications(userId: string, page = 1, limit = 20, filter?: string, search?: string) {
     const skip = (page - 1) * limit;
     
-    const where: any = { userId };
+    // Add logic to exclude deleted or old notifications if needed, though soft delete handled by model if column exists
+    // The query now implicitly filters where `deletedAt` is null if standard Prisma behavior, but schema shows deletedAt is optional
+    // Let's ensure we filter by deletedAt: null if standard soft-delete is intended.
+    // Schema: deletedAt DateTime?
+    const where: any = { 
+        userId,
+        deletedAt: null
+    };
+    
     if (filter === 'unread') {
       where.isRead = false;
+    }
+    
+    if (search) {
+      where.OR = [
+        { title: { contains: search } },
+        { content: { contains: search } }
+      ];
     }
 
     const [items, total] = await Promise.all([
@@ -200,5 +258,35 @@ export class NotificationService {
     ]);
 
     return { items, total };
+  }
+
+  /**
+   * Cleanup old notifications (Soft Delete)
+   * Keeps notifications for 30 days
+   */
+  async cleanupOldNotifications(): Promise<void> {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const result = await prisma.notification.updateMany({
+        where: {
+            createdAt: {
+                lt: thirtyDaysAgo
+            },
+            deletedAt: null // Only update active ones
+        } as any,
+        data: {
+            deletedAt: new Date()
+        } as any
+    });
+
+    logger.info({
+        domain: 'NOTIFICATION',
+        action: 'cleanup',
+        metadata: {
+            count: result.count,
+            cutoff: thirtyDaysAgo
+        }
+    });
   }
 }

@@ -78,6 +78,8 @@ export class BillGeneratorService {
       if (sub.enableNotification) {
           await this.notificationService.notify({
               userId: sub.userId,
+              key: 'notification.bill.generated',
+              data: { name: sub.name },
               title: 'New Bill Generated',
               content: `A new bill for ${sub.name} is ready for confirmation.`,
               type: 'billing',

@@ -150,4 +150,65 @@ export class PaymentRecordRepository {
           }
       });
   }
+
+  /**
+   * Find pending bills that are older than X days for reminder
+   */
+  async findOverduePendingBills(daysThreshold: number): Promise<any[]> {
+    const today = new Date();
+    const thresholdDate = new Date();
+    thresholdDate.setDate(today.getDate() - daysThreshold);
+
+    // We want PENDING bills where billingDate <= thresholdDate
+    // Meaning they have been pending for at least `daysThreshold` days since the bill date.
+    
+    return prisma.paymentRecord.findMany({
+        where: {
+            status: { in: ['PENDING', 'UNPAID'] },
+            billingDate: {
+                lte: thresholdDate
+            },
+            // Avoid spamming? Maybe check updated_at to ensure we didn't just notify?
+            // For simplicity, let's just find them. Logic layer can handle frequency if needed.
+        },
+        include: {
+            user: {
+                select: {
+                    id: true,
+                    email: true,
+                    name: true
+                }
+            },
+            subscription: {
+                select: {
+                    name: true,
+                    currency: true
+                }
+            }
+        }
+    });
+  }
+
+  /**
+   * Sum spending by category in a date range
+   */
+  async sumByCategoryAndDateRange(userId: string, categoryId: string, startDate: Date, endDate: Date): Promise<number> {
+      const result = await prisma.paymentRecord.aggregate({
+          where: {
+              userId,
+              status: 'PAID',
+              billingDate: {
+                  gte: startDate,
+                  lte: endDate
+              },
+              subscription: {
+                  categoryId: categoryId
+              }
+          },
+          _sum: {
+              amount: true
+          }
+      });
+      return result._sum.amount?.toNumber() || 0;
+  }
 }

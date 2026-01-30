@@ -1,17 +1,22 @@
 import { Server as HttpServer } from 'http';
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
 import { logger } from '../logger/logger';
 import { NotificationDTO } from '@subcare/types';
+import { TokenService } from '../../services/TokenService';
 
 export class SocketService {
   private io: Server;
+  private tokenService: TokenService;
 
-  constructor(httpServer: HttpServer) {
+  constructor(httpServer: HttpServer, tokenService: TokenService) {
+    this.tokenService = tokenService;
     this.io = new Server(httpServer, {
-      path: '/socket.io/', // Keep consistent with Next.js rewrite
+      path: '/socket.io',
       cors: {
-        origin: "*", // Or configured allowed origins
-        methods: ["GET", "POST"]
+        origin: "http://localhost:3000", // 允许所有来源，解决开发环境跨域问题
+        methods: ["GET", "POST"],
+        allowedHeaders: ["Authorization"],
+        credentials: true
       }
     });
 
@@ -19,35 +24,87 @@ export class SocketService {
   }
 
   private initialize() {
+    // Middleware for Authentication
+    this.io.use((socket, next) => {
+        const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.split(' ')[1];
+
+        if (!token) {
+            logger.warn({ 
+                domain: 'SOCKET', 
+                action: 'auth_reject', 
+                metadata: { 
+                    reason: 'No token provided', 
+                    socketId: socket.id,
+                    ip: socket.handshake.address
+                } 
+            });
+            return next(new Error('Authentication error: No token provided'));
+        }
+
+        try {
+            const payload = this.tokenService.verifyAccessToken(token) as any;
+            
+            // Attach user to socket
+            socket.data.user = payload;
+            
+            // Auto-join user room
+            if (payload.userId) {
+                socket.join(`user:${payload.userId}`);
+                logger.info({ 
+                    domain: 'SOCKET', 
+                    action: 'auth_success', 
+                    userId: payload.userId,
+                    metadata: { 
+                        socketId: socket.id,
+                        rooms: [`user:${payload.userId}`]
+                    }
+                });
+            }
+
+            next();
+        } catch (error) {
+            logger.warn({ 
+                domain: 'SOCKET', 
+                action: 'auth_fail', 
+                metadata: { 
+                    reason: 'Invalid token', 
+                    socketId: socket.id,
+                    error: String(error)
+                } 
+            });
+            next(new Error('Authentication error: Invalid token'));
+        }
+    });
+
     this.io.on('connection', (socket) => {
       // Basic logging
       logger.info({
-        message: 'Socket connected',
-        socketId: socket.id,
-        transport: socket.conn.transport.name
-      });
-
-      // Authentication Placeholder
-      // In real app, verify token from handshake.auth.token
-      // const token = socket.handshake.auth.token;
-      
-      socket.on('authenticate', (data: { userId: string }) => {
-        if (data.userId) {
-            socket.join(`user:${data.userId}`);
-            // socket.data.userId = data.userId;
-            logger.info({ message: 'User joined room', userId: data.userId });
+        domain: 'SOCKET',
+        action: 'connect',
+        userId: socket.data.user?.userId,
+        metadata: {
+            message: 'Socket connected and authenticated',
+            socketId: socket.id,
+            transport: socket.conn.transport.name,
+            query: socket.handshake.query
         }
       });
 
-      // Also support joining via query param if needed, or initial handshake
-      const queryUserId = socket.handshake.query.userId as string;
-      if (queryUserId) {
-          socket.join(`user:${queryUserId}`);
-          logger.info({ message: 'User joined room via query', userId: queryUserId });
-      }
+      // No need for manual authenticate event anymore, but we can keep it for legacy or debug
+      // Or we can remove it to enforce middleware auth. 
+      // User asked for middleware auth, so let's rely on that.
 
       socket.on('disconnect', (reason) => {
-        logger.info({ message: 'Socket disconnected', reason, socketId: socket.id });
+        logger.info({ 
+            domain: 'SOCKET',
+            action: 'disconnect',
+            userId: socket.data.user?.userId,
+            metadata: {
+                message: 'Socket disconnected', 
+                reason, 
+                socketId: socket.id 
+            }
+        });
       });
     });
   }
@@ -56,12 +113,41 @@ export class SocketService {
    * Send a notification to a specific user
    */
   public sendNotification(userId: string, notification: NotificationDTO | any) {
-    this.io.to(`user:${userId}`).emit('notification:new', notification);
+    const roomName = `user:${userId}`;
+    this.io.to(roomName).emit('notification:new', notification);
+    
+    // Check if any sockets are in the room (for debugging)
+    const socketsInRoom = this.io.sockets.adapter.rooms.get(roomName);
+    const socketCount = socketsInRoom ? socketsInRoom.size : 0;
+
     logger.debug({ 
         domain: 'SOCKET', 
         action: 'emit', 
         userId, 
-        event: 'notification:new' 
+        metadata: {
+            event: 'notification:new',
+            room: roomName,
+            recipientCount: socketCount
+        }
+    });
+  }
+
+  /**
+   * Send notification read event
+   */
+  public sendNotificationRead(userId: string, notificationId?: string) {
+    const roomName = `user:${userId}`;
+    this.io.to(roomName).emit('notification:read', { id: notificationId }); // id is undefined for markAllAsRead
+
+    logger.debug({ 
+        domain: 'SOCKET', 
+        action: 'emit', 
+        userId, 
+        metadata: {
+            event: 'notification:read',
+            room: roomName,
+            notificationId
+        }
     });
   }
 

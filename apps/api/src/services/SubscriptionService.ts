@@ -149,6 +149,8 @@ export class SubscriptionService {
 
     await this.notificationService.notify({
       userId: data.userId,
+      key: 'notification.sub.created',
+      data: { name: data.name },
       title: 'New Subscription Added',
       content: `You have successfully added ${data.name} to your subscriptions.`,
       type: 'system',
@@ -287,5 +289,42 @@ export class SubscriptionService {
     }
 
     return this.paymentRecordRepository.findBySubscriptionId(subscriptionId, filters);
+  }
+
+  /**
+   * Check and send renewal reminders
+   * Intended to be run by Cron Job
+   */
+  async checkAndSendRenewalReminders() {
+      const candidates = await this.subscriptionRepository.findSubscriptionsForRenewalReminder();
+      
+      console.log(`[Renewal Check] Found ${candidates.length} subscriptions needing reminder.`);
+
+      for (const sub of candidates) {
+          try {
+              const days = sub.notifyDaysBefore || 0;
+              const dateStr = sub.nextPayment ? new Date(sub.nextPayment).toLocaleDateString() : 'Unknown Date';
+              
+              await this.notificationService.notify({
+                  userId: sub.userId,
+                  key: 'notification.sub.renewal_reminder',
+                  data: { 
+                      name: sub.name,
+                      days: days,
+                      date: dateStr,
+                      amount: sub.price,
+                      currency: sub.currency
+                  },
+                  title: 'Upcoming Renewal Reminder', // Fallback
+                  content: `Your subscription for ${sub.name} will renew in ${days} days on ${dateStr}. Amount: ${sub.currency} ${sub.price}.`, // Fallback
+                  type: 'system', // or 'billing'
+                  channels: ['in-app', 'email'], // Requirement: Both channels
+                  priority: 'HIGH'
+              });
+
+          } catch (error) {
+              console.error(`[Renewal Check] Failed to notify user ${sub.userId} for subscription ${sub.id}`, error);
+          }
+      }
   }
 }

@@ -40,6 +40,70 @@
     "empty_title": "暂无通知",
     "empty_description": "您已查看所有通知！有重要消息时我们会通知您。"
   },
+  "notification": {
+    "auth": {
+      "welcome": {
+        "title": "欢迎加入 SubCare，{{username}}！",
+        "content": "我们很高兴您的加入。立即开始追踪您的订阅服务吧。"
+      },
+      "verify_code": {
+        "title": "安全验证码",
+        "content": "您的验证码是 {{code}}，{{expireMinutes}}分钟内有效。"
+      },
+      "password_changed": {
+        "title": "密码修改成功",
+        "content": "您的密码已于 {{time}} 修改。"
+      },
+      "reset_request": {
+        "title": "重置密码申请",
+        "content": "我们已收到您的重置密码申请，请查看邮件并点击链接继续。"
+      },
+      "reset_success": {
+        "title": "密码重置成功",
+        "content": "您的密码已重置，现在可以使用新密码登录。"
+      },
+      "new_login": {
+        "title": "新设备登录提醒",
+        "content": "您的账户于 {{time}} 在新设备登录。"
+      }
+    },
+    "sub": {
+      "created": {
+        "title": "订阅添加成功",
+        "content": "您已成功添加订阅 {{name}}。"
+      },
+      "updated": {
+        "title": "订阅已更新",
+        "content": "{{name}} 的 {{field}} 已更新。"
+      },
+      "deleted": {
+        "title": "订阅已删除",
+        "content": "订阅 {{name}} 已被移除。"
+      },
+      "renew_reminder": {
+        "title": "续费提醒",
+        "content": "{{name}} 即将续费，预计扣款 {{amount}}。"
+      }
+    },
+    "bill": {
+      "generated": {
+        "title": "新账单已生成",
+        "content": "{{name}} 的新账单已生成，请确认支付状态。"
+      },
+      "paid": {
+        "title": "支付确认成功",
+        "content": "已确认 {{name}} 的支付记录，金额 {{currency}} {{amount}}。"
+      },
+      "skipped": {
+        "title": "已跳过本次续费",
+        "content": "您已取消 {{name}} 的本次续费。"
+      },
+      "price_hike": {
+        "title": "价格变动警告",
+        "content": "检测到 {{name}} 的价格有所上涨，请注意核对。"
+      }
+    }
+  },
   "preview": "预览",
   "updating": "更新中...",
   "verifying": "验证中...",

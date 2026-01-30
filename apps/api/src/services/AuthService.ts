@@ -80,8 +80,10 @@ export class AuthService {
     // 发送欢迎通知
     await this.notificationService.notify({
         userId: user.id,
-        title: "Welcome to SubCare!",
-        content: "We are glad to have you on board. Start tracking your subscriptions today.",
+        key: "notification.auth.welcome",
+        data: { username: user.name || user.email },
+        title: "Welcome to SubCare!", // Fallback/Email
+        content: "We are glad to have you on board. Start tracking your subscriptions today.", // Fallback/Email
         type: "system",
         channels: ["in-app", "email"]
     }).catch(err => console.error('Failed to send welcome notification', err));
@@ -116,6 +118,8 @@ export class AuthService {
 
     await this.notificationService.notify({
       userId: user.id,
+      key: 'notification.auth.verify_code',
+      data: { code, expireMinutes: '5' },
       title: 'Security Verification Code',
       content: `Your verification code is: ${code}. It expires in 5 minutes.`,
       type: 'security',
@@ -166,6 +170,8 @@ export class AuthService {
     // 5. Notify
     await this.notificationService.notify({
       userId: user.id,
+      key: 'notification.auth.password_changed',
+      data: { time: new Date().toLocaleString() },
       title: 'Password Changed',
       content: 'Your password has been changed successfully.',
       type: 'security',
@@ -316,6 +322,8 @@ export class AuthService {
 
     await this.notificationService.notify({
       userId: user.id,
+      key: 'notification.auth.reset_request',
+      data: { resetUrl, expireMinutes: '15' },
       title: '重置您的密码',
       content: `您申请了重置密码。请复制以下链接到浏览器中访问以重置您的密码。此链接15分钟内有效。\n\n${resetUrl}`,
       type: 'security',
@@ -394,6 +402,8 @@ export class AuthService {
     // Notify user
     await this.notificationService.notify({
         userId: user.id,
+        key: 'notification.auth.reset_success',
+        data: {},
         title: '密码修改成功',
         content: '您的密码已成功修改。',
         type: 'security',

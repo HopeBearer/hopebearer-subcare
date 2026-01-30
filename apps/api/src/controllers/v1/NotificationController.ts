@@ -18,8 +18,9 @@ export class NotificationController {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 20;
     const filter = req.query.filter as string;
+    const search = req.query.search as string;
 
-    const result = await this.notificationService.getUserNotifications(userId, page, limit, filter);
+    const result = await this.notificationService.getUserNotifications(userId, page, limit, filter, search);
 
     res.status(StatusCodes.OK).json({
       success: true,

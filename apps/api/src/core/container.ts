@@ -66,7 +66,8 @@ const financialService = new FinancialService(
     subscriptionRepository, 
     currencyService, 
     userRepository,
-    billGeneratorService
+    billGeneratorService,
+    notificationService
 );
 
 // Middleware

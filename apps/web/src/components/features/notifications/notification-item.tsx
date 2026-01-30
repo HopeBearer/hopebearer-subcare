@@ -40,6 +40,58 @@ export function NotificationItem({ notification, onRead, onClick }: Notification
     }
   };
 
+  // Resolve Title and Content using i18n if key is present
+  const title = notification.key 
+      ? t(notification.key, { ...notification.data, defaultValue: notification.title }) 
+      : notification.title;
+      
+  // For content, sometimes we might have a specific key structure like "key_content" or similar.
+  // But usually notification key resolves to the main message.
+  // If we want title + content, we might need a convention. 
+  // Let's assume:
+  // - notification.key -> Title (or summary)
+  // - notification.content -> Fallback detail
+  // OR: 
+  // - We map key to title, and maybe key + "_desc" to content?
+  // 
+  // For now, let's use the key for the main "Title/Message" shown in bold, 
+  // and use existing content as secondary text if it differs, or if we have a strategy.
+  //
+  // Actually, looking at the backend changes:
+  // e.g. key: "notification.auth.welcome"
+  // The translation likely contains the full message.
+  // 
+  // Strategy:
+  // 1. Title = t(key) 
+  // 2. Content = notification.content (as fallback detail or just hidden if title covers it?)
+  // 
+  // Let's treat the key as the source of truth for the MAIN text.
+  // If the translation for the key exists, we display it as the "Title" area.
+  // The "Content" area might be redundant if the key covers it.
+  // But let's check if we have a secondary key convention.
+  // If not, we can just use the backend-provided fallback content for the paragraph if no better option.
+  //
+  // Alternative:
+  // Title = t(notification.key + ".title", defaultValue: notification.title)
+  // Content = t(notification.key + ".content", defaultValue: notification.content)
+  // This is safer if we organize locales like:
+  // "notification": { "auth": { "welcome": { "title": "Welcome", "content": "..." } } }
+  // But previously we defined keys like: "welcome": "Welcome {{user}}!" (Single string)
+  //
+  // Let's stick to Single String for the main message (Title area), and use content as description.
+  
+  const displayTitle = notification.key 
+    ? t(`${notification.key}.title`, { ...notification.data, defaultValue: notification.title })
+    : notification.title;
+
+  // Try to find if there is a content specific translation, otherwise use backend content
+  const displayContent = notification.key 
+    ? t(`${notification.key}.content`, { ...notification.data, defaultValue: notification.content })
+    : notification.content;
+    
+  // If the key translation returned the key itself (meaning missing), fallback to backend provided text.
+  // i18next usually returns the key if missing unless configured otherwise.
+  
   return (
     <div
       onClick={() => onClick(notification)}
@@ -78,7 +130,7 @@ export function NotificationItem({ notification, onRead, onClick }: Notification
             "text-sm font-semibold truncate transition-colors", 
             notification.isRead ? "text-gray-500 dark:text-gray-400 font-medium" : "text-gray-900 dark:text-white"
           )}>
-            {notification.title}
+            {displayTitle}
           </h4>
           <span className={cn(
             "text-xs flex items-center gap-1 flex-shrink-0 transition-colors",
@@ -93,7 +145,7 @@ export function NotificationItem({ notification, onRead, onClick }: Notification
           "text-sm line-clamp-2 leading-relaxed transition-colors", 
           notification.isRead ? "text-gray-400 dark:text-gray-500" : "text-secondary"
         )}>
-          {notification.content}
+          {displayContent}
         </p>
 
 
@@ -108,7 +160,6 @@ export function NotificationItem({ notification, onRead, onClick }: Notification
           {!notification.isRead && (
             <Button
               variant="ghost"
-              size="sm"
               className="h-7 px-2.5 text-xs ml-auto rounded-lg hover:bg-primary/10 hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
               onClick={(e) => {
                 e.stopPropagation();

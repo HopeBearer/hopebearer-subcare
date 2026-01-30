@@ -32,6 +32,7 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime?
   
   subscriptions Subscription[]
   notifications Notification[]
@@ -84,6 +85,7 @@ model Subscription {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   @@index([userId])
   @@index([categoryId])
@@ -105,6 +107,7 @@ model Category {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   @@index([userId])
   @@map("categories")
@@ -132,6 +135,7 @@ model PaymentRecord {
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
 
   @@index([userId, billingDate])
   @@index([subscriptionId])
@@ -145,6 +149,10 @@ model Notification {
   content   String   @db.Text
   type      String   // system / billing / security / marketing
   isRead    Boolean  @default(false)
+
+  // i18n support
+  key       String?  // Translation key (e.g. "notification.welcome")
+  data      Json?    // Translation params (e.g. { "name": "User" })
   
   // Extended fields for rich UI and interaction
   link        String?
@@ -153,6 +161,7 @@ model Notification {
   actionLabel String?
 
   createdAt DateTime @default(now())
+  deletedAt DateTime?
 
   user User @relation(fields: [userId], references: [id])
 
@@ -176,6 +185,7 @@ model SystemLog {
   error     String?  @db.Text
 
   createdAt DateTime @default(now())
+  deletedAt DateTime?
 
   @@index([domain])
   @@index([level])
@@ -190,6 +200,8 @@ model MessageTemplate {
   title    String
   content  String @db.Text  // HTML or Markdown
   channel  String          // email / in-app
+  
+  deletedAt DateTime?
 
   @@map("message_templates")
 }
@@ -200,6 +212,7 @@ model PasswordResetToken {
   token     String   @unique // Hashed token
   expiresAt DateTime
   createdAt DateTime @default(now())
+  deletedAt DateTime?
 
   @@map("password_reset_tokens")
 }

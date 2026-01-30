@@ -129,7 +129,13 @@ export class FinancialController {
       }
 
       const { id } = req.params;
-      const record = await this.financialService.confirmPayment(id, req.user.userId);
+      const { actualAmount, actualDate } = req.body;
+      const record = await this.financialService.confirmPayment(
+        req.user.userId,
+        id,
+        actualAmount,
+        actualDate ? new Date(actualDate) : undefined
+      );
 
       res.status(StatusCodes.OK).json({
         status: 'success',
@@ -156,7 +162,7 @@ export class FinancialController {
       // const { type } = req.body; // 'skip_once' | 'cancel_subscription'
 
       // Currently implement skip logic for the record
-      const record = await this.financialService.skipPayment(id, req.user.userId);
+      const record = await this.financialService.cancelRenewal(req.user.userId, id);
 
       res.status(StatusCodes.OK).json({
         status: 'success',

@@ -1,68 +1,119 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useInView } from 'react-intersection-observer';
 import { api } from '@/lib/api';
 import { NotificationItem } from './notification-item';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCheck, Inbox } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Loader2, CheckCheck, Inbox, Search } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/hooks';
 import { NotificationDTO } from '@subcare/types';
 import { useNotificationStore } from '@/store';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useDebounce } from '@/hooks/use-debounce';
+import Fuse from 'fuse.js';
 
 export function NotificationList() {
   const { t } = useTranslation('common');
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 300);
   const queryClient = useQueryClient();
   const { decrementUnread, resetUnread } = useNotificationStore();
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    refetch
-  } = useInfiniteQuery({
-    queryKey: ['notifications', filter],
-    queryFn: async ({ pageParam = 1 }) => {
+  // Client-side pagination state
+  const [displayCount, setDisplayCount] = useState(20);
+
+  // Fetch a large batch of notifications (e.g. 1000) to support client-side i18n search
+  // In a real-world app, this might be heavy, but for notifications it's often acceptable.
+  // Ideally, we would fetch ALL notifications for search, or use a backend search engine (Elasticsearch/MeiliSearch) 
+  // that can index localized content. For now, fetching 1000 is a pragmatic solution.
+  const { data: allNotifications, isLoading } = useQuery({
+    queryKey: ['notifications', 'list', 1000],
+    queryFn: async () => {
       const response = await api.get('/notifications', {
         params: {
-          page: pageParam,
-          limit: 20,
-          filter // Assuming API supports filter, if not client side filter is needed or API update
+          page: 1,
+          limit: 1000,
+          // No backend filter/search params, we do it all client-side
         }
       });
-      // Adapt response to infinite query format
-      // response is { success: true, data: { items: [], total: number } }
-      return {
-          items: response.data.items as NotificationDTO[],
-          total: response.data.total,
-          nextPage: (response.data.items.length === 20) ? pageParam + 1 : undefined
-      };
+      return response.data.items as NotificationDTO[];
     },
-    getNextPageParam: (lastPage) => lastPage.nextPage,
-    initialPageParam: 1
   });
 
+  // Prepare data with resolved translations for Fuse.js
+  const searchableItems = useMemo(() => {
+    if (!allNotifications) return [];
+    
+    return allNotifications.map(item => ({
+      ...item,
+      // Resolve localized text for searching
+      _searchTitle: item.key 
+        ? t(`${item.key}.title`, { ...item.data, defaultValue: item.title })
+        : item.title,
+      _searchContent: item.key 
+        ? t(`${item.key}.content`, { ...item.data, defaultValue: item.content })
+        : item.content
+    }));
+  }, [allNotifications, t]);
+
+  // Initialize Fuse instance
+  const fuse = useMemo(() => {
+    return new Fuse(searchableItems, {
+      keys: ['_searchTitle', '_searchContent'],
+      threshold: 0.3, // Fuzzy match threshold
+      ignoreLocation: true,
+      useExtendedSearch: true
+    });
+  }, [searchableItems]);
+
+  // Filter and Search
+  const filteredItems = useMemo(() => {
+    let items = searchableItems;
+
+    // 1. Filter by Status
+    if (filter === 'unread') {
+      items = items.filter(item => !item.isRead);
+    }
+
+    // 2. Search using Fuse.js
+    if (debouncedSearch) {
+      items = fuse.search(debouncedSearch).map(result => result.item);
+    }
+
+    return items;
+  }, [searchableItems, filter, debouncedSearch, fuse]);
+
+  // Reset display count when filter/search changes
+  useEffect(() => {
+    setDisplayCount(20);
+  }, [filter, debouncedSearch]);
+
+  // Get current slice for rendering
+  const visibleItems = filteredItems.slice(0, displayCount);
+  const hasMore = visibleItems.length < filteredItems.length;
+
+  // Infinite scroll trigger
   const { ref, inView } = useInView();
 
   useEffect(() => {
-    if (inView && hasNextPage) {
-      fetchNextPage();
+    if (inView && hasMore) {
+      setDisplayCount(prev => prev + 20);
     }
-  }, [inView, fetchNextPage, hasNextPage]);
+  }, [inView, hasMore]);
 
   const markAsReadMutation = useMutation({
     mutationFn: async (id: string) => {
       await api.patch(`/notifications/${id}/read`);
     },
     onSuccess: () => {
+      // Refresh list to show read status
+      // We invalidate the list query
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      decrementUnread();
     },
     onError: () => {
         toast.error(t('error.generic'));
@@ -75,7 +126,6 @@ export function NotificationList() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      resetUnread();
       toast.success(t('success.saved'));
     }
   });
@@ -89,14 +139,13 @@ export function NotificationList() {
       }
   };
 
-  const allItems = data?.pages.flatMap(page => page.items) || [];
-  const isEmpty = allItems.length === 0;
+  const isEmpty = visibleItems.length === 0 && !isLoading;
 
   return (
     <div className="space-y-6">
       {/* Header Actions */}
-      <div className="flex items-center justify-between">
-        <div className="flex p-1 bg-surface border border-base rounded-xl">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex p-1 bg-surface border border-base rounded-xl flex-shrink-0">
           <button
             onClick={() => setFilter('all')}
             className={cn(
@@ -121,12 +170,22 @@ export function NotificationList() {
           </button>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-1 w-full sm:w-auto items-center gap-3">
+            <div className="relative flex-1 sm:max-w-xs">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input 
+                    placeholder={t('common.search', { defaultValue: 'Search...' })} 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9 h-10 text-sm rounded-xl bg-surface border-base focus:ring-1 focus:ring-primary/20"
+                />
+            </div>
+            
             <button
                 onClick={() => markAllAsReadMutation.mutate()}
                 disabled={markAllAsReadMutation.isPending}
                 className={cn(
-                    'flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 ease group',
+                    'hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 ease group flex-shrink-0',
                     'border border-gray-200 dark:border-gray-600 hover:border-[#A5A6F6]/30',
                     'bg-transparent hover:bg-primary-pale dark:hover:bg-white/5',
                     markAllAsReadMutation.isPending && "opacity-70 cursor-not-allowed"
@@ -141,12 +200,31 @@ export function NotificationList() {
                     {t('notifications.mark_all_read', { defaultValue: 'Mark all as read' })}
                 </span>
             </button>
+            
+             {/* Mobile Mark Read Icon Only */}
+             <button
+                onClick={() => markAllAsReadMutation.mutate()}
+                disabled={markAllAsReadMutation.isPending}
+                className={cn(
+                    'sm:hidden flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 ease',
+                    'border border-gray-200 dark:border-gray-600',
+                    'bg-surface',
+                    markAllAsReadMutation.isPending && "opacity-70 cursor-not-allowed"
+                )}
+                title={t('notifications.mark_all_read', { defaultValue: 'Mark all as read' })}
+            >
+                {markAllAsReadMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-gray-500" />
+                ) : (
+                    <CheckCheck className="w-4 h-4 text-gray-500" />
+                )}
+            </button>
         </div>
       </div>
 
       {/* List */}
       <div className="space-y-3 min-h-[300px]">
-        {isLoading && !data ? (
+        {isLoading && !allNotifications ? (
            <div className="flex flex-col gap-3">
               {[1,2,3].map(i => (
                   <div key={i} className="h-24 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
@@ -166,7 +244,7 @@ export function NotificationList() {
             </div>
         ) : (
             <>
-                {allItems.map((item) => (
+                {visibleItems.map((item) => (
                     <NotificationItem 
                         key={item.id} 
                         notification={item} 
@@ -175,11 +253,9 @@ export function NotificationList() {
                     />
                 ))}
                 
-                {hasNextPage && (
+                {hasMore && (
                     <div ref={ref} className="py-4 flex justify-center w-full">
-                        {isFetchingNextPage && (
-                            <Loader2 className="w-6 h-6 animate-spin text-primary/60" />
-                        )}
+                        <Loader2 className="w-6 h-6 animate-spin text-primary/60" />
                     </div>
                 )}
             </>

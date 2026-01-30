@@ -40,6 +40,70 @@
     "empty_title": "No notifications",
     "empty_description": "You're all caught up! We'll notify you when something important happens."
   },
+  "notification": {
+    "auth": {
+      "welcome": {
+        "title": "Welcome to SubCare, {{username}}!",
+        "content": "We are glad to have you on board. Start tracking your subscriptions today."
+      },
+      "verify_code": {
+        "title": "Security Verification Code",
+        "content": "Your verification code is {{code}}. It expires in {{expireMinutes}} minutes."
+      },
+      "password_changed": {
+        "title": "Password Changed",
+        "content": "Your password was changed at {{time}}."
+      },
+      "reset_request": {
+        "title": "Password Reset Request",
+        "content": "We received a request to reset your password. Please check your email to continue."
+      },
+      "reset_success": {
+        "title": "Password Reset Successful",
+        "content": "Your password has been reset. You can now login with your new password."
+      },
+      "new_login": {
+        "title": "New Login Detected",
+        "content": "Your account was accessed from a new device at {{time}}."
+      }
+    },
+    "sub": {
+      "created": {
+        "title": "Subscription Added",
+        "content": "You have successfully added {{name}} to your subscriptions."
+      },
+      "updated": {
+        "title": "Subscription Updated",
+        "content": "{{name}}'s {{field}} has been updated."
+      },
+      "deleted": {
+        "title": "Subscription Deleted",
+        "content": "{{name}} has been removed from your subscriptions."
+      },
+      "renew_reminder": {
+        "title": "Renewal Reminder",
+        "content": "{{name}} is about to renew. Estimated cost: {{amount}}."
+      }
+    },
+    "bill": {
+      "generated": {
+        "title": "New Bill Generated",
+        "content": "A new bill for {{name}} is ready for confirmation."
+      },
+      "paid": {
+        "title": "Payment Confirmed",
+        "content": "Payment for {{name}} ({{currency}} {{amount}}) has been confirmed."
+      },
+      "skipped": {
+        "title": "Renewal Skipped",
+        "content": "You have skipped the renewal for {{name}}."
+      },
+      "price_hike": {
+        "title": "Price Hike Warning",
+        "content": "We detected a price increase for {{name}}. Please check the details."
+      }
+    }
+  },
   "preview": "Preview",
   "updating": "Updating...",
   "verifying": "Verifying...",

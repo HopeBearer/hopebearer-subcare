@@ -324,6 +324,9 @@ export interface NotificationDTO {
   isRead: boolean;
   
   // Extended UI fields
+  key?: string | null;  // i18n key
+  data?: Record<string, any> | null; // i18n data
+  
   link?: string | null;
   metadata?: Record<string, any> | null;
   priority: NotificationPriority | string;
@@ -336,8 +339,12 @@ export interface NotificationPayload {
   userId: string;
   title?: string;
   content?: string;
-  templateKey?: string;
-  templateData?: Record<string, string>;
+  
+  key?: string;            // i18n key
+  data?: Record<string, any>; // i18n variables
+  templateKey?: string;    // @deprecated
+  templateData?: Record<string, string>; // @deprecated
+
   type: NotificationType;
   channels?: ('in-app' | 'email')[];
   
