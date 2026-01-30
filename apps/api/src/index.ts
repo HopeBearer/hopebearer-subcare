@@ -1,13 +1,26 @@
 import './setup-env'; // 必须最先导入，以确保环境变量加载
 import app from './app';
+import http from 'http';
 import { seedTemplates } from './utils/seed-templates';
 import cron from 'node-cron';
 import { services } from './core/container';
+import { SocketService } from './infrastructure/socket/socket.service';
 
 const PORT = process.env.PORT || 3001;
 
+// Create HTTP server manually to attach Socket.io
+const server = http.createServer(app);
+
+// Initialize Socket Service
+const socketService = new SocketService(server);
+
+// Inject Socket Service into Notification Service
+if (services.notification) {
+    services.notification.setSocketService(socketService);
+}
+
 // 启动服务器
-app.listen(PORT, async () => {
+server.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   console.log('Environment:', process.env.NODE_ENV);
   

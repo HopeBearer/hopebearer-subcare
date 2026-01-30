@@ -28,6 +28,18 @@
     "back": "上一步",
     "complete": "完成"
   },
+  "common": {
+    "all": "全部",
+    "unread": "未读",
+    "refresh": "刷新",
+    "load_more": "加载更多"
+  },
+  "notifications": {
+    "mark_all_read": "全部已读",
+    "mark_read": "已读",
+    "empty_title": "暂无通知",
+    "empty_description": "您已查看所有通知！有重要消息时我们会通知您。"
+  },
   "preview": "预览",
   "updating": "更新中...",
   "verifying": "验证中...",

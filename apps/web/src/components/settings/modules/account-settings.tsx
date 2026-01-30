@@ -9,7 +9,6 @@ import { Lock, Trash2, Mail, CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '@/store';
 import { authService } from '@/services';
 import { toast } from 'sonner';
-import JSEncrypt from 'jsencrypt';
 
 export function AccountSettings() {
   const { t } = useTranslation('settings');
@@ -67,21 +66,12 @@ export function AccountSettings() {
 
     setIsUpdating(true);
     try {
-      // Fetch public key
-      const { data } = await authService.getPublicKey();
-      const encryptor = new JSEncrypt();
-      encryptor.setPublicKey(data.publicKey);
-
-      const encryptedCurrentPassword = encryptor.encrypt(currentPassword);
-      const encryptedNewPassword = encryptor.encrypt(newPassword);
-
-      if (!encryptedCurrentPassword || !encryptedNewPassword) {
-        throw new Error('Encryption failed');
-      }
-
+      // Remove client-side encryption due to environment compatibility issues.
+      // Send passwords in plain text over HTTPS (which handles encryption).
+      
       await authService.changePassword({
-        currentPassword: encryptedCurrentPassword,
-        newPassword: encryptedNewPassword,
+        currentPassword: currentPassword,
+        newPassword: newPassword,
         verificationCode
       });
       

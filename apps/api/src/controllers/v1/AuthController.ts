@@ -124,16 +124,15 @@ export class AuthController {
   };
 
   /**
-   * 获取公钥
+   * 获取公钥 (Deprecated - Returns empty)
    * GET /auth/public-key
    */
   getPublicKey = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = this.authService.getPublicKey();
       res.status(StatusCodes.OK).json({
         status: 'success',
         code: BusinessCode.SUCCESS,
-        data: result,
+        data: { publicKey: "" },
       });
     } catch (error) {
       next(error);

@@ -8,7 +8,6 @@ import { User, prisma } from "@subcare/database";
 import { TokenService } from "./TokenService";
 import { CaptchaService } from "./CaptchaService";
 import { VerificationCodeService } from "./VerificationCodeService";
-import { EncryptionService } from "./EncryptionService";
 import { NotificationService } from "../modules/notification/notification.service";
 
 /**
@@ -29,7 +28,6 @@ export interface AuthResponse {
 export class AuthService {
   private captchaService: CaptchaService;
   private verificationCodeService: VerificationCodeService;
-  private encryptionService: EncryptionService;
 
   constructor(
     private userRepository: UserRepository,
@@ -38,14 +36,14 @@ export class AuthService {
   ) {
     this.captchaService = new CaptchaService();
     this.verificationCodeService = new VerificationCodeService();
-    this.encryptionService = new EncryptionService();
   }
 
   /**
    * Get Public Key for encryption
    */
   getPublicKey() {
-    return { publicKey: this.encryptionService.getPublicKey() };
+    // Encryption removed
+    return { publicKey: "" };
   }
 
   /**
@@ -133,14 +131,9 @@ export class AuthService {
   async changePassword(userId: string, data: any): Promise<void> {
     const { currentPassword, newPassword, verificationCode } = data;
 
-    // Decrypt passwords
-    let decryptedCurrentPassword, decryptedNewPassword;
-    try {
-        decryptedCurrentPassword = this.encryptionService.decrypt(currentPassword);
-        decryptedNewPassword = this.encryptionService.decrypt(newPassword);
-    } catch (e) {
-        throw new AppError("INVALID_ENCRYPTION", StatusCodes.BAD_REQUEST, { message: "Encryption failed" });
-    }
+    // No encryption on payload, assuming HTTPS transport security.
+    const decryptedCurrentPassword = currentPassword;
+    const decryptedNewPassword = newPassword;
 
     // 1. Verify User exists
     const user = await this.userRepository.findById(userId);

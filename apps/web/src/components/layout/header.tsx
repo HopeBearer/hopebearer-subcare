@@ -10,6 +10,7 @@ import { ThemeToggle } from '@/components/common/theme-toggle';
 import { LanguageSwitcher } from '@/components/common/language-switcher';
 import { cn } from '@/lib/utils';
 import { settingsConfig } from '@/components/settings/config';
+import { NotificationBell } from './notification-bell';
 
 export function Header() {
   const { t } = useTranslation(['common', 'subscription', 'dashboard', 'settings']);
@@ -92,7 +93,8 @@ export function Header() {
           </button>
         )}
 
-        <ThemeToggle className="mr-2" />
+        <NotificationBell />
+        <ThemeToggle />
         <LanguageSwitcher />
 
         <button 

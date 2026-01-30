@@ -297,3 +297,57 @@ export interface FinancialOverviewDTO {
   sankey: SankeyData;
   anomalies: SpendingAnomaly[];
 }
+
+// --- Notification Types ---
+
+export enum NotificationType {
+  SYSTEM = 'system',
+  BILLING = 'billing',
+  SECURITY = 'security',
+  MARKETING = 'marketing',
+  AI = 'ai' // For future AI use
+}
+
+export enum NotificationPriority {
+  LOW = 'LOW',
+  NORMAL = 'NORMAL',
+  HIGH = 'HIGH',
+  URGENT = 'URGENT'
+}
+
+export interface NotificationDTO {
+  id: string;
+  userId: string;
+  title: string;
+  content: string;
+  type: NotificationType | string;
+  isRead: boolean;
+  
+  // Extended UI fields
+  link?: string | null;
+  metadata?: Record<string, any> | null;
+  priority: NotificationPriority | string;
+  actionLabel?: string | null;
+
+  createdAt: Date | string;
+}
+
+export interface NotificationPayload {
+  userId: string;
+  title?: string;
+  content?: string;
+  templateKey?: string;
+  templateData?: Record<string, string>;
+  type: NotificationType;
+  channels?: ('in-app' | 'email')[];
+  
+  // Extended
+  link?: string;
+  metadata?: Record<string, any>;
+  priority?: NotificationPriority;
+  actionLabel?: string;
+}
+
+export interface NotificationStats {
+  unreadCount: number;
+}

@@ -11,13 +11,25 @@ export type CreateNotificationPayload = {
   templateData?: Record<string, string>;
   type: 'system' | 'billing' | 'security' | 'marketing';
   channels?: ('in-app' | 'email')[];
+  link?: string;
+  metadata?: any;
+  priority?: string;
+  actionLabel?: string;
 };
 
+import { SocketService } from '../../infrastructure/socket/socket.service';
+
 export class NotificationService {
+  private socketService: SocketService | null = null;
+
   constructor(
     private emailProvider: EmailProvider,
     private messageTemplateRepository: MessageTemplateRepository
   ) {}
+
+  public setSocketService(socketService: SocketService) {
+    this.socketService = socketService;
+  }
 
   private replaceTemplateVariables(content: string, data: Record<string, string>): string {
     return content.replace(/\{\{(\w+)\}\}/g, (_, key) => data[key] || '');
@@ -63,14 +75,24 @@ export class NotificationService {
     // 1. In-App Notification
     if (channels.includes('in-app')) {
       try {
-        await prisma.notification.create({
+        const notification = await prisma.notification.create({
           data: {
             userId,
             title,
             content,
             type,
+            link: payload.link,
+            metadata: payload.metadata,
+            priority: payload.priority || 'NORMAL',
+            actionLabel: payload.actionLabel
           },
         });
+
+        // Push via Socket
+        if (this.socketService) {
+            this.socketService.sendNotification(userId, notification);
+        }
+
       } catch (error) {
         logger.error({
           domain: 'NOTIFICATION',
@@ -159,16 +181,22 @@ export class NotificationService {
     });
   }
 
-  async getUserNotifications(userId: string, page = 1, limit = 20) {
+  async getUserNotifications(userId: string, page = 1, limit = 20, filter?: string) {
     const skip = (page - 1) * limit;
+    
+    const where: any = { userId };
+    if (filter === 'unread') {
+      where.isRead = false;
+    }
+
     const [items, total] = await Promise.all([
       prisma.notification.findMany({
-        where: { userId },
+        where,
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
-      prisma.notification.count({ where: { userId } }),
+      prisma.notification.count({ where }),
     ]);
 
     return { items, total };

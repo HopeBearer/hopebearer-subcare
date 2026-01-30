@@ -145,12 +145,19 @@ model Notification {
   content   String   @db.Text
   type      String   // system / billing / security / marketing
   isRead    Boolean  @default(false)
+  
+  // Extended fields for rich UI and interaction
+  link        String?
+  metadata    Json?
+  priority    String   @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  actionLabel String?
 
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
+  @@index([isRead])
   @@map("notifications")
 }
 
