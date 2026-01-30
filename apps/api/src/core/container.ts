@@ -43,7 +43,7 @@ const emailProvider = new NodemailerProvider();
 const notificationService = new NotificationService(emailProvider, messageTemplateRepository);
 
 const authService = new AuthService(userRepository, tokenService, notificationService);
-const userService = new UserService(userRepository);
+const userService = new UserService(userRepository, notificationService);
 const billGeneratorService = new BillGeneratorService(subscriptionRepository, paymentRecordRepository, notificationService);
 
 const subscriptionService = new SubscriptionService(

@@ -1,5 +1,6 @@
 import { UserRepository } from "../repositories/UserRepository";
 import { User, PrismaClient } from "@subcare/database";
+import { NotificationService } from "../modules/notification/notification.service";
 
 const prisma = new PrismaClient();
 
@@ -8,7 +9,10 @@ const prisma = new PrismaClient();
  * 处理用户相关的业务逻辑
  */
 export class UserService {
-  constructor(private userRepository: UserRepository) {}
+  constructor(
+    private userRepository: UserRepository,
+    private notificationService: NotificationService
+  ) {}
 
   /**
    * 获取所有用户列表
@@ -41,7 +45,26 @@ export class UserService {
     // Prevent updating sensitive fields via this method if exposed directly
     // Ideally, separate methods for password reset etc.
     const { password: _p, refreshToken: _r, role: _role, ...safeUpdates } = data;
-    return this.userRepository.update(id, safeUpdates);
+    const updatedUser = await this.userRepository.update(id, safeUpdates);
+
+    // Notify user about profile update
+    // Only notify if meaningful fields changed (name, email, bio)
+    if (safeUpdates.name || safeUpdates.email || safeUpdates.bio) {
+        await this.notificationService.notify({
+            userId: id,
+            key: 'notification.account.updated',
+            data: { 
+                field: Object.keys(safeUpdates).join(', ')
+            },
+            title: 'Account Profile Updated',
+            content: 'Your account profile information has been updated.',
+            type: 'system',
+            eventKey: 'system.account_update',
+            channels: ['in-app', 'email'] // Default channels if not set
+        }).catch(err => console.error('Failed to send profile update notification', err));
+    }
+
+    return updatedUser;
   }
 
   /**

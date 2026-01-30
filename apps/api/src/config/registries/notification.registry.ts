@@ -37,5 +37,11 @@ export const notificationRegistry: Record<string, RouteVersions> = {
       handler: (req, res, next) => controllersV1.Notification.updateSetting(req, res).catch(next),
       middlewares: [authMiddleware.authenticate]
     }
+  },
+  'PATCH /notifications/settings/category': {
+    v1: {
+      handler: (req, res, next) => controllersV1.Notification.updateCategory(req, res).catch(next),
+      middlewares: [authMiddleware.authenticate]
+    }
   }
 };

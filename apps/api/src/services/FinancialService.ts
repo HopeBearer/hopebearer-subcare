@@ -198,6 +198,7 @@ export class FinancialService {
             title: 'Payment Confirmed',
             content: `Payment for ${subscription.name} has been confirmed.`,
             type: 'billing',
+            eventKey: 'billing.payment_success',
             // channels: ['in-app'] // Removed hardcoded
         }).catch(console.error);
 
@@ -248,6 +249,7 @@ export class FinancialService {
                              title: 'Budget Limit Exceeded',
                              content: `Your spending in ${category.name} this month is ${totalSpent}, exceeding the limit of ${category.budgetLimit}.`,
                              type: 'billing',
+                             eventKey: 'billing.budget_exceeded',
                              channels: ['in-app', 'email'],
                              priority: 'HIGH'
                          }).catch(console.error);

@@ -55,12 +55,48 @@
   "notifications": {
     "title": "消息通知",
     "description": "管理您的通知偏好设置",
+    "granular_control": "详细设置",
+    "category": {
+      "billing": "账单与订阅",
+      "billing_desc": "管理账单提醒和订阅续费通知",
+      "system": "系统与账户",
+      "system_desc": "管理系统公告和账户变更通知",
+      "security": "安全中心",
+      "security_desc": "管理重要的安全警告",
+      "marketing": "营销推广",
+      "marketing_desc": "管理订阅通讯和优惠活动"
+    },
+    "event": {
+      "billing": {
+        "subscription_created": "新增订阅",
+        "subscription_created_desc": "在您成功添加新订阅时发送通知。",
+        "renewal_upcoming": "续费提醒",
+        "renewal_upcoming_desc": "在订阅即将续费前发送提醒。",
+        "payment_success": "支付成功",
+        "payment_success_desc": "在支付记录确认成功时发送通知。",
+        "payment_failed": "支付失败",
+        "budget_exceeded": "预算超支",
+        "budget_exceeded_desc": "在分类支出超过月度预算时提醒。",
+        "price_change": "价格变动"
+      },
+      "system": {
+        "announcement": "系统公告",
+        "maintenance": "维护通知",
+        "account_update": "账户变动",
+        "account_update_desc": "账户信息变更的重要通知。"
+      },
+      "security": {
+        "login_new_device": "新设备登录",
+        "password_change": "密码修改",
+        "password_change_desc": "检测到密码修改时发送安全警告。"
+      },
+      "marketing": {
+        "newsletter": "订阅通讯",
+        "promotions": "优惠活动"
+      }
+    },
     "email": "邮件通知",
     "in_app": "站内信通知",
-    "billing_reminders": "账单提醒",
-    "billing_reminders_desc": "总控开关。包含：新增订阅、账单生成、支付确认，以及所有订阅的续费提醒",
-    "system_updates": "系统更新",
-    "system_updates_desc": "包含：账号安全、系统公告、欢迎消息",
     "load_error": "加载设置失败",
     "update_error": "更新设置失败"
   },

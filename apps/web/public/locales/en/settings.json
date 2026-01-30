@@ -55,12 +55,48 @@
   "notifications": {
     "title": "Notifications",
     "description": "Manage your notification preferences",
+    "granular_control": "Detailed Settings",
+    "category": {
+      "billing": "Billing & Subscription",
+      "billing_desc": "Manage billing alerts and subscription reminders",
+      "system": "System & Account",
+      "system_desc": "Manage system announcements and account updates",
+      "security": "Security",
+      "security_desc": "Manage critical security alerts",
+      "marketing": "Marketing",
+      "marketing_desc": "Manage newsletters and promotions"
+    },
+    "event": {
+      "billing": {
+        "subscription_created": "New Subscription",
+        "subscription_created_desc": "Notifies you when you successfully add a new subscription.",
+        "renewal_upcoming": "Renewal Reminder",
+        "renewal_upcoming_desc": "Notifies you when a subscription is about to renew.",
+        "payment_success": "Payment Success",
+        "payment_success_desc": "Notifies you when a payment is successfully recorded.",
+        "payment_failed": "Payment Failed",
+        "budget_exceeded": "Budget Exceeded",
+        "budget_exceeded_desc": "Notifies you when your monthly category budget is exceeded.",
+        "price_change": "Price Change Alert"
+      },
+      "system": {
+        "announcement": "Announcements",
+        "maintenance": "Maintenance",
+        "account_update": "Account Updates",
+        "account_update_desc": "Notifies you of important account changes."
+      },
+      "security": {
+        "login_new_device": "New Device Login",
+        "password_change": "Password Changed",
+        "password_change_desc": "Notifies you when your password is changed."
+      },
+      "marketing": {
+        "newsletter": "Newsletter",
+        "promotions": "Promotions"
+      }
+    },
     "email": "Email Notifications",
     "in_app": "In-App Notifications",
-    "billing_reminders": "Billing Reminders",
-    "billing_reminders_desc": "Master switch. Includes: New Subscriptions, Bills, Payments, and all Renewal Reminders",
-    "system_updates": "System Updates",
-    "system_updates_desc": "Includes: Account Security, Announcements, Welcome Messages",
     "load_error": "Failed to load settings",
     "update_error": "Failed to update setting"
   },

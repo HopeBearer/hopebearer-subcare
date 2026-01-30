@@ -175,6 +175,7 @@ export class AuthService {
       title: 'Password Changed',
       content: 'Your password has been changed successfully.',
       type: 'security',
+      eventKey: 'security.password_change',
       channels: ['email']
     });
   }
@@ -407,6 +408,7 @@ export class AuthService {
         title: '密码修改成功',
         content: '您的密码已成功修改。',
         type: 'security',
+        eventKey: 'security.password_change',
         channels: ['email', 'in-app']
     });
   }

@@ -3,6 +3,7 @@ import { logger } from '../../infrastructure/logger/logger';
 import { EmailProvider } from '../../infrastructure/email/email.provider';
 import { MessageTemplateRepository } from '../../repositories/MessageTemplateRepository';
 import { NotificationSettingService } from './notification-setting.service';
+import { SocketService } from '../../infrastructure/socket/socket.service';
 
 export type CreateNotificationPayload = {
   userId: string;
@@ -13,14 +14,13 @@ export type CreateNotificationPayload = {
   templateKey?: string;    // @deprecated use key
   templateData?: Record<string, string>; // @deprecated use data
   type: 'system' | 'billing' | 'security' | 'marketing';
-  // channels?: ('in-app' | 'email')[]; // Removed: determined by settings now
+  // Event-specific key for granular settings (e.g. 'billing.renewal_upcoming')
+  eventKey?: string;
   link?: string;
   metadata?: any;
   priority?: string;
   actionLabel?: string;
 };
-
-import { SocketService } from '../../infrastructure/socket/socket.service';
 
 export class NotificationService {
   private socketService: SocketService | null = null;
@@ -50,13 +50,12 @@ export class NotificationService {
         templateData, 
         key, 
         data, 
-        type
+        type,
+        eventKey
     } = payload;
 
     let title = initialTitle;
     let content = initialContent;
-    // ... rest of logic
-
 
     // Unify parameters
     const finalKey = key || templateKey;
@@ -105,14 +104,19 @@ export class NotificationService {
         domain: 'NOTIFICATION',
         action: 'debug_check',
         userId,
-        metadata: { type, hasSocket: !!this.socketService }
+        metadata: { type, eventKey, hasSocket: !!this.socketService }
     });
 
     if (type !== 'security') {
         try {
+            // Priority: eventKey -> key (if it looks like event key?) -> type
+            // We use eventKey if provided, otherwise fallback to Category (type)
+            // Note: finalKey is usually i18n key (e.g. notification.welcome), which might not match eventKey
+            const checkKey = eventKey || type;
+
             const [emailEnabled, inAppEnabled] = await Promise.all([
-                this.notificationSettingService.isChannelEnabled(userId, type, 'email'),
-                this.notificationSettingService.isChannelEnabled(userId, type, 'inApp')
+                this.notificationSettingService.isChannelEnabled(userId, checkKey, 'email'),
+                this.notificationSettingService.isChannelEnabled(userId, checkKey, 'inApp')
             ]);
             sendEmail = emailEnabled;
             sendInApp = inAppEnabled;
@@ -121,7 +125,7 @@ export class NotificationService {
                 domain: 'NOTIFICATION',
                 action: 'settings_resolved',
                 userId,
-                metadata: { type, emailEnabled, inAppEnabled }
+                metadata: { checkKey, emailEnabled, inAppEnabled }
             });
         } catch (err) {
             logger.error({
@@ -197,6 +201,7 @@ export class NotificationService {
       userId,
       metadata: {
         type,
+        eventKey,
         channels: { email: sendEmail, inApp: sendInApp },
         title,
         templateKey
@@ -278,7 +283,7 @@ export class NotificationService {
         take: limit,
       }),
       prisma.notification.count({ where }),
-    ]);
+      ]);
 
     return { items, total };
   }

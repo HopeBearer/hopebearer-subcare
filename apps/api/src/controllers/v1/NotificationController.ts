@@ -51,7 +51,7 @@ export class NotificationController {
   }
 
   /**
-   * Update notification settings
+   * Update notification settings (Granular)
    */
   async updateSetting(req: Request, res: Response) {
     const userId = req.user?.userId;
@@ -59,11 +59,48 @@ export class NotificationController {
       throw new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'User not found' });
     }
 
-    const setting = await this.notificationSettingService.updateSetting(userId, req.body);
+    // Support legacy 'type' field by mapping it to 'key' if key is missing
+    const payload = {
+        ...req.body,
+        key: req.body.key || req.body.type
+    };
+
+    const setting = await this.notificationSettingService.updateSetting(userId, payload);
 
     res.status(StatusCodes.OK).json({
       success: true,
       data: setting,
+    });
+  }
+
+  /**
+   * Update notification category (Master Switch)
+   */
+  async updateCategory(req: Request, res: Response) {
+    const userId = req.user?.userId;
+    if (!userId) {
+        throw new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'User not found' });
+    }
+
+    const { category, enabled, channel } = req.body;
+    
+    if (!category || typeof enabled !== 'boolean') {
+        throw new AppError('BAD_REQUEST', StatusCodes.BAD_REQUEST, { message: 'Invalid payload' });
+    }
+
+    // Validate channel if provided
+    if (channel && !['email', 'inApp'].includes(channel)) {
+        throw new AppError('BAD_REQUEST', StatusCodes.BAD_REQUEST, { message: 'Invalid channel' });
+    }
+
+    await this.notificationSettingService.updateCategory(userId, category, enabled, channel);
+
+    // Return updated settings to refresh UI
+    const settings = await this.notificationSettingService.getSettings(userId);
+
+    res.status(StatusCodes.OK).json({
+        success: true,
+        data: settings
     });
   }
 

@@ -154,6 +154,7 @@ export class SubscriptionService {
       title: 'New Subscription Added',
       content: `You have successfully added ${data.name} to your subscriptions.`,
       type: 'billing',
+      eventKey: 'billing.subscription_created',
       // channels: ['in-app'] // Removed hardcoded channels
     }).catch(console.error);
 
@@ -318,6 +319,7 @@ export class SubscriptionService {
                   title: 'Upcoming Renewal Reminder', // Fallback
                   content: `Your subscription for ${sub.name} will renew in ${days} days on ${dateStr}. Amount: ${sub.currency} ${sub.price}.`, // Fallback
                   type: 'billing',
+                  eventKey: 'billing.renewal_upcoming',
                   // channels: ['in-app', 'email'], // Requirement: Both channels
                   priority: 'HIGH'
               });

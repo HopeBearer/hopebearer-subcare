@@ -176,8 +176,8 @@ model NotificationSetting {
   id        String   @id @default(uuid())
   userId    String
   
-  // Notification Type: 'billing', 'system', 'marketing'
-  type      String   
+  // Notification Key: Can be Category ('billing') or Event ('billing.renewal')
+  key       String   
   
   // Channel switches
   email     Boolean  @default(true)
@@ -188,7 +188,7 @@ model NotificationSetting {
   
   user User @relation(fields: [userId], references: [id])
 
-  @@unique([userId, type])
+  @@unique([userId, key])
   @@map("notification_settings")
 }
 
