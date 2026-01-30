@@ -53,18 +53,16 @@
     "delete_confirm": "删除账户"
   },
   "notifications": {
-    "title": "通知设置",
-    "description": "选择您希望接收通知的方式和时间",
+    "title": "消息通知",
+    "description": "管理您的通知偏好设置",
     "email": "邮件通知",
-    "sub_reminders": "订阅提醒",
-    "sub_reminders_desc": "在订阅续费前接收通知",
-    "security": "安全警报",
-    "security_desc": "接收有关可疑活动的通知",
-    "push": "推送通知",
-    "push_reminders": "到期提醒",
-    "push_reminders_desc": "即将付款的即时通知",
-    "product_updates": "产品更新",
-    "product_updates_desc": "关于新功能和改进的消息"
+    "in_app": "站内信通知",
+    "billing_reminders": "账单提醒",
+    "billing_reminders_desc": "总控开关。包含：新增订阅、账单生成、支付确认，以及所有订阅的续费提醒",
+    "system_updates": "系统更新",
+    "system_updates_desc": "包含：账号安全、系统公告、欢迎消息",
+    "load_error": "加载设置失败",
+    "update_error": "更新设置失败"
   },
   "messages": {
     "fill_all_fields": "请填写所有必填项",

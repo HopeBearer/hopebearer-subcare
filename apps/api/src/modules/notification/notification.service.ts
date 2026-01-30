@@ -2,6 +2,7 @@ import { prisma } from '@subcare/database';
 import { logger } from '../../infrastructure/logger/logger';
 import { EmailProvider } from '../../infrastructure/email/email.provider';
 import { MessageTemplateRepository } from '../../repositories/MessageTemplateRepository';
+import { NotificationSettingService } from './notification-setting.service';
 
 export type CreateNotificationPayload = {
   userId: string;
@@ -12,7 +13,7 @@ export type CreateNotificationPayload = {
   templateKey?: string;    // @deprecated use key
   templateData?: Record<string, string>; // @deprecated use data
   type: 'system' | 'billing' | 'security' | 'marketing';
-  channels?: ('in-app' | 'email')[];
+  // channels?: ('in-app' | 'email')[]; // Removed: determined by settings now
   link?: string;
   metadata?: any;
   priority?: string;
@@ -23,11 +24,14 @@ import { SocketService } from '../../infrastructure/socket/socket.service';
 
 export class NotificationService {
   private socketService: SocketService | null = null;
+  private notificationSettingService: NotificationSettingService;
 
   constructor(
     private emailProvider: EmailProvider,
     private messageTemplateRepository: MessageTemplateRepository
-  ) {}
+  ) {
+    this.notificationSettingService = new NotificationSettingService();
+  }
 
   public setSocketService(socketService: SocketService) {
     this.socketService = socketService;
@@ -38,17 +42,21 @@ export class NotificationService {
   }
 
   async notify(payload: CreateNotificationPayload): Promise<void> {
-    let { 
+    const { 
         userId, 
-        title, 
-        content, 
+        title: initialTitle, 
+        content: initialContent, 
         templateKey, 
         templateData, 
         key, 
         data, 
-        type, 
-        channels = ['in-app'] 
+        type
     } = payload;
+
+    let title = initialTitle;
+    let content = initialContent;
+    // ... rest of logic
+
 
     // Unify parameters
     const finalKey = key || templateKey;
@@ -58,8 +66,6 @@ export class NotificationService {
     if (finalKey) {
       const template = await this.messageTemplateRepository.findByKey(finalKey);
       if (template) {
-        // Only override if not explicitly provided (or always override?)
-        // Let's assume template is the source of truth for text.
         let resolvedTitle = template.title;
         let resolvedContent = template.content;
         
@@ -73,17 +79,8 @@ export class NotificationService {
         if (!content) content = resolvedContent;
 
       } else {
-         // If template not found, we might still want to proceed if title/content were manually provided.
-         // Or just use the key as fallback to avoid crashing DB if title/content required.
          if (!title) title = finalKey; 
          if (!content) content = finalKey; 
-
-         logger.warn({
-            domain: 'NOTIFICATION',
-            action: 'template_not_found',
-            userId,
-            metadata: { key: finalKey }
-         });
       }
     }
     
@@ -98,8 +95,46 @@ export class NotificationService {
         return;
     }
 
-    // 1. In-App Notification
-    if (channels.includes('in-app')) {
+    // --- CHECK SETTINGS ---
+    // Default to true for security, otherwise check DB
+    let sendEmail = true;
+    let sendInApp = true;
+
+    // Debug Log
+    logger.info({
+        domain: 'NOTIFICATION',
+        action: 'debug_check',
+        userId,
+        metadata: { type, hasSocket: !!this.socketService }
+    });
+
+    if (type !== 'security') {
+        try {
+            const [emailEnabled, inAppEnabled] = await Promise.all([
+                this.notificationSettingService.isChannelEnabled(userId, type, 'email'),
+                this.notificationSettingService.isChannelEnabled(userId, type, 'inApp')
+            ]);
+            sendEmail = emailEnabled;
+            sendInApp = inAppEnabled;
+            
+            logger.info({
+                domain: 'NOTIFICATION',
+                action: 'settings_resolved',
+                userId,
+                metadata: { type, emailEnabled, inAppEnabled }
+            });
+        } catch (err) {
+            logger.error({
+                domain: 'NOTIFICATION',
+                action: 'settings_check_error',
+                userId,
+                error: err
+            });
+        }
+    }
+
+    // 1. In-App Notification (DB + Socket)
+    if (sendInApp) {
       try {
         const notificationData: any = {
             userId,
@@ -121,11 +156,8 @@ export class NotificationService {
         // Push via Socket
         if (this.socketService) {
             this.socketService.sendNotification(userId, notification);
-            logger.debug({ domain: 'NOTIFICATION', action: 'socket_push', userId, notificationId: notification.id });
-        } else {
-             logger.warn({ domain: 'NOTIFICATION', action: 'socket_service_not_initialized', userId, reason: 'socketService is null' });
+            logger.debug({ domain: 'NOTIFICATION', action: 'socket_push', userId, metadata: { notificationId: notification.id } });
         }
-
       } catch (error) {
         logger.error({
           domain: 'NOTIFICATION',
@@ -138,8 +170,7 @@ export class NotificationService {
     }
 
     // 2. Email Notification
-    if (channels.includes('email')) {
-      // Need to fetch user email first
+    if (sendEmail) {
       try {
         const user = await prisma.user.findUnique({
           where: { id: userId },
@@ -148,16 +179,8 @@ export class NotificationService {
 
         if (user?.email) {
           await this.emailProvider.sendEmail(user.email, title, content);
-        } else {
-          logger.warn({
-            domain: 'NOTIFICATION',
-            action: 'email_skipped_no_user',
-            userId,
-            metadata: { reason: 'User not found or no email' },
-          });
         }
       } catch (error) {
-        // Email failure shouldn't crash the whole flow, but should be logged
         logger.error({
           domain: 'NOTIFICATION',
           action: 'send_email_fail',
@@ -174,7 +197,7 @@ export class NotificationService {
       userId,
       metadata: {
         type,
-        channels,
+        channels: { email: sendEmail, inApp: sendInApp },
         title,
         templateKey
       },

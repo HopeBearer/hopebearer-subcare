@@ -54,17 +54,15 @@
   },
   "notifications": {
     "title": "Notifications",
-    "description": "Choose how and when you want to be notified",
+    "description": "Manage your notification preferences",
     "email": "Email Notifications",
-    "sub_reminders": "Subscription Reminders",
-    "sub_reminders_desc": "Get notified before your subscriptions renew",
-    "security": "Security Alerts",
-    "security_desc": "Get notified about suspicious activity",
-    "push": "Push Notifications",
-    "push_reminders": "Due Date Reminders",
-    "push_reminders_desc": "Instant notifications for upcoming payments",
-    "product_updates": "Product Updates",
-    "product_updates_desc": "News about new features and improvements"
+    "in_app": "In-App Notifications",
+    "billing_reminders": "Billing Reminders",
+    "billing_reminders_desc": "Master switch. Includes: New Subscriptions, Bills, Payments, and all Renewal Reminders",
+    "system_updates": "System Updates",
+    "system_updates_desc": "Includes: Account Security, Announcements, Welcome Messages",
+    "load_error": "Failed to load settings",
+    "update_error": "Failed to update setting"
   },
   "messages": {
     "fill_all_fields": "Please fill in all fields",

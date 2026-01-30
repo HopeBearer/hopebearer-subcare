@@ -53,6 +53,8 @@ export const routeConfig: Record<string, string> = {
 
   // Notifications
   'GET /notifications': 'v1',
+  'GET /notifications/settings': 'v1',
+  'PATCH /notifications/settings': 'v1',
   'GET /notifications/unread-count': 'v1',
   'PATCH /notifications/:id/read': 'v1',
   'PATCH /notifications/read-all': 'v1',

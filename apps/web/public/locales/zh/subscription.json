@@ -18,7 +18,7 @@
   "on": "已开启",
   "off": "已关闭",
   "reminders": "提醒设置",
-  "notifications_enabled": "已启用提醒",
+  "notifications_enabled": "已启用提醒 (需开启全局账单通知)",
   "notifications_disabled": "未启用提醒",
   "alert_before": "在续费前 <bold>{{days}} 天</bold> 提醒我",
   "notes_usage": "备注与使用情况",

@@ -198,7 +198,7 @@ export class FinancialService {
             title: 'Payment Confirmed',
             content: `Payment for ${subscription.name} has been confirmed.`,
             type: 'billing',
-            channels: ['in-app']
+            // channels: ['in-app'] // Removed hardcoded
         }).catch(console.error);
 
         await this.advanceSubscriptionDate(subscription);

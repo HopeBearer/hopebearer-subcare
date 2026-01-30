@@ -18,7 +18,7 @@
   "on": "On",
   "off": "Off",
   "reminders": "Reminders",
-  "notifications_enabled": "Notifications are enabled",
+  "notifications_enabled": "Notifications enabled (Requires global setting ON)",
   "notifications_disabled": "Notifications disabled",
   "alert_before": "Alert me <bold>{{days}} days</bold> before renewal.",
   "notes_usage": "Notes & Usage",

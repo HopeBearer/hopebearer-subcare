@@ -25,5 +25,17 @@ export const notificationRegistry: Record<string, RouteVersions> = {
       handler: (req, res, next) => controllersV1.Notification.markAllAsRead(req, res).catch(next),
       middlewares: [authMiddleware.authenticate]
     }
+  },
+  'GET /notifications/settings': {
+    v1: {
+      handler: (req, res, next) => controllersV1.Notification.getSettings(req, res).catch(next),
+      middlewares: [authMiddleware.authenticate]
+    }
+  },
+  'PATCH /notifications/settings': {
+    v1: {
+      handler: (req, res, next) => controllersV1.Notification.updateSetting(req, res).catch(next),
+      middlewares: [authMiddleware.authenticate]
+    }
   }
 };

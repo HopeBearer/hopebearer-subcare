@@ -36,6 +36,7 @@ model User {
   
   subscriptions Subscription[]
   notifications Notification[]
+  notificationSettings NotificationSetting[]
   paymentRecords PaymentRecord[]
   categories    Category[]
 
@@ -168,6 +169,27 @@ model Notification {
   @@index([userId])
   @@index([isRead])
   @@map("notifications")
+}
+
+// User Notification Settings
+model NotificationSetting {
+  id        String   @id @default(uuid())
+  userId    String
+  
+  // Notification Type: 'billing', 'system', 'marketing'
+  type      String   
+  
+  // Channel switches
+  email     Boolean  @default(true)
+  inApp     Boolean  @default(true) // Includes Web Socket push
+
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, type])
+  @@map("notification_settings")
 }
 
 model SystemLog {

@@ -85,7 +85,7 @@ export class AuthService {
         title: "Welcome to SubCare!", // Fallback/Email
         content: "We are glad to have you on board. Start tracking your subscriptions today.", // Fallback/Email
         type: "system",
-        channels: ["in-app", "email"]
+        // channels: ["in-app", "email"] // Removed hardcoded
     }).catch(err => console.error('Failed to send welcome notification', err));
 
     // 返回结果时移除敏感字段

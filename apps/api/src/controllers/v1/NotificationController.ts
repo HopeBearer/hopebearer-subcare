@@ -1,10 +1,15 @@
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { NotificationService } from '../../modules/notification/notification.service';
+import { NotificationSettingService } from '../../modules/notification/notification-setting.service';
 import { AppError } from '../../utils/AppError';
 
 export class NotificationController {
-  constructor(private notificationService: NotificationService) {}
+  private notificationSettingService: NotificationSettingService;
+
+  constructor(private notificationService: NotificationService) {
+    this.notificationSettingService = new NotificationSettingService();
+  }
 
   /**
    * Get user notifications
@@ -25,6 +30,40 @@ export class NotificationController {
     res.status(StatusCodes.OK).json({
       success: true,
       data: result,
+    });
+  }
+
+  /**
+   * Get notification settings
+   */
+  async getSettings(req: Request, res: Response) {
+    const userId = req.user?.userId;
+    if (!userId) {
+      throw new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'User not found' });
+    }
+
+    const settings = await this.notificationSettingService.getSettings(userId);
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      data: settings,
+    });
+  }
+
+  /**
+   * Update notification settings
+   */
+  async updateSetting(req: Request, res: Response) {
+    const userId = req.user?.userId;
+    if (!userId) {
+      throw new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'User not found' });
+    }
+
+    const setting = await this.notificationSettingService.updateSetting(userId, req.body);
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      data: setting,
     });
   }
 

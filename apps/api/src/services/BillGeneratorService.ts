@@ -83,7 +83,7 @@ export class BillGeneratorService {
               title: 'New Bill Generated',
               content: `A new bill for ${sub.name} is ready for confirmation.`,
               type: 'billing',
-              channels: ['in-app'] // or email if implemented
+              // channels: ['in-app'] // Removed hardcoded
           }).catch(console.error);
       }
 
