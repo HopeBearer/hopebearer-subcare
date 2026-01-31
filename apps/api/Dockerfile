@@ -27,6 +27,7 @@ COPY .gitignore .gitignore
 RUN pnpm db:generate
 
 # Build the project
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN pnpm turbo run build --filter=@subcare/api...
 
 # 3. Production runner

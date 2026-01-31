@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  transpilePackages: ["@subcare/types", "@subcare/utils"],
   async rewrites() {
     return [
       {
