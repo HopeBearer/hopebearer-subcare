@@ -26,9 +26,8 @@ RUN pnpm install --frozen-lockfile
 COPY --from=builder /app/out/full/ .
 COPY .gitignore .gitignore
 
-# Generate Prisma Client if needed (often needed if web app imports types from database package)
-# Uncomment the following line if your web app uses Prisma types directly
-# RUN pnpm db:generate
+# Generate Prisma Client (needed for types)
+RUN pnpm db:generate
 
 RUN pnpm turbo run build --filter=@subcare/web...
 
