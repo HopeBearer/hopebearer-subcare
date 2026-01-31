@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  subcare-web:
+    # Replace with your actual GHCR image path
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-yourusername}/subcare-web:latest
+    restart: always
+    environment:
+      - NODE_ENV=production
+      # This URL is used by the Next.js server (SSR) to contact the API
+      # Since they are in the same docker network, we can use the container name
+      - NEXT_PUBLIC_API_URL=http://subcare-api:3001/api
+    networks:
+      - app-network
+
+  subcare-api:
+    # Replace with your actual GHCR image path
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-yourusername}/subcare-api:latest
+    restart: always
+    environment:
+      - DATABASE_URL=mysql://root:${MYSQL_ROOT_PASSWORD}@mysql:3306/subcare
+      - PORT=3001
+      # Add other env vars here or use env_file
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+  mysql:
+    image: mysql:8
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: subcare
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "80:80"
+      # - "443:443" # Uncomment if setting up SSL
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - subcare-web
+      - subcare-api
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
