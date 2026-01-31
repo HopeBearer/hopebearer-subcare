@@ -6,10 +6,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  transpilePackages: ["@subcare/types", "@subcare/utils"],
+  transpilePackages: ["@subcare/types", "@subcare/utils", "@subcare/database"],
   async rewrites() {
     return [
       {
