@@ -141,7 +141,7 @@ export class FinancialService {
                   title: 'Pending Bill Reminder',
                   content: `You have a bill for ${bill.subscription?.name} pending for ${daysPending} days. Please confirm payment.`,
                   type: 'billing',
-                  channels: ['in-app', 'email'],
+                  channels: { inApp: true, email: true },
                   priority: 'HIGH'
               });
 
@@ -199,7 +199,7 @@ export class FinancialService {
             content: `Payment for ${subscription.name} has been confirmed.`,
             type: 'billing',
             eventKey: 'billing.payment_success',
-            // channels: ['in-app'] // Removed hardcoded
+            // channels: { inApp: true } // Removed hardcoded
         }).catch(console.error);
 
         await this.advanceSubscriptionDate(subscription);
@@ -250,7 +250,7 @@ export class FinancialService {
                              content: `Your spending in ${category.name} this month is ${totalSpent}, exceeding the limit of ${category.budgetLimit}.`,
                              type: 'billing',
                              eventKey: 'billing.budget_exceeded',
-                             channels: ['in-app', 'email'],
+                             channels: { inApp: true, email: true },
                              priority: 'HIGH'
                          }).catch(console.error);
                      }
@@ -298,7 +298,7 @@ export class FinancialService {
             title: 'Subscription Cancelled',
             content: `You have cancelled the renewal for ${subscription.name}.`,
             type: 'billing',
-            channels: ['in-app']
+            channels: { inApp: true }
         }).catch(console.error);
     }
 

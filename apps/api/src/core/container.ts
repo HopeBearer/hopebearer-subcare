@@ -96,5 +96,7 @@ export const controllersV2 = {
 export const services = {
     notification: notificationService,
     email: emailProvider,
-    billGenerator: billGeneratorService
+    billGenerator: billGeneratorService,
+    subscription: subscriptionService,
+    financial: financialService
 };

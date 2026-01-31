@@ -27,7 +27,7 @@ export function SubscriptionHistory({ subscriptionId }: SubscriptionHistoryProps
     );
   }
 
-  if (!history || history.length === 0) {
+  if (!history || !history.items || history.items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-40 text-gray-400">
         <p className="text-sm">{t('no_data', { ns: 'finance', defaultValue: 'No history available' })}</p>
@@ -47,7 +47,7 @@ export function SubscriptionHistory({ subscriptionId }: SubscriptionHistoryProps
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {history.map((record) => (
+            {history.items.map((record) => (
               <tr key={record.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
                 <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
                   {format(new Date(record.billingDate), 'MMM d, yyyy')}

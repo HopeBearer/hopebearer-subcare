@@ -151,7 +151,7 @@ export class AuthService {
       title: 'Security Verification Code',
       content: `Your verification code is: ${code}. It expires in 5 minutes.`,
       type: 'security',
-      channels: ['email']
+      channels: { email: true }
     });
   }
 
@@ -204,7 +204,7 @@ export class AuthService {
       content: 'Your password has been changed successfully.',
       type: 'security',
       eventKey: 'security.password_change',
-      channels: ['email']
+      channels: { email: true }
     });
   }
 
@@ -356,7 +356,7 @@ export class AuthService {
       title: '重置您的密码',
       content: `您申请了重置密码。请复制以下链接到浏览器中访问以重置您的密码。此链接15分钟内有效。\n\n${resetUrl}`,
       type: 'security',
-      channels: ['email'] // Only email is appropriate for this
+      channels: { email: true } // Only email is appropriate for this
     });
   }
 
@@ -437,7 +437,7 @@ export class AuthService {
         content: '您的密码已成功修改。',
         type: 'security',
         eventKey: 'security.password_change',
-        channels: ['email', 'in-app']
+        channels: { email: true, inApp: true }
     });
   }
 }

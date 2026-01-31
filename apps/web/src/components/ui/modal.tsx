@@ -8,7 +8,7 @@ import { Button } from './button';
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title: string;
+  title: React.ReactNode;
   children: React.ReactNode;
   className?: string;
   headerClassName?: string;
@@ -31,7 +31,7 @@ export function Modal({ isOpen, onClose, title, children, className, headerClass
         className
       )}>
         <div className={cn("flex items-center justify-between mb-4", headerClassName)}>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{title}</h2>
+          <div className="text-xl font-semibold text-gray-900 dark:text-white">{title}</div>
           <Button
             variant="ghost"
             className="h-8 w-8 p-0 rounded-full bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition-colors"

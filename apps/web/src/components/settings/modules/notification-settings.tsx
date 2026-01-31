@@ -145,12 +145,11 @@ export function NotificationSettings() {
                                   </div>
                                   <div className="flex items-center gap-3 ml-4">
                                       {group.children.length > 0 && (
-                                          <Button 
-                                              variant="ghost" 
-                                              size="sm" 
-                                              className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
-                                              onClick={() => toggleCategory(channel, catKey)}
-                                          >
+                                            <Button 
+                                                variant="ghost" 
+                                                className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                                onClick={() => toggleCategory(channel, catKey)}
+                                            >
                                               {openStates[channel]?.[catKey] ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                                           </Button>
                                       )}
@@ -175,12 +174,11 @@ export function NotificationSettings() {
                                                       {t(`notifications.event.${child.key}_desc`, '')}
                                                   </span>
                                               </div>
-                                              <Switch 
-                                                  size="sm"
-                                                  checked={child[channel]}
-                                                  onCheckedChange={(val) => updateSetting(child.key, channel, val)}
-                                                  disabled={!isParentEnabled}
-                                              />
+                                                <Switch 
+                                                    checked={child[channel]}
+                                                    onCheckedChange={(val) => updateSetting(child.key, channel, val)}
+                                                    disabled={!isParentEnabled}
+                                                />
                                           </div>
                                       ))}
                                   </div>

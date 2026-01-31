@@ -109,7 +109,11 @@ export const TransactionHistoryTable = ({
                 {t('pagination.prev', 'Previous')}
             </button>
             <span className="text-sm text-muted-foreground">
-              {t('pagination.page_info', { page: pagination.page, total: pagination.totalPages || 1 }, `Page ${pagination.page} of ${pagination.totalPages || 1}`)}
+              {t('pagination.page_info', { 
+                page: pagination.page, 
+                total: pagination.totalPages || 1,
+                defaultValue: `Page ${pagination.page} of ${pagination.totalPages || 1}`
+              })}
             </span>
             <button 
                 disabled={pagination.page >= (pagination.totalPages || 1)}

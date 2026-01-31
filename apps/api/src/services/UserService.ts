@@ -60,7 +60,7 @@ export class UserService {
             content: 'Your account profile information has been updated.',
             type: 'system',
             eventKey: 'system.account_update',
-            channels: ['in-app', 'email'] // Default channels if not set
+            channels: { inApp: true, email: true } // Default channels if not set
         }).catch(err => console.error('Failed to send profile update notification', err));
     }
 

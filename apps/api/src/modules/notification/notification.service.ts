@@ -20,6 +20,11 @@ export type CreateNotificationPayload = {
   metadata?: any;
   priority?: string;
   actionLabel?: string;
+  // Optional override for channels
+  channels?: {
+    email?: boolean;
+    inApp?: boolean;
+  };
 };
 
 export class NotificationService {
@@ -103,15 +108,18 @@ export class NotificationService {
     let sendEmail = true;
     let sendInApp = true;
 
-    // Debug Log
-    logger.info({
-        domain: 'NOTIFICATION',
-        action: 'debug_check',
-        userId,
-        metadata: { type, eventKey, hasSocket: !!this.socketService }
-    });
-
-    if (type !== 'security') {
+    if (payload.channels) {
+        // Explicit override from payload
+        sendEmail = payload.channels.email ?? false;
+        sendInApp = payload.channels.inApp ?? false;
+        
+        logger.info({
+            domain: 'NOTIFICATION',
+            action: 'settings_override',
+            userId,
+            metadata: { channels: payload.channels }
+        });
+    } else if (type !== 'security') {
         try {
             // Priority: eventKey -> key (if it looks like event key?) -> type
             // We use eventKey if provided, otherwise fallback to Category (type)

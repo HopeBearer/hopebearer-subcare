@@ -1,7 +1,7 @@
 import { LucideIcon } from 'lucide-react';
 import { ComponentType } from 'react';
 
-export type SettingsTabId = 'profile' | 'account' | 'notifications' | 'security' | 'billing';
+export type SettingsTabId = 'profile' | 'account' | 'notifications' | 'preferences' | 'api';
 
 export interface SettingsTab {
   id: SettingsTabId;
