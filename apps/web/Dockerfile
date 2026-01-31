@@ -24,6 +24,7 @@ RUN pnpm install --frozen-lockfile
 
 # Build the project
 COPY --from=builder /app/out/full/ .
+COPY --from=builder /app/turbo.json ./turbo.json
 COPY .gitignore .gitignore
 
 # Generate Prisma Client (needed for types)
@@ -36,7 +37,7 @@ RUN pnpm turbo run build --filter=@subcare/web
 # 3. Production image, copy all the files and run next
 FROM base AS runner
 WORKDIR /app
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 # Don't run production as root
 RUN addgroup --system --gid 1001 nodejs
@@ -52,7 +53,7 @@ COPY --from=installer --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/we
 
 EXPOSE 3000
 
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
 CMD ["node", "apps/web/server.js"]
