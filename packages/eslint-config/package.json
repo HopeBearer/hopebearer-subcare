@@ -7,6 +7,9 @@
     "next.js",
     "react-internal.js"
   ],
+  "scripts": {
+    "build": "echo 'no build'"
+  },
   "devDependencies": {
     "eslint-config-turbo": "^1.11.3",
     "eslint-config-prettier": "^9.1.0",

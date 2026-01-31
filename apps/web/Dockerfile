@@ -30,6 +30,7 @@ COPY .gitignore .gitignore
 RUN pnpm db:generate
 
 ENV NODE_OPTIONS="--max-old-space-size=4096"
+# Remove ellipsis to prevent building dependencies without build scripts
 RUN pnpm turbo run build --filter=@subcare/web
 
 # 3. Production image, copy all the files and run next
