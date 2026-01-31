@@ -13,7 +13,7 @@ RUN npx turbo prune --scope=@subcare/web --docker
 
 # 2. Rebuild the source code only when needed
 FROM base AS installer
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@8.15.4 --activate
 
