@@ -223,6 +223,9 @@ importers:
         specifier: ^5.0.10
         version: 5.0.10(@types/react@19.2.8)(react@19.2.3)
     devDependencies:
+      '@subcare/database':
+        specifier: workspace:*
+        version: link:../../packages/database
       '@types/node':
         specifier: ^20
         version: 20.19.30
