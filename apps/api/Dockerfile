@@ -27,9 +27,9 @@ COPY .gitignore .gitignore
 # Generate Prisma Client (CRITICAL for API)
 RUN pnpm db:generate
 
-# Build the project
+# Build the project (force clean build)
 ENV NODE_OPTIONS="--max-old-space-size=4096"
-RUN pnpm turbo run build --filter=@subcare/api...
+RUN rm -rf apps/api/dist && pnpm turbo run build --filter=@subcare/api... --force
 
 # 3. Production runner
 FROM base AS runner
