@@ -28,6 +28,8 @@ services:
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASS=${SMTP_PASS}
       - EMAIL_FROM=${EMAIL_FROM:-"SubCare" <hopebearer@163.com>}
+      # WebSocket CORS 配置
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://38.22.90.133}
     depends_on:
       - mysql
     networks:

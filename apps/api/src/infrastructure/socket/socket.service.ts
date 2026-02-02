@@ -10,10 +10,18 @@ export class SocketService {
 
   constructor(httpServer: HttpServer, tokenService: TokenService) {
     this.tokenService = tokenService;
+    // 支持多个 origin：本地开发和远程服务器
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://38.22.90.133',
+      'http://38.22.90.133:80',
+      process.env.CORS_ORIGIN, // 可通过环境变量添加额外 origin
+    ].filter(Boolean) as string[];
+
     this.io = new Server(httpServer, {
       path: '/socket.io',
       cors: {
-        origin: "http://localhost:3000", // 允许所有来源，解决开发环境跨域问题
+        origin: allowedOrigins,
         methods: ["GET", "POST"],
         allowedHeaders: ["Authorization"],
         credentials: true
@@ -26,54 +34,54 @@ export class SocketService {
   private initialize() {
     // Middleware for Authentication
     this.io.use((socket, next) => {
-        const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.split(' ')[1];
+      const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.split(' ')[1];
 
-        if (!token) {
-            logger.warn({ 
-                domain: 'SOCKET', 
-                action: 'auth_reject', 
-                metadata: { 
-                    reason: 'No token provided', 
-                    socketId: socket.id,
-                    ip: socket.handshake.address
-                } 
-            });
-            return next(new Error('Authentication error: No token provided'));
-        }
+      if (!token) {
+        logger.warn({
+          domain: 'SOCKET',
+          action: 'auth_reject',
+          metadata: {
+            reason: 'No token provided',
+            socketId: socket.id,
+            ip: socket.handshake.address
+          }
+        });
+        return next(new Error('Authentication error: No token provided'));
+      }
 
-        try {
-            const payload = this.tokenService.verifyAccessToken(token) as any;
-            
-            // Attach user to socket
-            socket.data.user = payload;
-            
-            // Auto-join user room
-            if (payload.userId) {
-                socket.join(`user:${payload.userId}`);
-                logger.info({ 
-                    domain: 'SOCKET', 
-                    action: 'auth_success', 
-                    userId: payload.userId,
-                    metadata: { 
-                        socketId: socket.id,
-                        rooms: [`user:${payload.userId}`]
-                    }
-                });
+      try {
+        const payload = this.tokenService.verifyAccessToken(token) as any;
+
+        // Attach user to socket
+        socket.data.user = payload;
+
+        // Auto-join user room
+        if (payload.userId) {
+          socket.join(`user:${payload.userId}`);
+          logger.info({
+            domain: 'SOCKET',
+            action: 'auth_success',
+            userId: payload.userId,
+            metadata: {
+              socketId: socket.id,
+              rooms: [`user:${payload.userId}`]
             }
-
-            next();
-        } catch (error) {
-            logger.warn({ 
-                domain: 'SOCKET', 
-                action: 'auth_fail', 
-                metadata: { 
-                    reason: 'Invalid token', 
-                    socketId: socket.id,
-                    error: String(error)
-                } 
-            });
-            next(new Error('Authentication error: Invalid token'));
+          });
         }
+
+        next();
+      } catch (error) {
+        logger.warn({
+          domain: 'SOCKET',
+          action: 'auth_fail',
+          metadata: {
+            reason: 'Invalid token',
+            socketId: socket.id,
+            error: String(error)
+          }
+        });
+        next(new Error('Authentication error: Invalid token'));
+      }
     });
 
     this.io.on('connection', (socket) => {
@@ -83,10 +91,10 @@ export class SocketService {
         action: 'connect',
         userId: socket.data.user?.userId,
         metadata: {
-            message: 'Socket connected and authenticated',
-            socketId: socket.id,
-            transport: socket.conn.transport.name,
-            query: socket.handshake.query
+          message: 'Socket connected and authenticated',
+          socketId: socket.id,
+          transport: socket.conn.transport.name,
+          query: socket.handshake.query
         }
       });
 
@@ -95,15 +103,15 @@ export class SocketService {
       // User asked for middleware auth, so let's rely on that.
 
       socket.on('disconnect', (reason) => {
-        logger.info({ 
-            domain: 'SOCKET',
-            action: 'disconnect',
-            userId: socket.data.user?.userId,
-            metadata: {
-                message: 'Socket disconnected', 
-                reason, 
-                socketId: socket.id 
-            }
+        logger.info({
+          domain: 'SOCKET',
+          action: 'disconnect',
+          userId: socket.data.user?.userId,
+          metadata: {
+            message: 'Socket disconnected',
+            reason,
+            socketId: socket.id
+          }
         });
       });
     });
@@ -115,20 +123,20 @@ export class SocketService {
   public sendNotification(userId: string, notification: NotificationDTO | any) {
     const roomName = `user:${userId}`;
     this.io.to(roomName).emit('notification:new', notification);
-    
+
     // Check if any sockets are in the room (for debugging)
     const socketsInRoom = this.io.sockets.adapter.rooms.get(roomName);
     const socketCount = socketsInRoom ? socketsInRoom.size : 0;
 
-    logger.debug({ 
-        domain: 'SOCKET', 
-        action: 'emit', 
-        userId, 
-        metadata: {
-            event: 'notification:new',
-            room: roomName,
-            recipientCount: socketCount
-        }
+    logger.debug({
+      domain: 'SOCKET',
+      action: 'emit',
+      userId,
+      metadata: {
+        event: 'notification:new',
+        room: roomName,
+        recipientCount: socketCount
+      }
     });
   }
 
@@ -139,15 +147,15 @@ export class SocketService {
     const roomName = `user:${userId}`;
     this.io.to(roomName).emit('notification:read', { id: notificationId }); // id is undefined for markAllAsRead
 
-    logger.debug({ 
-        domain: 'SOCKET', 
-        action: 'emit', 
-        userId, 
-        metadata: {
-            event: 'notification:read',
-            room: roomName,
-            notificationId
-        }
+    logger.debug({
+      domain: 'SOCKET',
+      action: 'emit',
+      userId,
+      metadata: {
+        event: 'notification:read',
+        room: roomName,
+        notificationId
+      }
     });
   }
 
@@ -155,6 +163,6 @@ export class SocketService {
    * Broadcast event (e.g. system maintenance)
    */
   public broadcast(event: string, data: any) {
-      this.io.emit(event, data);
+    this.io.emit(event, data);
   }
 }

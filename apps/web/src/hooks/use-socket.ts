@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { useAuthStore, useNotificationStore } from '@/store'; 
+import { useAuthStore, useNotificationStore } from '@/store';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -15,21 +15,23 @@ export const useSocket = () => {
 
     // Only connect if authenticated
     if (!isAuthenticated || !accessToken || !user) {
-        console.log('[useSocket] Not authenticated, skipping connection.');
-        if (socketRef.current) {
-            console.log('[useSocket] Disconnecting existing socket.');
-            socketRef.current.disconnect();
-            socketRef.current = null;
-        }
-        return;
+      console.log('[useSocket] Not authenticated, skipping connection.');
+      if (socketRef.current) {
+        console.log('[useSocket] Disconnecting existing socket.');
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+      return;
     }
 
     console.log('[useSocket] Attempting to connect to socket...');
 
     // Connect via proxy path
-    // Use direct URL for development to avoid Next.js proxy issues with WebSockets
-    const socketUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    
+    // Use NEXT_PUBLIC_SOCKET_URL for WebSocket connection (without /api suffix)
+    // Falls back to window.location.origin in production (uses nginx proxy)
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL ||
+      (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001');
+
     const socket = io(socketUrl, {
       path: '/socket.io',
       auth: {
@@ -56,40 +58,40 @@ export const useSocket = () => {
     });
 
     socket.on('disconnect', (reason) => {
-       console.log('[useSocket] Socket disconnected:', reason);
+      console.log('[useSocket] Socket disconnected:', reason);
     });
 
     socket.on('notification:new', (data) => {
       console.log('[useSocket] New Notification received:', data);
-      
+
       // Update store
       incrementUnread();
 
       // Refresh notification list if active
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      
+
       toast(data.title || 'New Notification', {
         description: data.content,
         action: data.actionLabel ? {
-            label: data.actionLabel,
-            onClick: () => {
-                if (data.link) {
-                    window.location.href = data.link; // or router.push
-                }
+          label: data.actionLabel,
+          onClick: () => {
+            if (data.link) {
+              window.location.href = data.link; // or router.push
             }
+          }
         } : undefined,
       });
     });
 
     socket.on('notification:read', (data) => {
       console.log('[useSocket] Notification read event received:', data);
-      
+
       if (data && data.id) {
-          decrementUnread();
+        decrementUnread();
       } else {
-          resetUnread();
+        resetUnread();
       }
-      
+
       // Refresh notification list if active
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     });
