@@ -78,29 +78,44 @@ jobs:
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
+        env:
+          GITHUB_IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          JWT_ACCESS_SECRET: ${{ secrets.JWT_ACCESS_SECRET }}
+          JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_SECURE: ${{ secrets.SMTP_SECURE }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          envs: GITHUB_IMAGE_NAME,MYSQL_ROOT_PASSWORD,JWT_ACCESS_SECRET,JWT_REFRESH_SECRET,SMTP_HOST,SMTP_PORT,SMTP_SECURE,SMTP_USER,SMTP_PASS,EMAIL_FROM,GHCR_TOKEN
           script: |
             cd /home/${{ secrets.VPS_USER }}/subcare
             
             # Create/update .env file (persists environment variables)
-            cat > .env <<EOF
-GITHUB_IMAGE_NAME=${{ env.IMAGE_NAME }}
-MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
-JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}
-JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
-SMTP_HOST=${{ secrets.SMTP_HOST }}
-SMTP_PORT=${{ secrets.SMTP_PORT }}
-SMTP_SECURE=${{ secrets.SMTP_SECURE }}
-SMTP_USER=${{ secrets.SMTP_USER }}
-SMTP_PASS=${{ secrets.SMTP_PASS }}
-EMAIL_FROM="${{ secrets.EMAIL_FROM }}"
-EOF
+            cat > .env << ENVEOF
+            GITHUB_IMAGE_NAME=${GITHUB_IMAGE_NAME}
+            MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+            JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+            JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+            SMTP_HOST=${SMTP_HOST}
+            SMTP_PORT=${SMTP_PORT}
+            SMTP_SECURE=${SMTP_SECURE}
+            SMTP_USER=${SMTP_USER}
+            SMTP_PASS=${SMTP_PASS}
+            EMAIL_FROM="${EMAIL_FROM}"
+            ENVEOF
+            # Remove leading whitespace from .env
+            sed -i 's/^[[:space:]]*//' .env
             
             # Login to GHCR
-            echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo ${GHCR_TOKEN} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
             # Rolling update: only restart containers with new images
             docker compose pull
