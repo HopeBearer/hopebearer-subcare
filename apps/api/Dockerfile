@@ -35,8 +35,15 @@ RUN pnpm turbo run build --filter=@subcare/api...
 FROM base AS runner
 WORKDIR /app
 
+# Install netcat for database readiness check and mysql-client for schema check
+RUN apk add --no-cache netcat-openbsd mysql-client
+
 # Copy necessary files
 COPY --from=installer /app .
 
+# Copy and set entrypoint script
+COPY apps/api/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 EXPOSE 3001
-CMD ["node", "apps/api/dist/index.js"]
+CMD ["/docker-entrypoint.sh"]

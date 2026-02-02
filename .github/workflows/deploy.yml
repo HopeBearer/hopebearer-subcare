@@ -23,6 +23,10 @@ jobs:
         run: |
           echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
+      # Set up Docker Buildx for better caching
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
@@ -30,6 +34,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Build Web with layer caching
       - name: Build and push Web
         uses: docker/build-push-action@v5
         with:
@@ -37,7 +42,10 @@ jobs:
           file: ./apps/web/Dockerfile
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-web:latest
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
 
+      # Build API with layer caching
       - name: Build and push API
         uses: docker/build-push-action@v5
         with:
@@ -45,6 +53,8 @@ jobs:
           file: ./apps/api/Dockerfile
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:latest
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
 
   deploy:
     needs: build-and-push
@@ -75,21 +85,20 @@ jobs:
           script: |
             cd /home/${{ secrets.VPS_USER }}/subcare
             
-            # Export env vars for docker-compose
-            export GITHUB_IMAGE_NAME=${{ env.IMAGE_NAME }}
-            export MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
-            export JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}
-            export JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
+            # Create/update .env file (persists environment variables)
+            cat > .env << 'ENVEOF'
+            GITHUB_IMAGE_NAME=${{ env.IMAGE_NAME }}
+            MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+            JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}
+            JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
+            ENVEOF
             
-            # Login to GHCR (use Personal Access Token stored in GHCR_TOKEN secret)
+            # Login to GHCR
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            # Pull new images
+            # Rolling update: only restart containers with new images
             docker compose pull
-            
-            # Restart services
-            docker compose down
-            docker compose up -d
+            docker compose up -d --remove-orphans
             
             # Prune old images
             docker image prune -f
