@@ -8,6 +8,8 @@
     "total_expenses": "今月の総支出",
     "active_subs": "アクティブなサブスク",
     "remaining_budget": "残りの予算",
+    "over_budget": "予算超過",
+    "total_budget": "総予算",
     "upcoming_renewals": "更新予定",
     "no_upcoming_renewals": "更新予定なし",
     "growth_last_month": "先月比",
@@ -18,16 +20,6 @@
       "remaining_budget": "今月の予算使用率",
       "upcoming_renewals": "今後 {{days}} 日以内に更新予定"
     }
-  },
-  "upcoming": {
-    "title": "更新予定",
-    "view_all": "すべて見る",
-    "empty_title": "更新予定なし",
-    "empty_desc": "今後30日以内に更新期限を迎えるサブスクリプションはありません。",
-    "today": "今日",
-    "days_left": "あと {{days}} 日",
-    "amount": "金額",
-    "date": "日付"
   },
   "charts": {
     "spending_trends": {
@@ -45,6 +37,16 @@
       "percentage": "割合",
       "amount": "金額"
     }
+  },
+  "upcoming": {
+    "title": "更新予定",
+    "view_all": "すべて見る",
+    "empty_title": "更新予定なし",
+    "empty_desc": "今後 {{days}} 日以内に更新期限を迎えるサブスクリプションはありません。",
+    "today": "今日",
+    "days_left": "あと {{days}} 日",
+    "amount": "金額",
+    "date": "日付"
   },
   "ai": {
     "title": "AI レコメンデーション",
@@ -80,5 +82,20 @@
   },
   "content": {
     "placeholder": "メインコンテンツプレースホルダー"
+  },
+  "pending_bills": {
+    "title": "未処理の請求書",
+    "explanation": "本日または延滞中の請求書です。支払いを確認してサブスクリプションのステータスを更新してください。",
+    "due_date": "支払期日",
+    "confirm_btn": "支払済みにする",
+    "confirmed_msg": "請求書を支払済みとしてマークしました",
+    "overdue": "延滞",
+    "confirm_title": "支払いの確認",
+    "confirm_desc": "実際の支払い金額を確認してください。",
+    "amount_label": "実際の金額",
+    "date_label": "支払日",
+    "cancel_btn": "更新をキャンセル",
+    "cancelled_msg": "更新がキャンセルされました",
+    "confirm_cancel": "この更新をキャンセルしてもよろしいですか？サブスクリプションもキャンセルされます。"
   }
 }

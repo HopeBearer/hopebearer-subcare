@@ -1,0 +1,71 @@
+{
+    "title": "財務分析",
+    "overview_desc": "支出習慣、将来の支払い、支払履歴を追跡します。",
+    "section": {
+        "big_picture": "支出概要",
+        "projection": "将来の予測"
+    },
+    "heatmap": {
+        "title": "支出強度",
+        "tooltip_suffix": "件の取引"
+    },
+    "projection": {
+        "title": "支出予測",
+        "subtitle": "今後12ヶ月の予測",
+        "monthly": "月額請求",
+        "cumulative": "累計合計"
+    },
+    "simulator": {
+        "title": "What-If シミュレーター",
+        "toggle_hint": "サブスクリプションを切り替えて影響を確認",
+        "search_placeholder": "サブスクリプションを検索...",
+        "sort": "並び替え",
+        "sort_options": {
+            "price_desc": "価格: 高い順",
+            "price_asc": "価格: 安い順",
+            "name": "名前: A-Z"
+        },
+        "no_results": "サブスクリプションが見つかりません"
+    },
+    "anomalies": {
+        "title": "異常と変更",
+        "detected": "件検出",
+        "empty": "最近異常は検出されませんでした。"
+    },
+    "sankey": {
+        "title": "支出フロー",
+        "subtitle": "予算がカテゴリー間でどのように分配されているかを可視化します。",
+        "no_data": "データがありません"
+    },
+    "overview": "概要",
+    "history": "請求履歴",
+    "total_expense": "年間総支出",
+    "ytd_expense_actual": "年初来支出（実績）",
+    "projected_annual_total": "予測年間合計",
+    "no_data": "データがありません",
+    "table": {
+        "date": "日付",
+        "subscription": "サブスクリプション",
+        "amount": "金額",
+        "status": "ステータス",
+        "cycle": "周期"
+    },
+    "status": {
+        "paid": "支払済",
+        "pending": "保留中",
+        "failed": "失敗",
+        "active": "有効",
+        "cancelled": "キャンセル済"
+    },
+    "cycle": {
+        "monthly": "月次",
+        "yearly": "年次",
+        "weekly": "週次",
+        "daily": "日次"
+    },
+    "pagination": {
+        "prev": "前へ",
+        "next": "次へ",
+        "page_info": "{{total}} ページ中 {{page}} ページ"
+    }
+}

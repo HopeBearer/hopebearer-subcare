@@ -1,4 +1,5 @@
 {
+  "loading": "読み込み中...",
   "app_name": "SubCare",
   "nav": {
     "dashboard": "ダッシュボード",
@@ -8,14 +9,38 @@
     "settings": "設定"
   },
   "metadata": {
-    "dashboard": { "title": "ダッシュボード", "description": "サブスクリプションと支出の概要。" },
-    "subscriptions": { "title": "サブスクリプション", "description": "すべてのサブスクリプションサービスを管理します。" },
-    "finance": { "title": "財務分析", "description": "支出習慣を分析します。" },
-    "settings": { "title": "設定", "description": "アプリケーションの設定を行います。" },
-    "login": { "title": "ログイン", "description": "アカウントにログインします。" },
-    "register": { "title": "登録", "description": "新しいアカウントを作成します。" },
-    "forgot_password": { "title": "パスワードを忘れた場合", "description": "アカウントのパスワードをリセットします。" },
-    "reset_password": { "title": "パスワードのリセット", "description": "新しいパスワードを設定します。" }
+    "dashboard": {
+      "title": "ダッシュボード",
+      "description": "サブスクリプションと支出の概要。"
+    },
+    "subscriptions": {
+      "title": "サブスクリプション",
+      "description": "すべてのサブスクリプションサービスを管理します。"
+    },
+    "finance": {
+      "title": "財務分析",
+      "description": "支出習慣を分析します。"
+    },
+    "settings": {
+      "title": "設定",
+      "description": "アプリケーションの設定を行います。"
+    },
+    "login": {
+      "title": "ログイン",
+      "description": "アカウントにログインします。"
+    },
+    "register": {
+      "title": "登録",
+      "description": "新しいアカウントを作成します。"
+    },
+    "forgot_password": {
+      "title": "パスワードを忘れた場合",
+      "description": "アカウントのパスワードをリセットします。"
+    },
+    "reset_password": {
+      "title": "パスワードのリセット",
+      "description": "新しいパスワードを設定します。"
+    }
   },
   "button": {
     "submit": "送信",
@@ -27,11 +52,94 @@
     "back": "戻る",
     "complete": "完了"
   },
+  "common": {
+    "all": "すべて",
+    "unread": "未読",
+    "refresh": "更新",
+    "load_more": "もっと読み込む"
+  },
+  "notifications": {
+    "mark_all_read": "すべて既読にする",
+    "mark_read": "既読にする",
+    "empty_title": "通知はありません",
+    "empty_description": "すべて確認済みです！重要なことがあればお知らせします。"
+  },
+  "notification": {
+    "auth": {
+      "welcome": {
+        "title": "SubCareへようこそ、{{username}}さん！",
+        "content": "ご登録ありがとうございます。今すぐサブスクリプションの追跡を始めましょう。"
+      },
+      "verify_code": {
+        "title": "セキュリティ認証コード",
+        "content": "認証コードは {{code}} です。{{expireMinutes}} 分間有効です。"
+      },
+      "password_changed": {
+        "title": "パスワードが変更されました",
+        "content": "{{time}} にパスワードが変更されました。"
+      },
+      "reset_request": {
+        "title": "パスワードリセットのリクエスト",
+        "content": "パスワードリセットのリクエストを受け付けました。メールを確認して続行してください。"
+      },
+      "reset_success": {
+        "title": "パスワードリセット完了",
+        "content": "パスワードがリセットされました。新しいパスワードでログインできます。"
+      },
+      "new_login": {
+        "title": "新しいログインを検出",
+        "content": "{{time}} に新しいデバイスからアカウントにアクセスがありました。"
+      }
+    },
+    "sub": {
+      "created": {
+        "title": "サブスクリプションを追加しました",
+        "content": "{{name}} をサブスクリプションに追加しました。"
+      },
+      "updated": {
+        "title": "サブスクリプションを更新しました",
+        "content": "{{name}} の {{field}} が更新されました。"
+      },
+      "deleted": {
+        "title": "サブスクリプションを削除しました",
+        "content": "{{name}} をサブスクリプションから削除しました。"
+      },
+      "renew_reminder": {
+        "title": "更新リマインダー",
+        "content": "{{name}} はまもなく更新されます。推定費用: {{amount}}"
+      }
+    },
+    "bill": {
+      "generated": {
+        "title": "新しい請求書が作成されました",
+        "content": "{{name}} の新しい請求書が確認待ちです。"
+      },
+      "paid": {
+        "title": "支払いが確認されました",
+        "content": "{{name}} の支払い ({{currency}} {{amount}}) が確認されました。"
+      },
+      "skipped": {
+        "title": "更新をスキップしました",
+        "content": "{{name}} の更新をスキップしました。"
+      },
+      "price_hike": {
+        "title": "価格上昇の警告",
+        "content": "{{name}} の価格上昇を検出しました。詳細をご確認ください。"
+      }
+    }
+  },
   "preview": "プレビュー",
+  "updating": "更新中...",
+  "verifying": "確認中...",
   "yes": "はい",
   "no": "いいえ",
   "edit": "編集",
   "delete": "削除",
+  "not_found_page": {
+    "title": "ページが見つかりません",
+    "description": "お探しのページは存在しないか、移動された可能性があります。",
+    "back_home": "ホームに戻る"
+  },
   "error": {
     "network": "ネットワークエラーが発生しました。再試行してください。",
     "UNKNOWN": "不明なエラーが発生しました。",
@@ -39,7 +147,9 @@
       "CAPTCHA_INVALID": "認証コードが無効です。",
       "CAPTCHA_REQUIRED": "認証コードを入力してください。",
       "BAD_REQUEST": "リクエストが無効です。",
-      "INVALID_CREDENTIALS": "ユーザー名またはパスワードが間違っています。"
+      "INVALID_CREDENTIALS": "ユーザー名またはパスワードが間違っています。",
+      "USER_NOT_FOUND": "ユーザーが見つかりません。",
+      "INVALID_PASSWORD": "パスワードが間違っています。"
     },
     "40100": {
       "UNAUTHORIZED": "セッションの有効期限が切れました。再度ログインしてください。",

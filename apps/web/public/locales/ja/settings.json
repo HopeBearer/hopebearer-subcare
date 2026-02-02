@@ -22,16 +22,16 @@
     "apikey_label": "APIキー",
     "apikey_placeholder": "APIキーを入力してください",
     "apikey_note": "APIキーは安全に保管され、推奨の取得のみに使用されます。",
-    "save_btn": "設定を保存",
-    "saving": "保存中...",
-    "success_config": "設定が正常に保存されました",
-    "error_config": "設定の保存に失敗しました",
     "model_label": "モデル",
     "load_models": "モデルを読み込む",
     "models_fetched": "モデルの読み込みに成功しました",
     "no_models_found": "モデルが見つかりません",
     "error_fetch_models": "モデルの読み込みに失敗しました",
-    "model_manual_hint": "APIキーを入力し、「モデルを読み込む」をクリックして特定のモデルを選択してください。"
+    "model_manual_hint": "APIキーを入力し、「モデルを読み込む」をクリックして特定のモデルを選択してください。",
+    "save_btn": "設定を保存",
+    "saving": "保存中...",
+    "success_config": "設定が正常に保存されました",
+    "error_config": "設定の保存に失敗しました"
   },
   "profile": {
     "title": "公開プロフィール",
@@ -63,6 +63,11 @@
     "current_password": "現在のパスワード",
     "new_password": "新しいパスワード",
     "confirm_password": "新しいパスワード（確認）",
+    "verification_code": "認証コード",
+    "send_code": "コードを送信",
+    "code_sent": "認証コードをメールに送信しました",
+    "send_failed": "認証コードの送信に失敗しました",
+    "code_hint": "セキュリティのため、パスワードを変更するにはメール認証が必要です",
     "update_password": "パスワードを更新",
     "danger_zone": "危険エリア",
     "delete_account": "アカウント削除",
@@ -71,16 +76,58 @@
   },
   "notifications": {
     "title": "通知",
-    "description": "通知の受信方法とタイミングを選択",
+    "description": "通知設定を管理します",
+    "granular_control": "詳細設定",
+    "category": {
+      "billing": "請求とサブスクリプション",
+      "billing_desc": "請求アラートとサブスクリプションリマインダーを管理",
+      "system": "システムとアカウント",
+      "system_desc": "システムのお知らせとアカウント更新を管理",
+      "security": "セキュリティ",
+      "security_desc": "重要なセキュリティアラートを管理",
+      "marketing": "マーケティング",
+      "marketing_desc": "ニュースレターとプロモーションを管理"
+    },
+    "event": {
+      "billing": {
+        "subscription_created": "新規サブスクリプション",
+        "subscription_created_desc": "新しいサブスクリプションを追加した際に通知します。",
+        "renewal_upcoming": "更新リマインダー",
+        "renewal_upcoming_desc": "サブスクリプションの更新が近づいた際に通知します。",
+        "payment_success": "支払い成功",
+        "payment_success_desc": "支払いが正常に記録された際に通知します。",
+        "payment_failed": "支払い失敗",
+        "budget_exceeded": "予算超過",
+        "budget_exceeded_desc": "月間カテゴリー予算を超過した際に通知します。",
+        "price_change": "価格変更アラート"
+      },
+      "system": {
+        "announcement": "お知らせ",
+        "maintenance": "メンテナンス",
+        "account_update": "アカウント更新",
+        "account_update_desc": "重要なアカウント変更を通知します。"
+      },
+      "security": {
+        "login_new_device": "新しいデバイスでのログイン",
+        "password_change": "パスワード変更",
+        "password_change_desc": "パスワードが変更された際に通知します。"
+      },
+      "marketing": {
+        "newsletter": "ニュースレター",
+        "promotions": "プロモーション"
+      }
+    },
     "email": "メール通知",
-    "sub_reminders": "サブスクリプション通知",
-    "sub_reminders_desc": "更新前に通知を受け取る",
-    "security": "セキュリティアラート",
-    "security_desc": "不審なアクティビティについて通知",
-    "push": "プッシュ通知",
-    "push_reminders": "期日リマインダー",
-    "push_reminders_desc": "支払いのための即時通知",
-    "product_updates": "製品アップデート",
-    "product_updates_desc": "新機能と改善に関するニュース"
+    "in_app": "アプリ内通知",
+    "load_error": "設定の読み込みに失敗しました",
+    "update_error": "設定の更新に失敗しました"
+  },
+  "messages": {
+    "fill_all_fields": "すべての項目を入力してください",
+    "passwords_mismatch": "新しいパスワードが一致しません",
+    "password_too_short": "パスワードは8文字以上である必要があります",
+    "password_updated": "パスワードが正常に更新されました",
+    "update_failed": "パスワードの更新に失敗しました",
+    "profile_updated": "プロフィールが正常に更新されました"
   }
 }

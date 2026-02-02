@@ -17,6 +17,7 @@ import authJa from '../../../public/locales/ja/auth.json';
 import dashboardJa from '../../../public/locales/ja/dashboard.json';
 import subscriptionJa from '../../../public/locales/ja/subscription.json';
 import settingsJa from '../../../public/locales/ja/settings.json';
+import financeJa from '../../../public/locales/ja/finance.json';
 
 // Export resources for i18n initialization
 export const resources = {
@@ -42,5 +43,7 @@ export const resources = {
     dashboard: dashboardJa,
     subscription: subscriptionJa,
     settings: settingsJa,
+    finance: financeJa,
   },
 } as const;
+
