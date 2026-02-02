@@ -1,4 +1,4 @@
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 
 # 1. Prune dependencies
 FROM base AS builder
@@ -21,6 +21,7 @@ RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY --from=builder /app/out/full/ .
+COPY --from=builder /app/turbo.json ./turbo.json
 COPY .gitignore .gitignore
 
 # Generate Prisma Client (CRITICAL for API)
