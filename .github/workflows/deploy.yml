@@ -53,6 +53,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Lowercase Image Name
+        run: |
+          echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
       - name: Copy config files to VPS
         uses: appleboy/scp-action@master
         with:
@@ -72,13 +76,13 @@ jobs:
             cd /home/${{ secrets.VPS_USER }}/subcare
             
             # Export env vars for docker-compose
-            export GITHUB_REPOSITORY_OWNER=${{ github.repository_owner }}
+            export GITHUB_IMAGE_NAME=${{ env.IMAGE_NAME }}
             export MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
             export JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}
             export JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
             
-            # Login to GHCR
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            # Login to GHCR (use Personal Access Token stored in GHCR_TOKEN secret)
+            echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
             # Pull new images
             docker compose pull

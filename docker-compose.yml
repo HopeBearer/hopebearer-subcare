@@ -2,8 +2,8 @@ version: '3.8'
 
 services:
   subcare-web:
-    # Replace with your actual GHCR image path
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-yourusername}/subcare-web:latest
+    # Image name format: ghcr.io/{owner}/{repo}-web:latest
+    image: ghcr.io/${GITHUB_IMAGE_NAME:-yourusername/subcare}-web:latest
     restart: always
     environment:
       - NODE_ENV=production
@@ -14,8 +14,8 @@ services:
       - app-network
 
   subcare-api:
-    # Replace with your actual GHCR image path
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-yourusername}/subcare-api:latest
+    # Image name format: ghcr.io/{owner}/{repo}-api:latest
+    image: ghcr.io/${GITHUB_IMAGE_NAME:-yourusername/subcare}-api:latest
     restart: always
     environment:
       - DATABASE_URL=mysql://root:${MYSQL_ROOT_PASSWORD}@mysql:3306/subcare
