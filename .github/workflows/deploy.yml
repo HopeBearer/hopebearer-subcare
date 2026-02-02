@@ -86,18 +86,18 @@ jobs:
             cd /home/${{ secrets.VPS_USER }}/subcare
             
             # Create/update .env file (persists environment variables)
-            cat > .env << EOF
-            GITHUB_IMAGE_NAME=${{ env.IMAGE_NAME }}
-            MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
-            JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}
-            JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
-            SMTP_HOST=${{ secrets.SMTP_HOST }}
-            SMTP_PORT=${{ secrets.SMTP_PORT }}
-            SMTP_SECURE=${{ secrets.SMTP_SECURE }}
-            SMTP_USER=${{ secrets.SMTP_USER }}
-            SMTP_PASS=${{ secrets.SMTP_PASS }}
-            EMAIL_FROM=${{ secrets.EMAIL_FROM }}
-            EOF
+            cat > .env <<EOF
+GITHUB_IMAGE_NAME=${{ env.IMAGE_NAME }}
+MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}
+JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
+SMTP_HOST=${{ secrets.SMTP_HOST }}
+SMTP_PORT=${{ secrets.SMTP_PORT }}
+SMTP_SECURE=${{ secrets.SMTP_SECURE }}
+SMTP_USER=${{ secrets.SMTP_USER }}
+SMTP_PASS=${{ secrets.SMTP_PASS }}
+EMAIL_FROM="${{ secrets.EMAIL_FROM }}"
+EOF
             
             # Login to GHCR
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
