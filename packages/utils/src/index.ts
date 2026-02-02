@@ -12,7 +12,8 @@ export function calculateNextPayment(startDate: Date | string, billingCycle: str
   // Reset time to start of day for accurate date comparison
   now.setHours(0, 0, 0, 0);
   
-  let nextPayment = new Date(startDate);
+  // Handle both Date and string inputs
+  let nextPayment = startDate instanceof Date ? new Date(startDate.getTime()) : new Date(startDate);
   // Reset time to start of day
   nextPayment.setHours(0, 0, 0, 0);
 
