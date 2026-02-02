@@ -35,8 +35,12 @@ RUN pnpm turbo run build --filter=@subcare/api...
 FROM base AS runner
 WORKDIR /app
 
-# Install netcat for database readiness check and mysql-client for schema check
-RUN apk add --no-cache netcat-openbsd mysql-client
+# Install required packages:
+# - netcat-openbsd: for database readiness check
+# - mysql-client: for schema check
+# - openssl: required by Prisma
+# - libc6-compat: required for Node.js native modules
+RUN apk add --no-cache netcat-openbsd mysql-client openssl libc6-compat
 
 # Copy necessary files
 COPY --from=installer /app .

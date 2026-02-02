@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   subcare-web:
     # Image name format: ghcr.io/{owner}/{repo}-web:latest
