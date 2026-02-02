@@ -2,8 +2,11 @@
   "extends": "@subcare/tsconfig/base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "declaration": true
   },
-  "include": ["src/**/*"],
+  "include": ["src"],
   "exclude": ["node_modules", "dist"]
 }
