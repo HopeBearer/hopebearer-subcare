@@ -53,6 +53,14 @@ export const routeConfig: Record<string, string> = {
   'GET /agent/config': 'v1',
   'GET /agent/recommendations': 'v1',
 
+  // AI Providers & Models
+  'GET /ai-providers': 'v1',
+  'GET /ai-providers/:id': 'v1',
+  'GET /ai-providers/:id/models': 'v1',
+  'GET /ai-providers/slug/:slug/models': 'v1',
+  'POST /ai-providers/:id/sync': 'v1',
+  'POST /ai-providers/sync-all': 'v1',
+
   // Users
   'GET /users': 'v2',
   'GET /users/profile': 'v1', // Profile before :id

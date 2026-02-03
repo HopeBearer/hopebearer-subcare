@@ -235,7 +235,13 @@ model UserAIConfig {
   id        String   @id @default(uuid())
   userId    String
   
-  provider  String   // "openai", "deepseek", "anthropic"
+  // Legacy field for backward compatibility
+  provider  String   // "openai", "deepseek", "anthropic", "openrouter"
+  
+  // New relation to AIProvider (optional for migration)
+  providerId String?
+  aiProvider AIProvider? @relation(fields: [providerId], references: [id])
+  
   apiKey    String   @db.Text // Encrypted
   model     String?  // e.g. "gpt-4-turbo", "deepseek-chat"
   baseUrl   String?  // Optional: for custom proxies or local LLMs
@@ -249,6 +255,7 @@ model UserAIConfig {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, provider])
+  @@index([providerId])
   @@map("user_ai_configs")
 }
 
@@ -286,4 +293,78 @@ model ExchangeRate {
   updatedAt DateTime @updatedAt
   
   @@map("exchange_rates")
+}
+
+// =====================
+// AI Provider & Model
+// =====================
+
+model AIProvider {
+  id          String   @id @default(uuid())
+  
+  name        String   // "OpenAI", "OpenRouter", "DeepSeek"
+  slug        String   @unique // "openai", "openrouter", "deepseek"
+  
+  baseUrl     String   // API base URL: "https://api.openai.com/v1"
+  modelsUrl   String?  // URL to fetch models list (optional)
+  
+  logoUrl     String?  // Provider logo URL
+  description String?  @db.Text
+  website     String?  // Official website
+  
+  isBuiltIn   Boolean  @default(false)  // Whether this is a built-in provider
+  isActive    Boolean  @default(true)   // Whether enabled
+  sortOrder   Int      @default(0)      // Display order
+  
+  models      AIModel[]
+  userConfigs UserAIConfig[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+  
+  @@map("ai_providers")
+}
+
+model AIModel {
+  id              String   @id @default(uuid())
+  
+  // Basic info
+  modelId         String   // Original ID: "gpt-4o", "openrouter/free"
+  name            String   // Display name
+  description     String?  @db.Text
+  
+  // Provider relation
+  providerId      String
+  provider        AIProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  
+  // Capabilities
+  contextLength   Int?
+  maxTokens       Int?
+  inputModalities Json?    // ["text", "image"]
+  outputModalities Json?   // ["text"]
+  
+  // Pricing (per million tokens, stored as string for precision)
+  pricingPrompt      String?  // Input price per million tokens
+  pricingCompletion  String?  // Output price per million tokens
+  pricingCurrency    String   @default("USD")
+  
+  // Supported parameters
+  supportedParams Json?    // ["temperature", "top_p", "tools", ...]
+  
+  // Status
+  isActive        Boolean  @default(true)
+  isFree          Boolean  @default(false)
+  
+  // Raw API response for future extension
+  rawData         Json?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+  
+  @@unique([providerId, modelId])
+  @@index([providerId])
+  @@index([isFree])
+  @@map("ai_models")
 }

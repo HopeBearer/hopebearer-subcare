@@ -11,16 +11,15 @@ import {
   Sparkles, 
   RefreshCw, 
   ArrowRight,
-  Settings,
-  BrainCircuit,
-  AlertTriangle,
-  Lightbulb,
-  ThumbsUp,
-  ExternalLink
+  ExternalLink,
+  Zap,
+  Search,
+  Check
 } from 'lucide-react';
-import { useState, useRef, MouseEvent, useEffect } from 'react';
+import { useState, useRef, MouseEvent, useEffect, useMemo } from 'react';
 import { agentService } from '@/services/modules/agent';
-import { AgentConfigDTO, RecommendationResponse, LocalizedString } from '@subcare/types';
+import { aiProviderService } from '@/services/modules/ai-provider';
+import { AgentConfigDTO, RecommendationResponse, LocalizedString, AIProviderDTO, AIModelDTO } from '@subcare/types';
 import { TruncatedTooltip } from '@/components/ui/truncated-tooltip';
 import { AutoScrollText } from '@/components/ui/auto-scroll-text';
 import { toast } from 'sonner';
@@ -33,14 +32,23 @@ export function AIRecommendations() {
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<RecommendationResponse | null>(null);
   const [config, setConfig] = useState<AgentConfigDTO | null>(null);
-  const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>('');
   const containerRef = useRef<HTMLDivElement>(null);
   
   // Config Modal State
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [apiKey, setApiKey] = useState('');
-  const [provider, setProvider] = useState('openai');
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Provider and Model selection
+  const [providers, setProviders] = useState<AIProviderDTO[]>([]);
+  const [models, setModels] = useState<AIModelDTO[]>([]);
+  const [selectedProviderId, setSelectedProviderId] = useState<string>('');
+  const [selectedModelId, setSelectedModelId] = useState<string>('');
+  const [isLoadingProviders, setIsLoadingProviders] = useState(false);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [showFreeOnly, setShowFreeOnly] = useState(true);
+  const [modelSearch, setModelSearch] = useState('');
 
   // Helper to get text based on current language
   const getLocalizedText = (textObj: LocalizedString) => {
@@ -54,7 +62,7 @@ export function AIRecommendations() {
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: currency,
-        currencyDisplay: 'code', // Ensure it shows "CNY 100" not "¥100"
+        currencyDisplay: 'code',
       }).format(amount);
     } catch (e) {
       return `${currency} ${amount}`;
@@ -68,16 +76,6 @@ export function AIRecommendations() {
       setConfig(active || null);
       if (active) {
         if (active.model) setSelectedModel(active.model);
-
-        // Load models for this active config
-        try {
-            const models = await agentService.getModels();
-            setAvailableModels(models);
-        } catch (e) {
-            console.warn('Failed to fetch models for dashboard', e);
-        }
-
-        // Initial load: no force refresh, use cache if available
         fetchRecommendations(false, active.model);
       }
     } catch (e) {
@@ -96,25 +94,81 @@ export function AIRecommendations() {
     } catch (e: any) {
       console.error('Failed to fetch recommendations', e);
       if (e?.response?.status === 400) {
-        setConfig(null); // Force re-config if invalid
+        setConfig(null);
       }
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Load providers for modal
+  const loadProviders = async () => {
+    setIsLoadingProviders(true);
+    try {
+      const data = await aiProviderService.getProviders();
+      setProviders(data);
+    } catch (e) {
+      console.error('Failed to load providers', e);
+    } finally {
+      setIsLoadingProviders(false);
+    }
+  };
+
+  // Load models for selected provider
+  const loadModels = async (providerId: string) => {
+    setIsLoadingModels(true);
+    setModelSearch('');
+    try {
+      const data = await aiProviderService.getModelsByProviderId(providerId);
+      setModels(data);
+      // Auto select first free model if available
+      const firstFree = data.find(m => m.isFree);
+      if (firstFree) {
+        setSelectedModelId(firstFree.modelId);
+      } else if (data.length > 0) {
+        setSelectedModelId(data[0].modelId);
+      }
+    } catch (e) {
+      console.error('Failed to load models', e);
+      setModels([]);
+    } finally {
+      setIsLoadingModels(false);
+    }
+  };
+
+  // Load providers when modal opens
+  useEffect(() => {
+    if (showConfigModal && providers.length === 0) {
+      loadProviders();
+    }
+  }, [showConfigModal]);
+
+  // Load models when provider changes
+  useEffect(() => {
+    if (selectedProviderId) {
+      loadModels(selectedProviderId);
+    }
+  }, [selectedProviderId]);
+
   const handleSaveConfig = async () => {
+    const provider = providers.find(p => p.id === selectedProviderId);
+    if (!provider || !apiKey) return;
+
+    setIsSaving(true);
     try {
       await agentService.configure({
-        provider: provider as any,
+        provider: provider.slug as any,
         apiKey,
-        model: provider === 'openai' ? 'gpt-4o' : 'deepseek-chat'
+        model: selectedModelId || undefined
       });
       toast.success(t('ai.success_config'));
       setShowConfigModal(false);
+      setApiKey('');
       checkConfig();
     } catch (e) {
       toast.error(t('ai.error_config'));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -136,6 +190,38 @@ export function AIRecommendations() {
         window.open(url, '_blank', 'noopener,noreferrer');
     }
   };
+
+  // Provider options for select
+  const providerOptions = useMemo(() => {
+    return providers.map(p => ({
+      label: p.name,
+      value: p.id
+    }));
+  }, [providers]);
+
+  // Filtered models based on search and free filter
+  const filteredModels = useMemo(() => {
+    let result = models;
+    
+    if (showFreeOnly) {
+      result = result.filter(m => m.isFree);
+    }
+    
+    if (modelSearch) {
+      const search = modelSearch.toLowerCase();
+      result = result.filter(m => 
+        m.name.toLowerCase().includes(search) || 
+        m.modelId.toLowerCase().includes(search)
+      );
+    }
+    
+    return result;
+  }, [models, modelSearch, showFreeOnly]);
+
+  // Get selected provider
+  const selectedProvider = useMemo(() => {
+    return providers.find(p => p.id === selectedProviderId);
+  }, [providers, selectedProviderId]);
 
   // If not configured, show simple setup card
   if (!config && !isLoading && !data) {
@@ -164,20 +250,154 @@ export function AIRecommendations() {
           </Button>
         </div>
 
-        <Modal isOpen={showConfigModal} onClose={() => setShowConfigModal(false)} title={t('ai.config_title')}>
+        {/* Config Modal */}
+        <Modal isOpen={showConfigModal} onClose={() => setShowConfigModal(false)} title={t('ai.config_title')} className="max-w-md">
           <div className="space-y-4 py-4">
-             <div className="space-y-2">
+            {/* Provider Selection - 下拉选择器 */}
+            <div className="space-y-2">
               <label className="text-sm font-medium">{t('ai.provider_label')}</label>
-              <Select options={[{ label: 'OpenAI (GPT-4o)', value: 'openai' }, { label: 'DeepSeek (V3)', value: 'deepseek' }]} value={provider} onChange={(val) => setProvider(val)} />
+              <Select
+                options={providerOptions}
+                value={selectedProviderId}
+                onChange={(val) => {
+                  setSelectedProviderId(val);
+                  setSelectedModelId('');
+                }}
+                placeholder={isLoadingProviders ? 'Loading...' : (t('ai.select_provider') || 'Select a provider')}
+                disabled={isLoadingProviders}
+              />
+              {selectedProvider?.website && (
+                <a 
+                  href={selectedProvider.website} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                >
+                  {t('ai.get_key') || 'Get API Key'} <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
             </div>
+
+            {/* API Key */}
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('ai.apikey_label')}</label>
-              <Input type="password" placeholder={t('ai.apikey_placeholder')} value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
+              <Input 
+                type="password" 
+                placeholder={t('ai.apikey_placeholder')} 
+                value={apiKey} 
+                onChange={(e) => setApiKey(e.target.value)} 
+              />
               <p className="text-xs text-muted-foreground">{t('ai.apikey_note')}</p>
             </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <Button variant="outline" onClick={() => setShowConfigModal(false)}>{t('ai.cancel_btn')}</Button>
-              <Button onClick={handleSaveConfig} disabled={!apiKey}>{t('ai.save_connect_btn')}</Button>
+
+            {/* Model Selection */}
+            {selectedProviderId && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">{t('ai.model_label') || 'Model'}</label>
+                  <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showFreeOnly}
+                      onChange={(e) => setShowFreeOnly(e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    <Zap className="w-3 h-3 text-yellow-500" />
+                    {t('ai.free_only') || 'Free only'}
+                  </label>
+                </div>
+
+                {/* Model Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder={t('ai.search_models') || 'Search models...'}
+                    value={modelSearch}
+                    onChange={(e) => setModelSearch(e.target.value)}
+                    className="pl-9 h-9"
+                  />
+                </div>
+
+                {/* Model List */}
+                <div className="max-h-[200px] overflow-y-auto rounded-xl bg-gray-50/50 dark:bg-gray-900/30 p-1.5">
+                  {isLoadingModels ? (
+                    <div className="space-y-1.5">
+                      {[1, 2, 3].map(i => (
+                        <div key={i} className="h-12 bg-white dark:bg-gray-800 rounded-lg animate-pulse border border-gray-200 dark:border-gray-700" />
+                      ))}
+                    </div>
+                  ) : filteredModels.length === 0 ? (
+                    <div className="p-6 text-center text-sm text-muted-foreground">
+                      {models.length === 0 
+                        ? (t('ai.no_models') || 'No models available')
+                        : (t('ai.no_models_match') || 'No models match')
+                      }
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {filteredModels.slice(0, 20).map(model => (
+                        <button
+                          key={model.id}
+                          onClick={() => setSelectedModelId(model.modelId)}
+                          className={cn(
+                            'w-full p-2.5 text-left transition-all duration-200 rounded-lg',
+                            'bg-white dark:bg-gray-800',
+                            'border-2',
+                            'hover:shadow-sm hover:scale-[1.01]',
+                            selectedModelId === model.modelId 
+                              ? 'border-primary shadow-sm shadow-primary/10 bg-primary/5 dark:bg-primary/10' 
+                              : 'border-gray-200 dark:border-gray-700 hover:border-primary/50'
+                          )}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={cn(
+                                "text-sm font-medium truncate",
+                                selectedModelId === model.modelId && "text-primary"
+                              )}>
+                                {model.name}
+                              </span>
+                              {model.isFree && (
+                                <span className="px-1.5 py-0.5 text-[9px] font-bold bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full shrink-0">
+                                  FREE
+                                </span>
+                              )}
+                            </div>
+                            <div className={cn(
+                              "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all",
+                              selectedModelId === model.modelId 
+                                ? "border-primary bg-primary text-white" 
+                                : "border-gray-300 dark:border-gray-600"
+                            )}>
+                              {selectedModelId === model.modelId && (
+                                <Check className="w-3 h-3" />
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                      {filteredModels.length > 20 && (
+                        <div className="p-2 text-center text-xs text-muted-foreground bg-white dark:bg-gray-800 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+                          +{filteredModels.length - 20} more
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setShowConfigModal(false)}>
+                {t('ai.cancel_btn')}
+              </Button>
+              <Button 
+                onClick={handleSaveConfig} 
+                disabled={!apiKey || !selectedProviderId || isSaving}
+              >
+                {isSaving ? 'Saving...' : t('ai.save_connect_btn')}
+              </Button>
             </div>
           </div>
         </Modal>
@@ -252,17 +472,6 @@ export function AIRecommendations() {
         </div>
         
         <div className="flex items-center gap-2">
-            {config && availableModels.length > 0 && (
-                <div className="w-[160px]">
-                    <Select 
-                        options={availableModels.map(m => ({ label: m, value: m }))}
-                        value={selectedModel}
-                        onChange={(val) => setSelectedModel(val)}
-                        className="h-10 text-xs py-1"
-                        placeholder={t('ai.model_label') || 'Model'}
-                    />
-                </div>
-            )}
             <button
             onClick={() => fetchRecommendations(true)}
             disabled={isLoading}

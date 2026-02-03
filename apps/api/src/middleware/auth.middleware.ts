@@ -58,4 +58,22 @@ export class AuthMiddleware {
       next();
     };
   };
+
+  /**
+   * Admin 权限中间件
+   * 快捷方法，检查用户是否为管理员
+   */
+  requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+    // 确保用户已通过认证
+    if (!req.user) {
+      return next(new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'Not authenticated' }));
+    }
+
+    // 检查是否为 Admin
+    if (req.user.role !== Role.ADMIN) {
+      return next(new AppError('FORBIDDEN', StatusCodes.FORBIDDEN, { message: 'Admin access required' }));
+    }
+
+    next();
+  };
 }

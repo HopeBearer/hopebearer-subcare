@@ -7,6 +7,7 @@ import { SystemLogController } from '../controllers/v1/SystemLogController';
 import { MessageTemplateController } from '../controllers/v1/MessageTemplateController';
 import { FinancialController } from '../controllers/v1/FinancialController';
 import { CurrencyController } from '../controllers/v1/CurrencyController';
+import { AIProviderController } from '../controllers/v1/AIProviderController';
 import { UserController as UserControllerV2 } from '../controllers/v2/UserController';
 import { AuthService } from '../services/AuthService';
 import { SubscriptionService } from '../services/SubscriptionService';
@@ -17,6 +18,7 @@ import { MessageTemplateService } from '../services/MessageTemplateService';
 import { FinancialService } from '../services/FinancialService';
 import { TokenService } from '../services/TokenService';
 import { CurrencyService } from '../services/CurrencyService';
+import { AIProviderService } from '../services/AIProviderService';
 import { UserRepository } from '../repositories/UserRepository';
 import { SubscriptionRepository } from '../repositories/SubscriptionRepository';
 import { SystemLogRepository } from '../repositories/SystemLogRepository';
@@ -24,6 +26,7 @@ import { MessageTemplateRepository } from '../repositories/MessageTemplateReposi
 import { PaymentRecordRepository } from '../repositories/PaymentRecordRepository';
 import { CategoryRepository } from '../repositories/CategoryRepository';
 import { ExchangeRateRepository } from '../repositories/ExchangeRateRepository';
+import { AIProviderRepository } from '../repositories/AIProviderRepository';
 import { AuthMiddleware } from '../middleware/auth.middleware';
 import { NodemailerProvider } from '../infrastructure/email/nodemailer.provider';
 import { NotificationService } from '../modules/notification/notification.service';
@@ -38,8 +41,10 @@ const messageTemplateRepository = new MessageTemplateRepository();
 const paymentRecordRepository = new PaymentRecordRepository();
 const categoryRepository = new CategoryRepository();
 const exchangeRateRepository = new ExchangeRateRepository();
+const aiProviderRepository = new AIProviderRepository();
 const tokenService = new TokenService();
 const currencyService = new CurrencyService(exchangeRateRepository);
+const aiProviderService = new AIProviderService(aiProviderRepository);
 
 // Infrastructure
 const emailProvider = new NodemailerProvider();
@@ -88,7 +93,8 @@ export const controllersV1 = {
   MessageTemplate: new MessageTemplateController(messageTemplateService),
   Financial: new FinancialController(financialService),
   Currency: new CurrencyController(currencyService),
-  Agent: new AgentController()
+  Agent: new AgentController(),
+  AIProvider: new AIProviderController(aiProviderService)
 };
 
 // V2 Controllers
@@ -103,5 +109,6 @@ export const services = {
   billGenerator: billGeneratorService,
   subscription: subscriptionService,
   financial: financialService,
-  currency: currencyService
+  currency: currencyService,
+  aiProvider: aiProviderService
 };

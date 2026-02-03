@@ -363,12 +363,63 @@ export interface NotificationStats {
 // --- AI Agent Types ---
 
 export interface AgentConfigDTO {
-  provider: 'openai' | 'deepseek' | 'anthropic';
+  provider: string; // "openai", "deepseek", "anthropic", "openrouter"
+  providerId?: string; // New: reference to AIProvider
+  providerName?: string; // Display name
   apiKey: string;
   model?: string;
   baseUrl?: string;
   isActive: boolean;
   isConfigured?: boolean; // Frontend helper
+}
+
+// --- AI Provider & Model Types ---
+
+export interface AIProviderDTO {
+  id: string;
+  name: string;
+  slug: string;
+  baseUrl: string;
+  modelsUrl?: string;
+  logoUrl?: string;
+  description?: string;
+  website?: string;
+  isBuiltIn: boolean;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export interface AIModelDTO {
+  id: string;
+  modelId: string;
+  name: string;
+  description?: string;
+  providerId: string;
+  providerSlug?: string; // For display
+  contextLength?: number;
+  maxTokens?: number;
+  inputModalities?: string[];
+  outputModalities?: string[];
+  pricingPrompt?: string;
+  pricingCompletion?: string;
+  pricingCurrency: string;
+  isFree: boolean;
+  supportedParams?: string[];
+}
+
+export interface AIModelFilter {
+  isFree?: boolean;
+  supportsImages?: boolean;
+  supportsTools?: boolean;
+  search?: string;
+}
+
+export interface ModelSyncResult {
+  added: number;
+  updated: number;
+  removed: number;
+  providerId: string;
+  providerName: string;
 }
 
 export interface LocalizedString {

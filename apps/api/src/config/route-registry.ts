@@ -9,6 +9,7 @@ import { messageTemplateRegistry } from './registries/message-template.registry'
 import { financialRegistry } from './registries/financial.registry';
 import { currencyRegistry } from './registries/currency.registry';
 import { agentRegistry } from './registries/agent.registry';
+import { aiProviderRegistry } from './registries/ai-provider.registry';
 
 export interface RouteImplementation {
   handler: RequestHandler;
@@ -34,4 +35,5 @@ export const routeRegistry: Record<string, RouteVersions> = {
   ...financialRegistry,
   ...currencyRegistry,
   ...agentRegistry,
+  ...aiProviderRegistry,
 };

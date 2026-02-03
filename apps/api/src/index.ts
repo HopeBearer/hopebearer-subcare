@@ -5,6 +5,7 @@ import { seedTemplates } from './utils/seed-templates';
 import cron from 'node-cron';
 import { services } from './core/container';
 import { exchangeRateJob } from './jobs/exchangeRate.job';
+import { aiModelSyncJob } from './jobs/ai-model-sync.job';
 import { SocketService } from './infrastructure/socket/socket.service';
 import { TokenService } from './services/TokenService';
 
@@ -67,8 +68,23 @@ server.listen(PORT, async () => {
     // Init Exchange Rate Job
     exchangeRateJob.start();
 
-    console.log('Cron jobs scheduled: Daily Bill Generation (00:01), Notification Cleanup (02:00)');
+    // Init AI Model Sync Job (default: Monday 03:00 UTC)
+    aiModelSyncJob.start();
+
+    console.log('Cron jobs scheduled: Daily Bill Generation (00:01), Notification Cleanup (02:00), AI Model Sync (Monday 03:00 UTC)');
 
     // Optional: Run seeding on startup or via separate script
     await seedTemplates().catch(console.error);
+
+    // Seed AI Providers on startup
+    if (services.aiProvider) {
+        await services.aiProvider.seedBuiltInProviders().catch(console.error);
+        
+        // Initial sync of AI models on first startup (if no models exist)
+        // This ensures models are available immediately after deployment
+        console.log('[Startup] Triggering initial AI model sync...');
+        services.aiProvider.syncAllProviders().catch(err => {
+            console.warn('[Startup] Initial AI model sync failed (non-critical):', err.message);
+        });
+    }
 });
