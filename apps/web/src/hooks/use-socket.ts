@@ -26,11 +26,11 @@ export const useSocket = () => {
 
     console.log('[useSocket] Attempting to connect to socket...');
 
-    // Connect via proxy path
-    // Use NEXT_PUBLIC_SOCKET_URL if set
-    // Otherwise, if in development and on localhost, point to 3001
-    // Otherwise fallback to valid logic (origin)
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
+    // Socket URL is configured via NEXT_PUBLIC_SOCKET_URL environment variable
+    // - Development (.env.local): http://localhost:3001
+    // - Production (docker-compose): empty string (uses current origin via nginx proxy)
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || '';
+    console.log('[useSocket] Connecting to:', socketUrl || '(current origin)');
 
     const socket = io(socketUrl, {
       path: '/socket.io',

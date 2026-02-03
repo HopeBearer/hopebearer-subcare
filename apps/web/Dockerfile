@@ -30,6 +30,11 @@ COPY .gitignore .gitignore
 # Generate Prisma Client (needed for types)
 RUN pnpm db:generate
 
+# Build-time environment variables for Next.js
+# These are embedded into the JS bundle during build
+ARG NEXT_PUBLIC_SOCKET_URL=""
+ENV NEXT_PUBLIC_SOCKET_URL=${NEXT_PUBLIC_SOCKET_URL}
+
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 # Remove ellipsis to prevent building dependencies without build scripts
 RUN pnpm turbo run build --filter=@subcare/web

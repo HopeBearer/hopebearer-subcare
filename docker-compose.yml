@@ -5,10 +5,10 @@ services:
     restart: always
     environment:
       - NODE_ENV=production
-      # This URL is used by the Next.js server (SSR) to contact the API
-      # Since they are in the same docker network, we can use the container name
-      - NEXT_PUBLIC_API_URL=/api
+      # Runtime env for Next.js server (SSR) to contact API internally
       - API_INTERNAL_URL=http://subcare-api:3001
+      # Note: NEXT_PUBLIC_* vars are embedded at BUILD time (not runtime)
+      # They are configured via Dockerfile ARG and GitHub Actions build-args
     networks:
       - app-network
 

@@ -3,8 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "turbo run build --filter=@subcare/types --filter=@subcare/utils --filter=@subcare/database --concurrency=3 && turbo dev",
-    "dev:fast": "turbo dev",
+    "dev": "turbo dev",
     "build": "turbo build",      
     "db:push": "pnpm exec prisma db push --schema=packages/database/prisma/schema.prisma",
     "db:studio": "pnpm exec prisma studio --schema=packages/database/prisma/schema.prisma",

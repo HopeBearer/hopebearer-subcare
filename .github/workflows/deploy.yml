@@ -35,6 +35,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # Build Web with layer caching
+      # Note: NEXT_PUBLIC_* vars must be passed as build-args (they're embedded at build time)
       - name: Build and push Web
         uses: docker/build-push-action@v5
         with:
@@ -44,6 +45,8 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-web:latest
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
+          build-args: |
+            NEXT_PUBLIC_SOCKET_URL=
 
       # Build API with layer caching
       - name: Build and push API
