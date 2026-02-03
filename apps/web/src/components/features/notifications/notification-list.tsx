@@ -109,25 +109,73 @@ export function NotificationList() {
   const markAsReadMutation = useMutation({
     mutationFn: async (id: string) => {
       await api.patch(`/notifications/${id}/read`);
+      return id;
     },
-    onSuccess: () => {
-      // Refresh list to show read status
-      // We invalidate the list query
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    onMutate: async (id: string) => {
+      // Cancel any outgoing refetches to avoid overwriting optimistic update
+      await queryClient.cancelQueries({ queryKey: ['notifications', 'list', 1000] });
+      
+      // Snapshot previous value
+      const previousNotifications = queryClient.getQueryData<NotificationDTO[]>(['notifications', 'list', 1000]);
+      
+      // Optimistically update the cache
+      if (previousNotifications) {
+        queryClient.setQueryData<NotificationDTO[]>(
+          ['notifications', 'list', 1000],
+          previousNotifications.map(n => n.id === id ? { ...n, isRead: true } : n)
+        );
+      }
+      
+      // Update unread count optimistically
+      decrementUnread();
+      
+      return { previousNotifications };
     },
-    onError: () => {
-        toast.error(t('error.generic'));
-    }
+    onError: (_err, _id, context) => {
+      // Rollback on error
+      if (context?.previousNotifications) {
+        queryClient.setQueryData(['notifications', 'list', 1000], context.previousNotifications);
+      }
+      toast.error(t('error.generic'));
+    },
+    // No need to invalidate on success - socket event will handle final sync
   });
 
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
       await api.patch('/notifications/read-all');
     },
+    onMutate: async () => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['notifications', 'list', 1000] });
+      
+      // Snapshot previous value
+      const previousNotifications = queryClient.getQueryData<NotificationDTO[]>(['notifications', 'list', 1000]);
+      
+      // Optimistically mark all as read
+      if (previousNotifications) {
+        queryClient.setQueryData<NotificationDTO[]>(
+          ['notifications', 'list', 1000],
+          previousNotifications.map(n => ({ ...n, isRead: true }))
+        );
+      }
+      
+      // Reset unread count
+      resetUnread();
+      
+      return { previousNotifications };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success(t('success.saved'));
-    }
+    },
+    onError: (_err, _vars, context) => {
+      // Rollback on error
+      if (context?.previousNotifications) {
+        queryClient.setQueryData(['notifications', 'list', 1000], context.previousNotifications);
+      }
+      toast.error(t('error.generic'));
+    },
+    // No need to invalidate - socket event will sync
   });
 
   const handleItemClick = (notification: NotificationDTO) => {
