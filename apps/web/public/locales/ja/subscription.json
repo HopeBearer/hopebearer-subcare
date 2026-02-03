@@ -122,5 +122,7 @@
   "total_records": "合計: {{count}} 件",
   "total_amount": "ページ合計",
   "page_total": "ページ合計",
-  "grand_total": "総合計"
+  "grand_total": "総合計",
+  "delete_confirm_title": "サブスクリプションを削除",
+  "delete_confirm_desc": "「{{name}}」を削除してもよろしいですか？この操作は取り消せません。"
 }

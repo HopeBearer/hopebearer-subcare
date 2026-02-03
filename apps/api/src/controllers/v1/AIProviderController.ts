@@ -44,7 +44,7 @@ export class AIProviderController {
       if (!provider) {
         return res.status(StatusCodes.NOT_FOUND).json({
           status: 'error',
-          code: BusinessCode.ERROR,
+          code: BusinessCode.NOT_FOUND,
           message: 'Provider not found'
         });
       }

@@ -1,11 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Calendar, Edit, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/hooks';
 import { getCategoryColor } from '@/lib/constants/colors';
 import { SubscriptionDTO } from '@subcare/types';
 import { ActionDropdown, ActionItem } from '@/components/ui/action-dropdown';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { useModalStore } from '@/store';
 import { subscriptionService } from '@/services';
 import { useQueryClient } from '@tanstack/react-query';
@@ -26,6 +28,7 @@ export function SubscriptionCard({ subscription, onClick, readonly }: Subscripti
   const { t } = useTranslation(['subscription', 'common']);
   const { openAddSubscription } = useModalStore();
   const queryClient = useQueryClient();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
   // Normalize status for display logic if backend uses different casing
   const statusKey = subscription.status; // e.g., 'ACTIVE', 'Active'
@@ -44,16 +47,19 @@ export function SubscriptionCard({ subscription, onClick, readonly }: Subscripti
     openAddSubscription(subscription);
   };
 
-  const handleDelete = async () => {
-    if (window.confirm(t('confirm_delete', { defaultValue: 'Are you sure you want to delete this subscription?' }))) {
-      try {
-        await subscriptionService.delete(subscription.id);
-        toast.success(t('deleted_success', { defaultValue: 'Subscription deleted successfully' }));
-        queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
-      } catch (error) {
-        console.error('Failed to delete subscription:', error);
-        toast.error(t('delete_failed', { defaultValue: 'Failed to delete subscription' }));
-      }
+  const handleDeleteClick = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await subscriptionService.delete(subscription.id);
+      toast.success(t('deleted_success', { defaultValue: 'Subscription deleted successfully' }));
+      queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+    } catch (error) {
+      console.error('Failed to delete subscription:', error);
+      toast.error(t('delete_failed', { defaultValue: 'Failed to delete subscription' }));
+      throw error;
     }
   };
 
@@ -66,7 +72,7 @@ export function SubscriptionCard({ subscription, onClick, readonly }: Subscripti
     {
       label: t('delete', { defaultValue: 'Delete', ns: 'common' }),
       icon: Trash2,
-      onClick: handleDelete,
+      onClick: handleDeleteClick,
       variant: 'danger',
     },
   ];
@@ -168,6 +174,20 @@ export function SubscriptionCard({ subscription, onClick, readonly }: Subscripti
            </div>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title={t('delete_confirm_title', { defaultValue: 'Delete Subscription' })}
+        description={t('delete_confirm_desc', { 
+          defaultValue: 'Are you sure you want to delete "{{name}}"? This action cannot be undone.',
+          name: subscription.name 
+        })}
+        confirmText={t('delete', { defaultValue: 'Delete', ns: 'common' })}
+        cancelText={t('button.cancel', { defaultValue: 'Cancel', ns: 'common' })}
+        variant="danger"
+      />
     </div>
   );
 }

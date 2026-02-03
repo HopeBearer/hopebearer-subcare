@@ -124,5 +124,7 @@
   "total_records": "共 {{count}} 条",
   "total_amount": "本页合计",
   "page_total": "本页合计",
-  "grand_total": "总合计"
+  "grand_total": "总合计",
+  "delete_confirm_title": "删除订阅",
+  "delete_confirm_desc": "确定要删除「{{name}}」吗？此操作无法撤销。"
 }

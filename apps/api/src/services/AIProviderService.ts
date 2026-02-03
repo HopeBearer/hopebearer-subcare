@@ -157,6 +157,17 @@ export class AIProviderService {
       });
     }
 
+    // Skip providers without sync capability
+    if (provider.slug !== 'openrouter' && !provider.modelsUrl) {
+      return {
+        added: 0,
+        updated: 0,
+        removed: 0,
+        providerId: provider.id,
+        providerName: provider.name
+      };
+    }
+
     console.log(`[AIProviderService] Syncing models for provider: ${provider.name}`);
 
     let modelsToSync: Array<{
@@ -177,18 +188,9 @@ export class AIProviderService {
     // Fetch models based on provider type
     if (provider.slug === 'openrouter') {
       modelsToSync = await this.fetchOpenRouterModels();
-    } else if (provider.modelsUrl) {
-      // Generic OpenAI-compatible API
-      modelsToSync = await this.fetchOpenAICompatibleModels(provider.modelsUrl);
     } else {
-      console.log(`[AIProviderService] No modelsUrl for provider: ${provider.name}, skipping sync`);
-      return {
-        added: 0,
-        updated: 0,
-        removed: 0,
-        providerId: provider.id,
-        providerName: provider.name
-      };
+      // Generic OpenAI-compatible API
+      modelsToSync = await this.fetchOpenAICompatibleModels(provider.modelsUrl!);
     }
 
     // Bulk upsert models

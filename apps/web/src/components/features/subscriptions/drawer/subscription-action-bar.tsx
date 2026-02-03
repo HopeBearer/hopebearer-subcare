@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Subscription } from './types';
 import { Trash2, Play, Pause, Pencil, XCircle, HelpCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +9,7 @@ import { subscriptionService } from '@/services';
 import { useModalStore } from '@/store';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
 import {
   Tooltip,
   TooltipContent,
@@ -24,6 +26,7 @@ export function SubscriptionActionBar({ subscription, onClose }: SubscriptionAct
   const { t } = useTranslation(['subscription', 'common']);
   const { openAddSubscription } = useModalStore();
   const queryClient = useQueryClient();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const isPaused = subscription.status === 'PAUSED' || subscription.status === 'Paused';
 
@@ -41,17 +44,20 @@ export function SubscriptionActionBar({ subscription, onClose }: SubscriptionAct
     }
   };
 
-  const handleDelete = async () => {
-    if (window.confirm(t('confirm_delete', { defaultValue: 'Are you sure you want to delete this subscription?' }))) {
-      try {
-        await subscriptionService.delete(subscription.id);
-        toast.success(t('deleted_success', { defaultValue: 'Subscription deleted successfully' }));
-        queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
-        onClose();
-      } catch (error) {
-        console.error('Failed to delete subscription:', error);
-        toast.error(t('delete_failed', { defaultValue: 'Failed to delete subscription' }));
-      }
+  const handleDeleteClick = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await subscriptionService.delete(subscription.id);
+      toast.success(t('deleted_success', { defaultValue: 'Subscription deleted successfully' }));
+      queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+      onClose();
+    } catch (error) {
+      console.error('Failed to delete subscription:', error);
+      toast.error(t('delete_failed', { defaultValue: 'Failed to delete subscription' }));
+      throw error;
     }
   };
 
@@ -63,7 +69,7 @@ export function SubscriptionActionBar({ subscription, onClose }: SubscriptionAct
     {
       icon: Trash2,
       label: t('delete', { defaultValue: 'Delete', ns: 'common' }),
-      onClick: handleDelete,
+      onClick: handleDeleteClick,
       className: "hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20",
       show: true
     },
@@ -147,6 +153,20 @@ export function SubscriptionActionBar({ subscription, onClose }: SubscriptionAct
           {t('edit', { defaultValue: 'Edit', ns: 'common' })}
         </button>
       </div>
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title={t('delete_confirm_title', { defaultValue: 'Delete Subscription' })}
+        description={t('delete_confirm_desc', { 
+          defaultValue: 'Are you sure you want to delete "{{name}}"? This action cannot be undone.',
+          name: subscription.name 
+        })}
+        confirmText={t('delete', { defaultValue: 'Delete', ns: 'common' })}
+        cancelText={t('button.cancel', { defaultValue: 'Cancel', ns: 'common' })}
+        variant="danger"
+      />
     </div>
   );
 }

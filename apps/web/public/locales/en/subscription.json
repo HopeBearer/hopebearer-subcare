@@ -124,5 +124,7 @@
   "total_records": "Total: {{count}}",
   "total_amount": "Page Total",
   "page_total": "Page Total",
-  "grand_total": "Grand Total"
+  "grand_total": "Grand Total",
+  "delete_confirm_title": "Delete Subscription",
+  "delete_confirm_desc": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone."
 }
