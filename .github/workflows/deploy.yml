@@ -110,6 +110,7 @@ jobs:
             SMTP_USER=${SMTP_USER}
             SMTP_PASS=${SMTP_PASS}
             EMAIL_FROM="${EMAIL_FROM}"
+            FIXER_API_KEY=${FIXER_API_KEY}
             ENVEOF
             # Remove leading whitespace from .env
             sed -i 's/^[[:space:]]*//' .env

@@ -41,8 +41,10 @@ export const routeConfig: Record<string, string> = {
   'GET /finance/pending': 'v1',
   'PATCH /finance/records/:id/confirm': 'v1',
   'POST /finance/records/:id/cancel': 'v1',
-  
+
   // Currency
+  'GET /currencies': 'v1',
+  'GET /currency/convert': 'v1',
   'GET /currency/preview-convert': 'v1',
 
   // Agent (AI)
@@ -52,11 +54,11 @@ export const routeConfig: Record<string, string> = {
   'GET /agent/recommendations': 'v1',
 
   // Users
-  'GET /users': 'v2', 
+  'GET /users': 'v2',
   'GET /users/profile': 'v1', // Profile before :id
   'PATCH /users/profile': 'v1',
-  'PATCH /users/:id/disable': 'v2', 
-  'DELETE /users/:id': 'v2', 
+  'PATCH /users/:id/disable': 'v2',
+  'DELETE /users/:id': 'v2',
 
   // Notifications
   'GET /notifications': 'v1',

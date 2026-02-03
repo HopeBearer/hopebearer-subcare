@@ -266,6 +266,7 @@ model AIRecommendation {
   @@map("ai_recommendations")
 }
 
+
 model PasswordResetToken {
   id        String   @id @default(uuid())
   email     String
@@ -275,4 +276,14 @@ model PasswordResetToken {
   deletedAt DateTime?
 
   @@map("password_reset_tokens")
+}
+
+model ExchangeRate {
+  id        String   @id @default(uuid())
+  currency  String   @unique // 'USD', 'CNY', etc.
+  rate      Decimal  @db.Decimal(20, 10) // Rate relative to EUR, increased precision for weak currencies
+  base      String   @default("EUR")
+  updatedAt DateTime @updatedAt
+  
+  @@map("exchange_rates")
 }

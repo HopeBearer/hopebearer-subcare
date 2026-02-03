@@ -27,10 +27,10 @@ export const useSocket = () => {
     console.log('[useSocket] Attempting to connect to socket...');
 
     // Connect via proxy path
-    // Use NEXT_PUBLIC_SOCKET_URL for WebSocket connection (without /api suffix)
-    // Falls back to window.location.origin in production (uses nginx proxy)
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL ||
-      (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001');
+    // Use NEXT_PUBLIC_SOCKET_URL if set
+    // Otherwise, if in development and on localhost, point to 3001
+    // Otherwise fallback to valid logic (origin)
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
 
     const socket = io(socketUrl, {
       path: '/socket.io',

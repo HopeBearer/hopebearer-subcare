@@ -3,6 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import { NotificationService } from '../../modules/notification/notification.service';
 import { NotificationSettingService } from '../../modules/notification/notification-setting.service';
 import { AppError } from '../../utils/AppError';
+import { BusinessCode } from '../../constants/BusinessCode';
 
 export class NotificationController {
   private notificationSettingService: NotificationSettingService;
@@ -28,7 +29,8 @@ export class NotificationController {
     const result = await this.notificationService.getUserNotifications(userId, page, limit, filter, search);
 
     res.status(StatusCodes.OK).json({
-      success: true,
+      status: 'success',
+      code: BusinessCode.SUCCESS,
       data: result,
     });
   }
@@ -45,7 +47,8 @@ export class NotificationController {
     const settings = await this.notificationSettingService.getSettings(userId);
 
     res.status(StatusCodes.OK).json({
-      success: true,
+      status: 'success',
+      code: BusinessCode.SUCCESS,
       data: settings,
     });
   }
@@ -61,14 +64,15 @@ export class NotificationController {
 
     // Support legacy 'type' field by mapping it to 'key' if key is missing
     const payload = {
-        ...req.body,
-        key: req.body.key || req.body.type
+      ...req.body,
+      key: req.body.key || req.body.type
     };
 
     const setting = await this.notificationSettingService.updateSetting(userId, payload);
 
     res.status(StatusCodes.OK).json({
-      success: true,
+      status: 'success',
+      code: BusinessCode.SUCCESS,
       data: setting,
     });
   }
@@ -79,18 +83,18 @@ export class NotificationController {
   async updateCategory(req: Request, res: Response) {
     const userId = req.user?.userId;
     if (!userId) {
-        throw new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'User not found' });
+      throw new AppError('UNAUTHORIZED', StatusCodes.UNAUTHORIZED, { message: 'User not found' });
     }
 
     const { category, enabled, channel } = req.body;
-    
+
     if (!category || typeof enabled !== 'boolean') {
-        throw new AppError('BAD_REQUEST', StatusCodes.BAD_REQUEST, { message: 'Invalid payload' });
+      throw new AppError('BAD_REQUEST', StatusCodes.BAD_REQUEST, { message: 'Invalid payload' });
     }
 
     // Validate channel if provided
     if (channel && !['email', 'inApp'].includes(channel)) {
-        throw new AppError('BAD_REQUEST', StatusCodes.BAD_REQUEST, { message: 'Invalid channel' });
+      throw new AppError('BAD_REQUEST', StatusCodes.BAD_REQUEST, { message: 'Invalid channel' });
     }
 
     await this.notificationSettingService.updateCategory(userId, category, enabled, channel);
@@ -99,8 +103,8 @@ export class NotificationController {
     const settings = await this.notificationSettingService.getSettings(userId);
 
     res.status(StatusCodes.OK).json({
-        success: true,
-        data: settings
+      success: true,
+      data: settings
     });
   }
 
@@ -116,7 +120,8 @@ export class NotificationController {
     const count = await this.notificationService.getUnreadCount(userId);
 
     res.status(StatusCodes.OK).json({
-      success: true,
+      status: 'success',
+      code: BusinessCode.SUCCESS,
       data: { count },
     });
   }
@@ -135,7 +140,8 @@ export class NotificationController {
     await this.notificationService.markAsRead(id, userId);
 
     res.status(StatusCodes.OK).json({
-      success: true,
+      status: 'success',
+      code: BusinessCode.SUCCESS,
       message: 'Notification marked as read',
     });
   }
@@ -153,7 +159,8 @@ export class NotificationController {
     await this.notificationService.markAllAsRead(userId);
 
     res.status(StatusCodes.OK).json({
-      success: true,
+      status: 'success',
+      code: BusinessCode.SUCCESS,
       message: 'All notifications marked as read',
     });
   }

@@ -6,6 +6,7 @@ import { NotificationController } from '../controllers/v1/NotificationController
 import { SystemLogController } from '../controllers/v1/SystemLogController';
 import { MessageTemplateController } from '../controllers/v1/MessageTemplateController';
 import { FinancialController } from '../controllers/v1/FinancialController';
+import { CurrencyController } from '../controllers/v1/CurrencyController';
 import { UserController as UserControllerV2 } from '../controllers/v2/UserController';
 import { AuthService } from '../services/AuthService';
 import { SubscriptionService } from '../services/SubscriptionService';
@@ -22,6 +23,7 @@ import { SystemLogRepository } from '../repositories/SystemLogRepository';
 import { MessageTemplateRepository } from '../repositories/MessageTemplateRepository';
 import { PaymentRecordRepository } from '../repositories/PaymentRecordRepository';
 import { CategoryRepository } from '../repositories/CategoryRepository';
+import { ExchangeRateRepository } from '../repositories/ExchangeRateRepository';
 import { AuthMiddleware } from '../middleware/auth.middleware';
 import { NodemailerProvider } from '../infrastructure/email/nodemailer.provider';
 import { NotificationService } from '../modules/notification/notification.service';
@@ -35,8 +37,9 @@ const systemLogRepository = new SystemLogRepository();
 const messageTemplateRepository = new MessageTemplateRepository();
 const paymentRecordRepository = new PaymentRecordRepository();
 const categoryRepository = new CategoryRepository();
+const exchangeRateRepository = new ExchangeRateRepository();
 const tokenService = new TokenService();
-const currencyService = new CurrencyService();
+const currencyService = new CurrencyService(exchangeRateRepository);
 
 // Infrastructure
 const emailProvider = new NodemailerProvider();
@@ -48,27 +51,27 @@ const userService = new UserService(userRepository, notificationService);
 const billGeneratorService = new BillGeneratorService(subscriptionRepository, paymentRecordRepository, notificationService);
 
 const subscriptionService = new SubscriptionService(
-    subscriptionRepository, 
-    notificationService,
-    paymentRecordRepository,
-    billGeneratorService
+  subscriptionRepository,
+  notificationService,
+  paymentRecordRepository,
+  billGeneratorService
 );
 const dashboardService = new DashboardService(
-  subscriptionRepository, 
-  userRepository, 
-  currencyService, 
-  paymentRecordRepository, 
+  subscriptionRepository,
+  userRepository,
+  currencyService,
+  paymentRecordRepository,
   categoryRepository
 );
 const systemLogService = new SystemLogService(systemLogRepository);
 const messageTemplateService = new MessageTemplateService(messageTemplateRepository);
 const financialService = new FinancialService(
-    paymentRecordRepository, 
-    subscriptionRepository, 
-    currencyService, 
-    userRepository,
-    billGeneratorService,
-    notificationService
+  paymentRecordRepository,
+  subscriptionRepository,
+  currencyService,
+  userRepository,
+  billGeneratorService,
+  notificationService
 );
 
 // Middleware
@@ -84,6 +87,7 @@ export const controllersV1 = {
   SystemLog: new SystemLogController(systemLogService),
   MessageTemplate: new MessageTemplateController(messageTemplateService),
   Financial: new FinancialController(financialService),
+  Currency: new CurrencyController(currencyService),
   Agent: new AgentController()
 };
 
@@ -94,9 +98,10 @@ export const controllersV2 = {
 
 // Export services for direct usage if needed
 export const services = {
-    notification: notificationService,
-    email: emailProvider,
-    billGenerator: billGeneratorService,
-    subscription: subscriptionService,
-    financial: financialService
+  notification: notificationService,
+  email: emailProvider,
+  billGenerator: billGeneratorService,
+  subscription: subscriptionService,
+  financial: financialService,
+  currency: currencyService
 };
