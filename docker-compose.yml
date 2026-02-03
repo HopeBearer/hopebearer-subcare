@@ -7,7 +7,8 @@ services:
       - NODE_ENV=production
       # This URL is used by the Next.js server (SSR) to contact the API
       # Since they are in the same docker network, we can use the container name
-      - NEXT_PUBLIC_API_URL=http://subcare-api:3001/api
+      - NEXT_PUBLIC_API_URL=/api
+      - API_INTERNAL_URL=http://subcare-api:3001
     networks:
       - app-network
 
