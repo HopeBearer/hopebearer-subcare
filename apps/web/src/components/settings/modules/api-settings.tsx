@@ -8,9 +8,11 @@ import { Select } from '@/components/ui/select';
 import { useState, useEffect, useMemo } from 'react';
 import { agentService } from '@/services/modules/agent';
 import { aiProviderService } from '@/services/modules/ai-provider';
-import { AIProviderDTO, AIModelDTO } from '@subcare/types';
+import { AIProviderDTO, AIModelDTO
+
+ } from '@subcare/types';
 import { toast } from 'sonner';
-import { Search, Zap, RefreshCw, Check, ExternalLink } from 'lucide-react';
+import { Search, Zap, RefreshCw, Check, ExternalLink, Key, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function ApiSettings() {
@@ -32,6 +34,9 @@ export function ApiSettings() {
   const [apiKey, setApiKey] = useState('');
   const [showFreeOnly, setShowFreeOnly] = useState(false);
   const [modelSearch, setModelSearch] = useState('');
+  
+  // Track if models have been loaded for DYNAMIC providers
+  const [modelsLoaded, setModelsLoaded] = useState(false);
 
   // Load providers on mount
   useEffect(() => {
@@ -39,15 +44,24 @@ export function ApiSettings() {
     checkCurrentConfig();
   }, []);
 
-  // Load models when provider changes
+  // When provider changes, handle model loading based on strategy
   useEffect(() => {
     if (selectedProviderId) {
-      loadModels(selectedProviderId);
+      const provider = providers.find(p => p.id === selectedProviderId);
+      setModels([]);
+      setSelectedModelId('');
+      setModelsLoaded(false);
+      
+      // For PUBLIC and MANUAL strategies, load models from cache immediately
+      if (provider && (provider.modelFetchStrategy === 'PUBLIC' || provider.modelFetchStrategy === 'MANUAL')) {
+        loadModelsFromCache(selectedProviderId);
+      }
     } else {
       setModels([]);
       setSelectedModelId('');
+      setModelsLoaded(false);
     }
-  }, [selectedProviderId]);
+  }, [selectedProviderId, providers]);
 
   const loadProviders = async () => {
     setIsLoadingProviders(true);
@@ -62,7 +76,8 @@ export function ApiSettings() {
     }
   };
 
-  const loadModels = async (providerId: string) => {
+  // Load models from cache (for PUBLIC/MANUAL strategies)
+  const loadModelsFromCache = async (providerId: string) => {
     setIsLoadingModels(true);
     setModelSearch('');
     try {
@@ -70,14 +85,48 @@ export function ApiSettings() {
         isFree: showFreeOnly || undefined
       });
       setModels(data);
+      setModelsLoaded(true);
       
       // Auto-select first model
-      if (data.length > 0 && !selectedModelId) {
+      if (data.length > 0) {
         setSelectedModelId(data[0].modelId);
       }
     } catch (e) {
-      console.error('Failed to load models', e);
+      console.error('Failed to load models from cache', e);
       setModels([]);
+    } finally {
+      setIsLoadingModels(false);
+    }
+  };
+
+  // Fetch models using API Key (for DYNAMIC strategy)
+  const fetchModelsWithApiKey = async () => {
+    if (!selectedProviderId || !apiKey) {
+      toast.error(t('api.apikey_required') || 'Please enter your API Key first');
+      return;
+    }
+
+    setIsLoadingModels(true);
+    setModelSearch('');
+    try {
+      const result = await aiProviderService.fetchModelsWithApiKey(selectedProviderId, apiKey);
+      setModels(result.models);
+      setModelsLoaded(true);
+      
+      if (result.models.length > 0) {
+        setSelectedModelId(result.models[0].modelId);
+        toast.success(t('api.models_fetched') || 'Models loaded successfully');
+      } else {
+        toast.info(t('api.no_models_found') || 'No models found');
+      }
+    } catch (e: any) {
+      console.error('Failed to fetch models', e);
+      setModels([]);
+      setModelsLoaded(false);
+      
+      // Show specific error message
+      const message = e?.response?.data?.message || e?.message || 'Failed to load models';
+      toast.error(message);
     } finally {
       setIsLoadingModels(false);
     }
@@ -120,6 +169,11 @@ export function ApiSettings() {
     return providers.find(p => p.id === selectedProviderId);
   }, [providers, selectedProviderId]);
 
+  // Check if provider requires API key to fetch models
+  const requiresApiKeyForModels = useMemo(() => {
+    return selectedProvider?.modelFetchStrategy === 'DYNAMIC';
+  }, [selectedProvider]);
+
   // Provider options for select
   const providerOptions = useMemo(() => {
     return providers.map(p => ({
@@ -128,21 +182,14 @@ export function ApiSettings() {
     }));
   }, [providers]);
 
-  // Model options for select (简化版，用于快速选择)
-  const modelOptions = useMemo(() => {
-    return filteredModels.slice(0, 100).map(m => ({
-      label: `${m.name}${m.isFree ? ' (Free)' : ''}`,
-      value: m.modelId
-    }));
-  }, [filteredModels]);
-
   const handleSaveConfig = async () => {
     if (!selectedProvider || !apiKey) return;
     
     setIsLoading(true);
     try {
       await agentService.configure({
-        provider: selectedProvider.slug as any,
+        provider: selectedProvider.slug,
+        providerId: selectedProvider.id,
         apiKey,
         model: selectedModelId || undefined
       });
@@ -157,6 +204,7 @@ export function ApiSettings() {
   };
 
   // Format pricing for display
+  // Pricing is stored as $ per million tokens (e.g., "2.8" = $2.8/1M tokens)
   const formatPricing = (model: AIModelDTO) => {
     if (model.isFree) return 'Free';
     if (!model.pricingPrompt && !model.pricingCompletion) return 'N/A';
@@ -166,11 +214,15 @@ export function ApiSettings() {
     
     if (prompt === 0 && completion === 0) return 'Free';
     
-    // Price per million tokens
-    const promptPrice = (prompt * 1000000).toFixed(2);
-    const completionPrice = (completion * 1000000).toFixed(2);
+    // Format price with appropriate precision
+    const formatPrice = (price: number) => {
+      if (price >= 1) return price.toFixed(2);
+      if (price >= 0.01) return price.toFixed(3);
+      return price.toFixed(4);
+    };
     
-    return `$${promptPrice} / $${completionPrice}`;
+    // Display: input / output price per 1M tokens
+    return `$${formatPrice(prompt)} / $${formatPrice(completion)}`;
   };
 
   return (
@@ -201,7 +253,7 @@ export function ApiSettings() {
           </div>
           
           <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
-            {/* Provider Selection - 下拉选择器 */}
+            {/* Provider Selection */}
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('api.provider_label')}</label>
               <Select
@@ -210,6 +262,8 @@ export function ApiSettings() {
                 onChange={(val) => {
                   setSelectedProviderId(val);
                   setSelectedModelId('');
+                  setModels([]);
+                  setModelsLoaded(false);
                 }}
                 placeholder={isLoadingProviders ? 'Loading...' : (t('api.select_provider') || 'Select a provider')}
                 disabled={isLoadingProviders}
@@ -229,13 +283,39 @@ export function ApiSettings() {
             {/* API Key Input */}
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('api.apikey_label')}</label>
-              <Input 
-                type="password" 
-                placeholder={t('api.apikey_placeholder') || 'Enter your API key'} 
-                value={apiKey} 
-                onChange={(e) => setApiKey(e.target.value)} 
-              />
-              <p className="text-xs text-muted-foreground">{t('api.apikey_note')}</p>
+              <div className="flex gap-2">
+                <Input 
+                  type="password" 
+                  placeholder={t('api.apikey_placeholder') || 'Enter your API key'} 
+                  value={apiKey} 
+                  onChange={(e) => setApiKey(e.target.value)} 
+                  className="flex-1"
+                />
+                {/* Load Models Button - Only show for DYNAMIC strategy */}
+                {requiresApiKeyForModels && selectedProviderId && (
+                  <Button
+                    variant="outline"
+                    onClick={fetchModelsWithApiKey}
+                    disabled={!apiKey || isLoadingModels}
+                    className="shrink-0"
+                  >
+                    {isLoadingModels ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Key className="w-4 h-4 mr-2" />
+                        {t('api.load_models') || 'Load Models'}
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {requiresApiKeyForModels && !modelsLoaded
+                  ? (t('api.apikey_required_for_models') || 'Enter your API Key and click "Load Models" to see available models.')
+                  : (t('api.apikey_note') || 'Your API key is stored securely.')
+                }
+              </p>
             </div>
 
             {/* Model Selection */}
@@ -254,105 +334,128 @@ export function ApiSettings() {
                       <Zap className="w-3 h-3 text-yellow-500" />
                       {t('api.free_only') || 'Free only'}
                     </label>
-                    <button
-                      onClick={() => selectedProviderId && loadModels(selectedProviderId)}
-                      className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-                      disabled={isLoadingModels}
-                    >
-                      <RefreshCw className={cn('w-4 h-4', isLoadingModels && 'animate-spin')} />
-                    </button>
+                    {/* Refresh button - only show after models are loaded */}
+                    {modelsLoaded && (
+                      <button
+                        onClick={() => {
+                          if (requiresApiKeyForModels) {
+                            fetchModelsWithApiKey();
+                          } else {
+                            loadModelsFromCache(selectedProviderId);
+                          }
+                        }}
+                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                        disabled={isLoadingModels}
+                      >
+                        <RefreshCw className={cn('w-4 h-4', isLoadingModels && 'animate-spin')} />
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                {/* Model Search */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder={t('api.search_models') || 'Search models...'}
-                    value={modelSearch}
-                    onChange={(e) => setModelSearch(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
+                {/* Show prompt for DYNAMIC strategy before models are loaded */}
+                {requiresApiKeyForModels && !modelsLoaded && !isLoadingModels && (
+                  <div className="p-6 text-center rounded-xl bg-gray-50/50 dark:bg-gray-900/30 border-2 border-dashed border-gray-200 dark:border-gray-700">
+                    <Key className="w-8 h-8 mx-auto text-muted-foreground mb-3" />
+                    <p className="text-sm text-muted-foreground">
+                      {t('api.model_manual_hint') || 'Enter your API Key above and click "Load Models" to view available models.'}
+                    </p>
+                  </div>
+                )}
 
-                {/* Model List */}
-                <div className="max-h-[320px] overflow-y-auto rounded-xl bg-gray-50/50 dark:bg-gray-900/30 p-2">
-                  {isLoadingModels ? (
-                    <div className="space-y-2">
-                      {[1, 2, 3].map(i => (
-                        <div key={i} className="h-16 bg-white dark:bg-gray-800 rounded-xl animate-pulse border border-gray-200 dark:border-gray-700" />
-                      ))}
+                {/* Model Search - Only show when models are loaded */}
+                {modelsLoaded && (
+                  <>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder={t('api.search_models') || 'Search models...'}
+                        value={modelSearch}
+                        onChange={(e) => setModelSearch(e.target.value)}
+                        className="pl-9"
+                      />
                     </div>
-                  ) : filteredModels.length === 0 ? (
-                    <div className="p-8 text-center text-muted-foreground text-sm">
-                      {models.length === 0 
-                        ? (t('api.no_models') || 'No models available')
-                        : (t('api.no_models_match') || 'No models match your search')
-                      }
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {filteredModels.slice(0, 50).map(model => (
-                        <button
-                          key={model.id}
-                          onClick={() => setSelectedModelId(model.modelId)}
-                          className={cn(
-                            'w-full p-3 text-left transition-all duration-200 rounded-xl',
-                            'bg-white dark:bg-gray-800',
-                            'border-2',
-                            'hover:shadow-md hover:scale-[1.01]',
-                            selectedModelId === model.modelId 
-                              ? 'border-primary shadow-md shadow-primary/10 bg-primary/5 dark:bg-primary/10' 
-                              : 'border-gray-200 dark:border-gray-700 hover:border-primary/50'
-                          )}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className={cn(
-                                  "font-semibold text-sm truncate",
-                                  selectedModelId === model.modelId && "text-primary"
-                                )}>
-                                  {model.name}
-                                </span>
-                                {model.isFree && (
-                                  <span className="px-2 py-0.5 text-[10px] font-bold bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full shrink-0 shadow-sm">
-                                    FREE
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2 mt-1">
-                                {model.contextLength && (
-                                  <span className="text-[11px] text-muted-foreground px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">
-                                    {(model.contextLength / 1000).toFixed(0)}K
-                                  </span>
-                                )}
-                                <span className="text-[11px] text-muted-foreground">
-                                  {formatPricing(model)}
-                                </span>
-                              </div>
-                            </div>
-                            <div className={cn(
-                              "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all",
-                              selectedModelId === model.modelId 
-                                ? "border-primary bg-primary text-white" 
-                                : "border-gray-300 dark:border-gray-600"
-                            )}>
-                              {selectedModelId === model.modelId && (
-                                <Check className="w-3.5 h-3.5" />
+
+                    {/* Model List */}
+                    <div className="max-h-[320px] overflow-y-auto rounded-xl bg-gray-50/50 dark:bg-gray-900/30 p-2">
+                      {isLoadingModels ? (
+                        <div className="space-y-2">
+                          {[1, 2, 3].map(i => (
+                            <div key={i} className="h-16 bg-white dark:bg-gray-800 rounded-xl animate-pulse border border-gray-200 dark:border-gray-700" />
+                          ))}
+                        </div>
+                      ) : filteredModels.length === 0 ? (
+                        <div className="p-8 text-center text-muted-foreground text-sm">
+                          {models.length === 0 
+                            ? (t('api.no_models') || 'No models available')
+                            : (t('api.no_models_match') || 'No models match your search')
+                          }
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {filteredModels.slice(0, 50).map(model => (
+                            <button
+                              key={model.id || model.modelId}
+                              onClick={() => setSelectedModelId(model.modelId)}
+                              className={cn(
+                                'w-full p-3 text-left transition-all duration-200 rounded-xl',
+                                'bg-white dark:bg-gray-800',
+                                'border-2',
+                                'hover:shadow-md hover:scale-[1.01]',
+                                selectedModelId === model.modelId 
+                                  ? 'border-primary shadow-md shadow-primary/10 bg-primary/5 dark:bg-primary/10' 
+                                  : 'border-gray-200 dark:border-gray-700 hover:border-primary/50'
                               )}
+                            >
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className={cn(
+                                      "font-semibold text-sm truncate",
+                                      selectedModelId === model.modelId && "text-primary"
+                                    )}>
+                                      {model.name}
+                                    </span>
+                                    {model.isFree && (
+                                      <span className="px-2 py-0.5 text-[10px] font-bold bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full shrink-0 shadow-sm">
+                                        FREE
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    {model.contextLength && (
+                                      <span className="text-[11px] text-muted-foreground px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">
+                                        {(model.contextLength / 1000).toFixed(0)}K
+                                      </span>
+                                    )}
+                                    <span className="text-[11px] text-muted-foreground">
+                                      {formatPricing(model)}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className={cn(
+                                  "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all",
+                                  selectedModelId === model.modelId 
+                                    ? "border-primary bg-primary text-white" 
+                                    : "border-gray-300 dark:border-gray-600"
+                                )}>
+                                  {selectedModelId === model.modelId && (
+                                    <Check className="w-3.5 h-3.5" />
+                                  )}
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                          {filteredModels.length > 50 && (
+                            <div className="p-3 text-center text-xs text-muted-foreground bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-600">
+                              {t('api.more_models', { count: filteredModels.length - 50 }) || `+${filteredModels.length - 50} more models, use search to filter`}
                             </div>
-                          </div>
-                        </button>
-                      ))}
-                      {filteredModels.length > 50 && (
-                        <div className="p-3 text-center text-xs text-muted-foreground bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-600">
-                          {t('api.more_models', { count: filteredModels.length - 50 }) || `+${filteredModels.length - 50} more models, use search to filter`}
+                          )}
                         </div>
                       )}
                     </div>
-                  )}
-                </div>
+                  </>
+                )}
               </div>
             )}
 

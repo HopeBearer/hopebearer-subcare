@@ -375,6 +375,15 @@ export interface AgentConfigDTO {
 
 // --- AI Provider & Model Types ---
 
+// Model fetch strategy: how to get the model list
+export type ModelFetchStrategy = 'DYNAMIC' | 'PUBLIC' | 'MANUAL';
+
+// API format: the API compatibility format
+export type ApiFormat = 'OPENAI' | 'ANTHROPIC' | 'CUSTOM';
+
+// Model source: how the model was added
+export type ModelSource = 'MANUAL' | 'API';
+
 export interface AIProviderDTO {
   id: string;
   name: string;
@@ -384,6 +393,8 @@ export interface AIProviderDTO {
   logoUrl?: string;
   description?: string;
   website?: string;
+  modelFetchStrategy: ModelFetchStrategy;
+  apiFormat: ApiFormat;
   isBuiltIn: boolean;
   isActive: boolean;
   sortOrder: number;
@@ -396,6 +407,7 @@ export interface AIModelDTO {
   description?: string;
   providerId: string;
   providerSlug?: string; // For display
+  source?: ModelSource;
   contextLength?: number;
   maxTokens?: number;
   inputModalities?: string[];

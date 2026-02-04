@@ -14,7 +14,8 @@ import {
   ExternalLink,
   Zap,
   Search,
-  Check
+  Check,
+  Loader2
 } from 'lucide-react';
 import { useState, useRef, MouseEvent, useEffect, useMemo } from 'react';
 import { agentService } from '@/services/modules/agent';
@@ -24,16 +25,48 @@ import { TruncatedTooltip } from '@/components/ui/truncated-tooltip';
 import { AutoScrollText } from '@/components/ui/auto-scroll-text';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store';
+import { useAIRecommendations } from '@/hooks/use-ai-recommendations';
 
 export function AIRecommendations() {
   const { t, i18n } = useTranslation('dashboard');
   const { user } = useAuthStore();
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [isLoading, setIsLoading] = useState(false);
-  const [data, setData] = useState<RecommendationResponse | null>(null);
+  
+  // WebSocket-based AI recommendations
+  const { 
+    isConnected: wsConnected,
+    isLoading: wsLoading, 
+    progress, 
+    data: wsData, 
+    error: wsError,
+    fetchRecommendations: wsFetch 
+  } = useAIRecommendations();
+  
+  // Local state for cached data and HTTP fallback
+  const [localData, setLocalData] = useState<RecommendationResponse | null>(null);
+  const [isHttpLoading, setIsHttpLoading] = useState(false);
+  
+  // Combined loading and data state
+  const isLoading = wsLoading || isHttpLoading;
+  const data = wsData || localData;
+  
   const [config, setConfig] = useState<AgentConfigDTO | null>(null);
   const [selectedModel, setSelectedModel] = useState<string>('');
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Sync wsData to localData when received
+  useEffect(() => {
+    if (wsData) {
+      setLocalData(wsData);
+    }
+  }, [wsData]);
+  
+  // Handle WebSocket errors
+  useEffect(() => {
+    if (wsError) {
+      toast.error(wsError.message || 'AI 推荐获取失败');
+    }
+  }, [wsError]);
   
   // Config Modal State
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -76,28 +109,41 @@ export function AIRecommendations() {
       setConfig(active || null);
       if (active) {
         if (active.model) setSelectedModel(active.model);
-        fetchRecommendations(false, active.model);
+        // Load cached recommendations via HTTP (no force refresh)
+        fetchCachedRecommendations(active.model);
       }
     } catch (e) {
       console.error('Failed to check AI config', e);
     }
   };
 
-  const fetchRecommendations = async (force: boolean = false, modelOverride?: string) => {
-    setIsLoading(true);
+  // Fetch cached recommendations via HTTP (fast, no AI call)
+  const fetchCachedRecommendations = async (modelOverride?: string) => {
+    setIsHttpLoading(true);
     try {
-      const result = await agentService.getRecommendations(undefined, force, modelOverride || selectedModel);
-      setData(result);
-      if (force) {
-        toast.success(t('common.updated', { defaultValue: 'Updated' }));
-      }
+      const result = await agentService.getRecommendations(undefined, false, modelOverride || selectedModel);
+      setLocalData(result);
     } catch (e: any) {
-      console.error('Failed to fetch recommendations', e);
+      console.error('Failed to fetch cached recommendations', e);
       if (e?.response?.status === 400) {
         setConfig(null);
       }
     } finally {
-      setIsLoading(false);
+      setIsHttpLoading(false);
+    }
+  };
+
+  // Fetch fresh recommendations via WebSocket (with real-time progress)
+  const fetchRecommendations = (force: boolean = false, modelOverride?: string) => {
+    if (force && wsConnected) {
+      // Use WebSocket for forced refresh (real-time progress)
+      wsFetch({
+        model: modelOverride || selectedModel,
+        forceRefresh: true
+      });
+    } else {
+      // Use HTTP for cached data
+      fetchCachedRecommendations(modelOverride);
     }
   };
 
@@ -497,13 +543,41 @@ export function AIRecommendations() {
           }}
         />
 
-        {/* Skeleton Loading */}
+        {/* Loading State with Progress */}
         {isLoading && !data && (
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-pulse mt-6">
+          <div className="mt-6 space-y-4">
+            {/* Progress indicator for WebSocket */}
+            {progress && (
+              <div className="flex items-center justify-center gap-3 py-4">
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                <span className="text-sm text-muted-foreground">
+                  {t(progress.messageKey, { 
+                    tool: progress.toolName ? t(`ai.tools.${progress.toolName}`, { defaultValue: progress.toolName }) : undefined,
+                    defaultValue: progress.messageKey 
+                  })}
+                </span>
+              </div>
+            )}
+            {/* Skeleton cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-pulse">
               {[1, 2, 3].map(i => (
-                  <div key={i} className="h-40 rounded-xl bg-gray-200 dark:bg-gray-800/50" />
+                <div key={i} className="h-40 rounded-xl bg-gray-200 dark:bg-gray-800/50" />
               ))}
-           </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Progress overlay when refreshing with existing data */}
+        {isLoading && data && progress && (
+          <div className="mt-4 flex items-center justify-center gap-3 py-3 px-4 rounded-lg bg-primary/5 border border-primary/20">
+            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+            <span className="text-sm text-primary font-medium">
+              {t(progress.messageKey, { 
+                tool: progress.toolName ? t(`ai.tools.${progress.toolName}`, { defaultValue: progress.toolName }) : undefined,
+                defaultValue: progress.messageKey 
+              })}
+            </span>
+          </div>
         )}
 
         {!isLoading && data && (

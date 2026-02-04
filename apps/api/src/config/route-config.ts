@@ -57,6 +57,7 @@ export const routeConfig: Record<string, string> = {
   'GET /ai-providers': 'v1',
   'GET /ai-providers/:id': 'v1',
   'GET /ai-providers/:id/models': 'v1',
+  'POST /ai-providers/:id/models': 'v1',
   'GET /ai-providers/slug/:slug/models': 'v1',
   'POST /ai-providers/:id/sync': 'v1',
   'POST /ai-providers/sync-all': 'v1',

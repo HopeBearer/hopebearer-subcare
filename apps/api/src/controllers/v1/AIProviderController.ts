@@ -11,6 +11,11 @@ const modelFilterSchema = z.object({
   search: z.string().optional()
 }).partial();
 
+// Schema for fetching models with API key
+const fetchModelsSchema = z.object({
+  apiKey: z.string().min(1, 'API Key is required')
+});
+
 export class AIProviderController {
   constructor(private aiProviderService: AIProviderService) {}
 
@@ -60,7 +65,7 @@ export class AIProviderController {
   };
 
   /**
-   * Get models for a provider
+   * Get models for a provider (from database cache)
    * GET /api/v1/ai-providers/:id/models
    */
   getModels = async (req: Request, res: Response, next: NextFunction) => {
@@ -74,6 +79,34 @@ export class AIProviderController {
         status: 'success',
         code: BusinessCode.SUCCESS,
         data: models
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Fetch models for a provider using API Key (for DYNAMIC strategy)
+   * POST /api/v1/ai-providers/:id/models
+   * 
+   * For DYNAMIC providers: Uses the provided API Key to fetch from provider API
+   * For PUBLIC/MANUAL providers: Returns cached models from database
+   */
+  fetchModels = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const { apiKey } = fetchModelsSchema.parse(req.body);
+      
+      const result = await this.aiProviderService.fetchModelsWithApiKey(id, apiKey);
+      
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data: result.models,
+        meta: {
+          strategy: result.strategy,
+          source: result.source // 'api' or 'cache'
+        }
       });
     } catch (error) {
       next(error);

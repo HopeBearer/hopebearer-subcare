@@ -1,10 +1,23 @@
 export interface LLMMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: 'system' | 'user' | 'assistant' | 'tool';
   content: string;
+  tool_call_id?: string;  // Required when role is 'tool'
+  tool_calls?: ToolCall[]; // Present in assistant messages that request tool calls
+}
+
+export interface ToolCall {
+  id: string;
+  type: 'function';
+  function: {
+    name: string;
+    arguments: string; // JSON string
+  };
 }
 
 export interface LLMResponse {
   content: string;
+  tool_calls?: ToolCall[];
+  finish_reason?: 'stop' | 'tool_calls' | 'length' | 'content_filter';
   usage?: {
     totalTokens: number;
     promptTokens: number;

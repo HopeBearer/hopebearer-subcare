@@ -85,7 +85,22 @@
     "estimated_savings": "预计节省：",
     "per_month": "/月",
     "per_year": "/年",
-    "approx": "约"
+    "approx": "约",
+    "progress": {
+      "connecting": "正在连接 AI 服务...",
+      "preparing": "正在准备分析您的订阅数据...",
+      "analyzing": "正在分析您的订阅数据...",
+      "integrating": "正在整合分析结果...",
+      "executing_tool": "正在执行 {{tool}}...",
+      "tool_completed": "{{tool}} 完成",
+      "completed": "分析完成！",
+      "timeout": "分析超时，请稍后重试"
+    },
+    "tools": {
+      "convert_currency": "汇率转换",
+      "search_web": "网络搜索",
+      "get_subscription_history": "订阅历史查询"
+    }
   },
   "content": {
     "placeholder": "主要内容占位符"

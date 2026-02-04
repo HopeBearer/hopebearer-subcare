@@ -2,11 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import { AgentService } from '../services/AgentService';
 import { StatusCodes } from 'http-status-codes';
 import { BusinessCode } from '../constants/BusinessCode';
-import { AppError } from '../utils/AppError';
 import { z } from 'zod';
 
 const configSchema = z.object({
-  provider: z.enum(['openai', 'deepseek', 'anthropic']),
+  provider: z.enum(['openai', 'deepseek', 'anthropic', 'openrouter']),
   apiKey: z.string().min(1),
   model: z.string().optional(),
   baseUrl: z.string().optional()
@@ -15,8 +14,8 @@ const configSchema = z.object({
 export class AgentController {
   private agentService: AgentService;
 
-  constructor() {
-    this.agentService = new AgentService();
+  constructor(agentService: AgentService) {
+    this.agentService = agentService;
   }
 
   /**

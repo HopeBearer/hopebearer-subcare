@@ -85,7 +85,22 @@
     "estimated_savings": "Estimated savings:",
     "per_month": "/mo",
     "per_year": "/yr",
-    "approx": "approx."
+    "approx": "approx.",
+    "progress": {
+      "connecting": "Connecting to AI service...",
+      "preparing": "Preparing to analyze your subscriptions...",
+      "analyzing": "Analyzing your subscriptions...",
+      "integrating": "Integrating analysis results...",
+      "executing_tool": "Running {{tool}}...",
+      "tool_completed": "{{tool}} completed",
+      "completed": "Analysis complete!",
+      "timeout": "Analysis timeout, please try again"
+    },
+    "tools": {
+      "convert_currency": "Currency Conversion",
+      "search_web": "Web Search",
+      "get_subscription_history": "Subscription History"
+    }
   },
   "content": {
     "placeholder": "Main Content Placeholder"

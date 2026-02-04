@@ -20,6 +20,12 @@ export const aiProviderRegistry: Record<string, RouteVersions> = {
       middlewares: [authMiddleware.authenticate]
     }
   },
+  'POST /ai-providers/:id/models': {
+    v1: { 
+      handler: controllersV1.AIProvider.fetchModels,
+      middlewares: [authMiddleware.authenticate]
+    }
+  },
   'GET /ai-providers/slug/:slug/models': {
     v1: { 
       handler: controllersV1.AIProvider.getModelsBySlug,

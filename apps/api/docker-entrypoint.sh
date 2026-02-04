@@ -26,6 +26,15 @@ else
   echo "💡 You may need to manually run: docker compose exec subcare-api npx prisma db push"
 fi
 
+# Seed AI providers and models data (idempotent - safe to run multiple times)
+echo "🌱 Syncing AI providers and models data..."
+if npx tsx apps/api/scripts/seed-ai-providers.ts 2>&1; then
+  echo "✅ AI providers and models synced!"
+else
+  echo "⚠️ AI providers seed had issues, but continuing to start the server..."
+  echo "💡 You can manually run: docker compose exec subcare-api npx tsx apps/api/scripts/seed-ai-providers.ts"
+fi
+
 # Start the application
 echo "🚀 Starting API server..."
 exec node apps/api/dist/index.js

@@ -9,7 +9,9 @@
     "start": "node dist/index.js",
     "lint": "eslint src/**/*.ts",
     "type-check": "tsc --noEmit",
-    "sync:ai-models": "tsx scripts/sync-ai-models.ts"
+    "sync:ai-models": "tsx scripts/sync-ai-models.ts",
+    "seed:ai-providers": "tsx scripts/seed-ai-providers.ts",
+    "seed:ai-providers:clean": "tsx scripts/seed-ai-providers.ts --clean"
   },
   "dependencies": {
     "@subcare/database": "workspace:*",

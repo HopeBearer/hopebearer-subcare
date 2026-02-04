@@ -1,8 +1,45 @@
 import axios from 'axios';
-import { AIProviderRepository } from '../repositories/AIProviderRepository';
+import * as fs from 'fs';
+import * as path from 'path';
+import { AIProviderRepository, ModelFetchStrategy, ApiFormat } from '../repositories/AIProviderRepository';
 import { AppError } from '../utils/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { AIProviderDTO, AIModelDTO, AIModelFilter, ModelSyncResult } from '@subcare/types';
+
+// Configuration file types
+interface ModelConfig {
+  modelId: string;
+  name: string;
+  description?: string;
+  contextLength?: number;
+  maxTokens?: number;
+  inputModalities?: string[];
+  outputModalities?: string[];
+  pricingPrompt?: string;
+  pricingCompletion?: string;
+  isFree?: boolean;
+}
+
+interface ProviderConfig {
+  name: string;
+  slug: string;
+  baseUrl: string;
+  modelsUrl?: string;
+  logoUrl?: string;
+  website?: string;
+  description?: string;
+  modelFetchStrategy: ModelFetchStrategy;
+  apiFormat: ApiFormat;
+  isBuiltIn?: boolean;
+  sortOrder?: number;
+  models?: ModelConfig[];
+}
+
+interface ProvidersConfig {
+  version: string;
+  description?: string;
+  providers: ProviderConfig[];
+}
 
 // OpenRouter API response types
 interface OpenRouterModel {
@@ -46,6 +83,8 @@ export class AIProviderService {
       logoUrl: p.logoUrl ?? undefined,
       description: p.description ?? undefined,
       website: p.website ?? undefined,
+      modelFetchStrategy: p.modelFetchStrategy,
+      apiFormat: p.apiFormat,
       isBuiltIn: p.isBuiltIn,
       isActive: p.isActive,
       sortOrder: p.sortOrder
@@ -68,6 +107,8 @@ export class AIProviderService {
       logoUrl: provider.logoUrl ?? undefined,
       description: provider.description ?? undefined,
       website: provider.website ?? undefined,
+      modelFetchStrategy: provider.modelFetchStrategy,
+      apiFormat: provider.apiFormat,
       isBuiltIn: provider.isBuiltIn,
       isActive: provider.isActive,
       sortOrder: provider.sortOrder
@@ -90,6 +131,8 @@ export class AIProviderService {
       logoUrl: provider.logoUrl ?? undefined,
       description: provider.description ?? undefined,
       website: provider.website ?? undefined,
+      modelFetchStrategy: provider.modelFetchStrategy,
+      apiFormat: provider.apiFormat,
       isBuiltIn: provider.isBuiltIn,
       isActive: provider.isActive,
       sortOrder: provider.sortOrder
@@ -144,6 +187,97 @@ export class AIProviderService {
       });
     }
     return this.getModelsByProviderId(provider.id, filters);
+  }
+
+  /**
+   * Fetch models for a provider using API Key (strategy-based)
+   * 
+   * - DYNAMIC: Uses the API Key to fetch from provider API in real-time
+   * - PUBLIC: Returns cached models from database (synced separately)
+   * - MANUAL: Returns manually maintained models from database
+   */
+  async fetchModelsWithApiKey(
+    providerId: string,
+    apiKey: string
+  ): Promise<{
+    models: AIModelDTO[];
+    strategy: ModelFetchStrategy;
+    source: 'api' | 'cache';
+  }> {
+    const provider = await this.repository.findProviderById(providerId);
+    if (!provider) {
+      throw new AppError('PROVIDER_NOT_FOUND', StatusCodes.NOT_FOUND, {
+        message: 'AI Provider not found'
+      });
+    }
+
+    const strategy = provider.modelFetchStrategy;
+
+    // For PUBLIC and MANUAL strategies, return cached models
+    if (strategy === 'PUBLIC' || strategy === 'MANUAL') {
+      const models = await this.getModelsByProviderId(providerId);
+      return {
+        models,
+        strategy,
+        source: 'cache'
+      };
+    }
+
+    // For DYNAMIC strategy, fetch from provider API using user's API Key
+    try {
+      const modelsUrl = provider.modelsUrl || `${provider.baseUrl}/models`;
+      
+      console.log(`[AIProviderService] Fetching models from ${modelsUrl} for ${provider.name}`);
+      
+      const response = await axios.get(modelsUrl, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000
+      });
+
+      const rawModels = response.data?.data || response.data || [];
+      
+      // Transform to DTO format
+      const models: AIModelDTO[] = rawModels.map((model: any) => ({
+        id: model.id || model.modelId,
+        modelId: model.id || model.modelId,
+        name: model.name || model.id,
+        description: model.description,
+        providerId: provider.id,
+        providerSlug: provider.slug,
+        contextLength: model.context_length || model.contextLength,
+        maxTokens: model.max_tokens || model.maxTokens,
+        inputModalities: model.input_modalities || model.architecture?.input_modalities,
+        outputModalities: model.output_modalities || model.architecture?.output_modalities,
+        pricingCurrency: 'USD',
+        isFree: false
+      }));
+
+      return {
+        models,
+        strategy,
+        source: 'api'
+      };
+    } catch (error: any) {
+      // Handle API errors
+      if (error.response?.status === 401) {
+        throw new AppError('INVALID_API_KEY', StatusCodes.UNAUTHORIZED, {
+          message: 'Invalid API Key. Please check your API key and try again.'
+        });
+      }
+      if (error.response?.status === 403) {
+        throw new AppError('API_FORBIDDEN', StatusCodes.FORBIDDEN, {
+          message: 'API access forbidden. Your API key may not have permission to list models.'
+        });
+      }
+      
+      console.error(`[AIProviderService] Failed to fetch models from ${provider.name}:`, error.message);
+      throw new AppError('FETCH_MODELS_FAILED', StatusCodes.BAD_GATEWAY, {
+        message: `Failed to fetch models from ${provider.name}. Please check your API key.`
+      });
+    }
   }
 
   /**
@@ -306,54 +440,54 @@ export class AIProviderService {
   }
 
   /**
-   * Seed built-in providers
+   * Seed built-in providers from configuration file
+   * 
+   * Reads from config/ai-providers.json to avoid hardcoding
    */
   async seedBuiltInProviders(): Promise<void> {
-    const builtInProviders = [
-      {
-        name: 'OpenAI',
-        slug: 'openai',
-        baseUrl: 'https://api.openai.com/v1',
-        modelsUrl: 'https://api.openai.com/v1/models',
-        website: 'https://openai.com',
-        description: 'OpenAI API - GPT-4, GPT-4o, and more',
-        isBuiltIn: true,
-        sortOrder: 1
-      },
-      {
-        name: 'OpenRouter',
-        slug: 'openrouter',
-        baseUrl: 'https://openrouter.ai/api/v1',
-        modelsUrl: 'https://openrouter.ai/api/v1/models',
-        website: 'https://openrouter.ai',
-        description: 'Access 200+ AI models through one unified API',
-        isBuiltIn: true,
-        sortOrder: 2
-      },
-      {
-        name: 'DeepSeek',
-        slug: 'deepseek',
-        baseUrl: 'https://api.deepseek.com/v1',
-        website: 'https://deepseek.com',
-        description: 'DeepSeek AI - Cost-effective and powerful models',
-        isBuiltIn: true,
-        sortOrder: 3
-      },
-      {
-        name: 'Anthropic',
-        slug: 'anthropic',
-        baseUrl: 'https://api.anthropic.com/v1',
-        website: 'https://anthropic.com',
-        description: 'Claude models - Safe and capable AI assistant',
-        isBuiltIn: true,
-        sortOrder: 4
-      }
-    ];
-
-    for (const provider of builtInProviders) {
-      await this.repository.upsertProvider(provider);
+    // Load configuration from file
+    const configPath = path.join(__dirname, '../../config/ai-providers.json');
+    
+    if (!fs.existsSync(configPath)) {
+      console.warn(`[AIProviderService] Config file not found: ${configPath}`);
+      console.warn('[AIProviderService] Skipping provider seeding. Run: pnpm seed:ai-providers');
+      return;
     }
 
-    console.log('[AIProviderService] Built-in providers seeded successfully');
+    try {
+      const configContent = fs.readFileSync(configPath, 'utf-8');
+      const config: ProvidersConfig = JSON.parse(configContent);
+      
+      console.log(`[AIProviderService] Loading providers from config (version: ${config.version})`);
+
+      for (const providerConfig of config.providers) {
+        const { models, ...providerInfo } = providerConfig;
+        
+        // Upsert provider
+        const provider = await this.repository.upsertProvider({
+          ...providerInfo,
+          isBuiltIn: providerInfo.isBuiltIn ?? false,
+          sortOrder: providerInfo.sortOrder ?? 0
+        });
+
+        // If provider has pre-defined models (MANUAL strategy), seed them
+        if (models && models.length > 0) {
+          for (const model of models) {
+            await this.repository.upsertModel(provider.id, {
+              ...model,
+              source: 'MANUAL'
+            });
+          }
+          console.log(`[AIProviderService] Seeded ${models.length} models for ${provider.name}`);
+        }
+      }
+
+      console.log(`[AIProviderService] Built-in providers seeded successfully (${config.providers.length} providers)`);
+    } catch (error) {
+      console.error('[AIProviderService] Failed to load provider config:', error);
+      throw new AppError('CONFIG_LOAD_FAILED', StatusCodes.INTERNAL_SERVER_ERROR, {
+        message: 'Failed to load AI providers configuration'
+      });
+    }
   }
 }

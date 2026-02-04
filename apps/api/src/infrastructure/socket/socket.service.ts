@@ -1,12 +1,35 @@
 import { Server as HttpServer } from 'http';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { logger } from '../logger/logger';
 import { NotificationDTO } from '@subcare/types';
 import { TokenService } from '../../services/TokenService';
 
+// Types for AI Recommendation events
+export interface AIRecommendationRequest {
+  model?: string;
+  focus?: string;
+  forceRefresh?: boolean;
+}
+
+export interface AIProgressEvent {
+  stage: 'started' | 'tool_call' | 'tool_result' | 'generating' | 'completed' | 'error';
+  messageKey: string;  // i18n key for frontend translation
+  toolName?: string;
+  loop?: number;
+  data?: any;
+}
+
+// Event handler type for AI recommendations
+type AIRecommendationHandler = (
+  userId: string,
+  request: AIRecommendationRequest,
+  onProgress: (event: AIProgressEvent) => void
+) => Promise<any>;
+
 export class SocketService {
   private io: Server;
   private tokenService: TokenService;
+  private aiRecommendationHandler: AIRecommendationHandler | null = null;
 
   constructor(httpServer: HttpServer, tokenService: TokenService) {
     this.tokenService = tokenService;
@@ -98,9 +121,8 @@ export class SocketService {
         }
       });
 
-      // No need for manual authenticate event anymore, but we can keep it for legacy or debug
-      // Or we can remove it to enforce middleware auth. 
-      // User asked for middleware auth, so let's rely on that.
+      // Handle AI Recommendation request via WebSocket
+      this.setupAIRecommendationHandler(socket);
 
       socket.on('disconnect', (reason) => {
         logger.info({
@@ -115,6 +137,89 @@ export class SocketService {
         });
       });
     });
+  }
+
+  /**
+   * Setup AI Recommendation event handlers for a socket
+   */
+  private setupAIRecommendationHandler(socket: Socket) {
+    socket.on('ai:recommendations:request', async (request: AIRecommendationRequest) => {
+      const userId = socket.data.user?.userId;
+      
+      if (!userId) {
+        socket.emit('ai:recommendations:error', { 
+          code: 'AUTH_ERROR',
+          message: 'User not authenticated' 
+        });
+        return;
+      }
+
+      logger.info({
+        domain: 'SOCKET',
+        action: 'ai_recommendation_start',
+        userId,
+        metadata: { request, socketId: socket.id }
+      });
+
+      if (!this.aiRecommendationHandler) {
+        socket.emit('ai:recommendations:error', { 
+          code: 'NOT_CONFIGURED',
+          message: 'AI recommendation handler not configured' 
+        });
+        return;
+      }
+
+      // Progress callback - sends real-time updates to client
+      const onProgress = (event: AIProgressEvent) => {
+        socket.emit('ai:recommendations:progress', event);
+        
+        logger.debug({
+          domain: 'SOCKET',
+          action: 'ai_recommendation_progress',
+          userId,
+          metadata: { stage: event.stage, message: event.message }
+        });
+      };
+
+      try {
+        const result = await this.aiRecommendationHandler(userId, request, onProgress);
+        
+        socket.emit('ai:recommendations:complete', { 
+          status: 'success',
+          data: result 
+        });
+
+        logger.info({
+          domain: 'SOCKET',
+          action: 'ai_recommendation_complete',
+          userId,
+          metadata: { socketId: socket.id }
+        });
+      } catch (error: any) {
+        const errorMessage = error?.message || 'Unknown error occurred';
+        const errorCode = error?.reason || 'AI_ERROR';
+        
+        socket.emit('ai:recommendations:error', { 
+          code: errorCode,
+          message: errorMessage 
+        });
+
+        logger.error({
+          domain: 'SOCKET',
+          action: 'ai_recommendation_error',
+          userId,
+          metadata: { error: errorMessage, socketId: socket.id }
+        });
+      }
+    });
+  }
+
+  /**
+   * Set the handler for AI recommendations
+   * This is called during app initialization to inject the AgentService method
+   */
+  public setAIRecommendationHandler(handler: AIRecommendationHandler) {
+    this.aiRecommendationHandler = handler;
   }
 
   /**

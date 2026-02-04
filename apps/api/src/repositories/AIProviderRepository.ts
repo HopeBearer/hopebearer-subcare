@@ -6,6 +6,16 @@ const db: any = prisma;
 
 // Note: These types will be available after running `prisma generate`
 // For now, we use inline types. After schema migration, you can import from @subcare/database
+
+// Model fetch strategy enum
+export type ModelFetchStrategy = 'DYNAMIC' | 'PUBLIC' | 'MANUAL';
+
+// API format enum
+export type ApiFormat = 'OPENAI' | 'ANTHROPIC' | 'CUSTOM';
+
+// Model source enum
+export type ModelSource = 'MANUAL' | 'API';
+
 interface AIProvider {
   id: string;
   name: string;
@@ -15,6 +25,8 @@ interface AIProvider {
   logoUrl: string | null;
   description: string | null;
   website: string | null;
+  modelFetchStrategy: ModelFetchStrategy;
+  apiFormat: ApiFormat;
   isBuiltIn: boolean;
   isActive: boolean;
   sortOrder: number;
@@ -29,6 +41,7 @@ interface AIModel {
   name: string;
   description: string | null;
   providerId: string;
+  source: ModelSource;
   contextLength: number | null;
   maxTokens: number | null;
   inputModalities: unknown;
@@ -92,6 +105,8 @@ export class AIProviderRepository {
     logoUrl?: string;
     description?: string;
     website?: string;
+    modelFetchStrategy?: ModelFetchStrategy;
+    apiFormat?: ApiFormat;
     isBuiltIn?: boolean;
     isActive?: boolean;
     sortOrder?: number;
@@ -105,6 +120,8 @@ export class AIProviderRepository {
         logoUrl: data.logoUrl,
         description: data.description,
         website: data.website,
+        modelFetchStrategy: data.modelFetchStrategy,
+        apiFormat: data.apiFormat,
         isBuiltIn: data.isBuiltIn,
         isActive: data.isActive,
         sortOrder: data.sortOrder,
@@ -118,6 +135,8 @@ export class AIProviderRepository {
         logoUrl: data.logoUrl,
         description: data.description,
         website: data.website,
+        modelFetchStrategy: data.modelFetchStrategy ?? 'DYNAMIC',
+        apiFormat: data.apiFormat ?? 'OPENAI',
         isBuiltIn: data.isBuiltIn ?? false,
         isActive: data.isActive ?? true,
         sortOrder: data.sortOrder ?? 0
@@ -201,6 +220,7 @@ export class AIProviderRepository {
     modelId: string;
     name: string;
     description?: string;
+    source?: ModelSource;
     contextLength?: number;
     maxTokens?: number;
     inputModalities?: string[];
@@ -220,6 +240,7 @@ export class AIProviderRepository {
       update: {
         name: data.name,
         description: data.description,
+        source: data.source,
         contextLength: data.contextLength,
         maxTokens: data.maxTokens,
         inputModalities: data.inputModalities,
@@ -238,6 +259,7 @@ export class AIProviderRepository {
         modelId: data.modelId,
         name: data.name,
         description: data.description,
+        source: data.source ?? 'MANUAL',
         contextLength: data.contextLength,
         maxTokens: data.maxTokens,
         inputModalities: data.inputModalities,

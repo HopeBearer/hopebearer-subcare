@@ -25,6 +25,18 @@ if (services.notification) {
     services.notification.setSocketService(socketService);
 }
 
+// Inject AI Recommendation handler into Socket Service
+if (services.agent) {
+    socketService.setAIRecommendationHandler(async (userId, request, onProgress) => {
+        return services.agent.getRecommendations({
+            userId,
+            model: request.model,
+            focus: request.focus,
+            forceRefresh: request.forceRefresh ?? true
+        }, onProgress);
+    });
+}
+
 // 启动服务器
 server.listen(PORT, async () => {
     console.log(`Server running on port ${PORT}`);

@@ -6,6 +6,7 @@ import { getErrorMessage } from '../utils/error-helper';
 
 export const api = axios.create({
   baseURL: '/api',
+  timeout: 100000,
   headers: {
     'Content-Type': 'application/json',
   },

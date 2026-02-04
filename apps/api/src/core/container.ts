@@ -19,6 +19,8 @@ import { FinancialService } from '../services/FinancialService';
 import { TokenService } from '../services/TokenService';
 import { CurrencyService } from '../services/CurrencyService';
 import { AIProviderService } from '../services/AIProviderService';
+import { AgentService } from '../services/AgentService';
+import { WebSearchService } from '../services/WebSearchService';
 import { UserRepository } from '../repositories/UserRepository';
 import { SubscriptionRepository } from '../repositories/SubscriptionRepository';
 import { SystemLogRepository } from '../repositories/SystemLogRepository';
@@ -27,11 +29,13 @@ import { PaymentRecordRepository } from '../repositories/PaymentRecordRepository
 import { CategoryRepository } from '../repositories/CategoryRepository';
 import { ExchangeRateRepository } from '../repositories/ExchangeRateRepository';
 import { AIProviderRepository } from '../repositories/AIProviderRepository';
+import { SearchCacheRepository } from '../repositories/SearchCacheRepository';
 import { AuthMiddleware } from '../middleware/auth.middleware';
 import { NodemailerProvider } from '../infrastructure/email/nodemailer.provider';
 import { NotificationService } from '../modules/notification/notification.service';
 import { BillGeneratorService } from '../services/BillGeneratorService';
 import { AgentController } from '../controllers/AgentController';
+import { ToolExecutor } from '../infrastructure/ai/tools/ToolExecutor';
 
 // Services & Repositories
 const userRepository = new UserRepository();
@@ -42,9 +46,27 @@ const paymentRecordRepository = new PaymentRecordRepository();
 const categoryRepository = new CategoryRepository();
 const exchangeRateRepository = new ExchangeRateRepository();
 const aiProviderRepository = new AIProviderRepository();
+const searchCacheRepository = new SearchCacheRepository();
 const tokenService = new TokenService();
 const currencyService = new CurrencyService(exchangeRateRepository);
 const aiProviderService = new AIProviderService(aiProviderRepository);
+const webSearchService = new WebSearchService(searchCacheRepository);
+
+// Tool Executor for AI Agent
+const toolExecutor = new ToolExecutor({
+  currencyService,
+  webSearchService,
+  subscriptionRepository,
+  paymentRecordRepository,
+  exchangeRateRepository
+});
+
+// Agent Service with dependencies
+const agentService = new AgentService();
+agentService.setDependencies({
+  toolExecutor,
+  currencyService
+});
 
 // Infrastructure
 const emailProvider = new NodemailerProvider();
@@ -93,7 +115,7 @@ export const controllersV1 = {
   MessageTemplate: new MessageTemplateController(messageTemplateService),
   Financial: new FinancialController(financialService),
   Currency: new CurrencyController(currencyService),
-  Agent: new AgentController(),
+  Agent: new AgentController(agentService),
   AIProvider: new AIProviderController(aiProviderService)
 };
 
@@ -110,5 +132,8 @@ export const services = {
   subscription: subscriptionService,
   financial: financialService,
   currency: currencyService,
-  aiProvider: aiProviderService
+  aiProvider: aiProviderService,
+  agent: agentService,
+  webSearch: webSearchService,
+  searchCache: searchCacheRepository
 };

@@ -17,6 +17,20 @@ enum Role {
   ADMIN
 }
 
+// AI Provider model fetch strategy
+enum ModelFetchStrategy {
+  DYNAMIC  // Requires user API Key to fetch models (OpenAI, DeepSeek)
+  PUBLIC   // Public API, can be cached server-side (OpenRouter)
+  MANUAL   // Manually maintained by admin (Anthropic, private deployments)
+}
+
+// AI Provider API format
+enum ApiFormat {
+  OPENAI     // OpenAI-compatible API
+  ANTHROPIC  // Anthropic API format
+  CUSTOM     // Custom format (requires adapter)
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -291,6 +305,7 @@ model ExchangeRate {
   rate      Decimal  @db.Decimal(20, 10) // Rate relative to EUR, increased precision for weak currencies
   base      String   @default("EUR")
   updatedAt DateTime @updatedAt
+  deletedAt DateTime?
   
   @@map("exchange_rates")
 }
@@ -312,6 +327,12 @@ model AIProvider {
   description String?  @db.Text
   website     String?  // Official website
   
+  // Model fetching strategy
+  modelFetchStrategy ModelFetchStrategy @default(DYNAMIC)
+  
+  // API format/compatibility
+  apiFormat   ApiFormat @default(OPENAI)
+  
   isBuiltIn   Boolean  @default(false)  // Whether this is a built-in provider
   isActive    Boolean  @default(true)   // Whether enabled
   sortOrder   Int      @default(0)      // Display order
@@ -326,17 +347,26 @@ model AIProvider {
   @@map("ai_providers")
 }
 
+// Model data source
+enum ModelSource {
+  MANUAL  // Manually added by admin
+  API     // Synced from provider API
+}
+
 model AIModel {
   id              String   @id @default(uuid())
   
   // Basic info
-  modelId         String   // Original ID: "gpt-4o", "openrouter/free"
+  modelId         String   // Original ID: "gpt-4o", "claude-3-opus-20240229"
   name            String   // Display name
   description     String?  @db.Text
   
   // Provider relation
   providerId      String
   provider        AIProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  
+  // Model source (how it was added)
+  source          ModelSource @default(MANUAL)
   
   // Capabilities
   contextLength   Int?
@@ -367,4 +397,34 @@ model AIModel {
   @@index([providerId])
   @@index([isFree])
   @@map("ai_models")
+}
+
+// =====================
+// AI Tool Search Cache
+// =====================
+
+model SearchCache {
+  id        String   @id @default(uuid())
+  cacheKey  String   @unique  // MD5 hash of query + search_type
+  query     String   @db.Text
+  searchType String?
+  results   Json     // Cached search results
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  deletedAt DateTime?  // For soft-delete compatibility
+  
+  @@index([cacheKey])
+  @@index([expiresAt])
+  @@map("search_cache")
+}
+
+model SearchUsageLog {
+  id        String   @id @default(uuid())
+  month     String   @unique  // "2026-02" format
+  count     Int      @default(0)
+  limit     Int      @default(1000)  // Monthly limit (Tavily free tier)
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?  // For soft-delete compatibility
+  
+  @@map("search_usage_log")
 }

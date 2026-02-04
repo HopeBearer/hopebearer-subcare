@@ -25,6 +25,8 @@
     "apikey_label": "API Key",
     "apikey_placeholder": "Enter your API Key",
     "apikey_note": "Your API key is stored securely and only used for fetching recommendations.",
+    "apikey_required": "Please enter your API Key first",
+    "apikey_required_for_models": "Enter your API Key and click \"Load Models\" to view available models.",
     "model_label": "Model",
     "free_only": "Free only",
     "search_models": "Search models...",

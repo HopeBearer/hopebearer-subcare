@@ -78,7 +78,22 @@
     "estimated_savings": "推定節約額：",
     "per_month": "/月",
     "per_year": "/年",
-    "approx": "約"
+    "approx": "約",
+    "progress": {
+      "connecting": "AI サービスに接続中...",
+      "preparing": "サブスクリプションデータを準備中...",
+      "analyzing": "サブスクリプションを分析中...",
+      "integrating": "分析結果を統合中...",
+      "executing_tool": "{{tool}} を実行中...",
+      "tool_completed": "{{tool}} 完了",
+      "completed": "分析完了！",
+      "timeout": "分析がタイムアウトしました。後でもう一度お試しください"
+    },
+    "tools": {
+      "convert_currency": "為替換算",
+      "search_web": "ウェブ検索",
+      "get_subscription_history": "サブスクリプション履歴"
+    }
   },
   "content": {
     "placeholder": "メインコンテンツプレースホルダー"
