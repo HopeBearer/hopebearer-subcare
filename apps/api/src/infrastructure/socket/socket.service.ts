@@ -177,7 +177,7 @@ export class SocketService {
           domain: 'SOCKET',
           action: 'ai_recommendation_progress',
           userId,
-          metadata: { stage: event.stage, message: event.message }
+          metadata: { stage: event.stage, messageKey: event.messageKey }
         });
       };
 
