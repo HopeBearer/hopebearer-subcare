@@ -7,6 +7,7 @@ export interface MessageCreateInput {
   toolCalls?: Prisma.InputJsonValue;
   toolCallId?: string;
   tokenCount?: number;
+  thinkingSteps?: Prisma.InputJsonValue;
 }
 
 export interface MessagePaginationOptions {
@@ -35,6 +36,7 @@ export class MessageRepository {
         toolCalls: data.toolCalls,
         toolCallId: data.toolCallId,
         tokenCount: data.tokenCount,
+        thinkingSteps: data.thinkingSteps,
       },
     });
   }
@@ -53,6 +55,7 @@ export class MessageRepository {
         toolCalls: msg.toolCalls,
         toolCallId: msg.toolCallId,
         tokenCount: msg.tokenCount,
+        thinkingSteps: msg.thinkingSteps,
       })),
     });
   }

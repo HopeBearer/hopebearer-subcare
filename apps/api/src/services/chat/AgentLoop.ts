@@ -58,6 +58,100 @@ export class AgentLoop {
   }
 
   /**
+   * 变更操作工具名称集合
+   */
+  private static readonly MUTATION_TOOL_NAMES = new Set([
+    'quick_add_subscription', 'update_subscription', 'cancel_subscription',
+    'pause_subscription', 'resume_subscription',
+    'confirm_bill_payment', 'cancel_bill_payment', 'cancel_all_pending_bills', 'update_bill'
+  ]);
+
+  /**
+   * 用于检测是否为"建议性"而非"完成性"声明
+   * 包含这些词的句子不算幻觉（如 "可以帮你添加订阅"）
+   */
+  private static readonly SUGGESTION_PREFIXES = /(?:可以|帮你|需要|是否|如果|建议|要不要|是否需要)/;
+
+  private static readonly MUTATION_CLAIM_PATTERNS: Array<{ pattern: RegExp; requiredTools: string[]; label: string }> = [
+    // ===== ✅ 开头的完成声明（高置信度）=====
+    // "✅ 已确认支付" 或 "✅ XXX 账单支付已确认"
+    { pattern: /✅[^。！？\n]{0,40}(?:确认[^。！？\n]{0,6}支付|支付[^。！？\n]{0,6}确认|已付款|已支付)/i, requiredTools: ['confirm_bill_payment'], label: '确认支付' },
+    // "✅ 已添加XXX订阅"
+    { pattern: /✅[^。！？\n]{0,40}(?:添加|创建|新增)[^。！？\n]{0,15}订阅/i, requiredTools: ['quick_add_subscription'], label: '添加订阅' },
+    // "✅ XXX 分类已更新" 或 "✅ 已更新XXX"
+    { pattern: /✅[^。！？\n]{0,40}(?:更新|修改|变更)[^。！？\n]{0,15}(?:订阅|价格|分类|周期)/i, requiredTools: ['update_subscription', 'update_bill'], label: '更新订阅/账单' },
+    { pattern: /✅[^。！？\n]{0,40}(?:分类|价格|周期)[^。！？\n]{0,10}(?:已更新|已修改|已变更)/i, requiredTools: ['update_subscription', 'update_bill'], label: '更新订阅/账单' },
+    // "✅ 已取消XXX订阅"
+    { pattern: /✅[^。！？\n]{0,40}(?:取消|删除)[^。！？\n]{0,15}订阅/i, requiredTools: ['cancel_subscription'], label: '取消订阅' },
+    // "✅ 已暂停/恢复XXX订阅"
+    { pattern: /✅[^。！？\n]{0,40}(?:暂停)[^。！？\n]{0,15}订阅/i, requiredTools: ['pause_subscription'], label: '暂停订阅' },
+    { pattern: /✅[^。！？\n]{0,40}(?:恢复|继续)[^。！？\n]{0,15}订阅/i, requiredTools: ['resume_subscription'], label: '恢复订阅' },
+    // "✅ 已取消账单/待支付"
+    { pattern: /✅[^。！？\n]{0,40}(?:取消)[^。！？\n]{0,15}(?:账单|待支付)/i, requiredTools: ['cancel_bill_payment', 'cancel_all_pending_bills'], label: '取消账单' },
+
+    // ===== 非 ✅ 开头，但明确的完成性声明 =====
+    // "已确认支付" 或 "支付已确认" (紧凑格式，不跨句)
+    { pattern: /已(?:成功)?确认[^。！？\n]{0,6}(?:支付|付款)/i, requiredTools: ['confirm_bill_payment'], label: '确认支付' },
+    { pattern: /(?:支付|付款|账单)[^。！？\n]{0,6}已(?:成功)?确认/i, requiredTools: ['confirm_bill_payment'], label: '确认支付' },
+    // "已添加XXX订阅"
+    { pattern: /已(?:成功)?(?:添加|创建|新增)[^。！？\n]{0,15}订阅/i, requiredTools: ['quick_add_subscription'], label: '添加订阅' },
+    // "已更新XXX"
+    { pattern: /已(?:成功)?(?:更新|修改|变更)[^。！？\n]{0,15}(?:订阅|价格|分类|周期)/i, requiredTools: ['update_subscription', 'update_bill'], label: '更新订阅/账单' },
+  ];
+
+  /**
+   * 检测 LLM 是否在没有调用变更工具的情况下声称执行了变更操作（幻觉检测）
+   * 
+   * 策略：
+   * 1. 按句子粒度检测，避免跨句误匹配
+   * 2. 排除建议性短语（"可以帮你添加"、"需要确认"等）
+   * 3. 只检查实际声称完成的操作
+   */
+  private detectHallucinatedMutation(
+    content: string,
+    toolCalls: ToolCallRecord[]
+  ): { detected: boolean; claimedActions: string[] } {
+    if (!content || content.trim().length === 0) {
+      return { detected: false, claimedActions: [] };
+    }
+
+    // 收集实际成功调用的变更工具名
+    const calledMutationTools = new Set(
+      toolCalls
+        .filter(tc => AgentLoop.MUTATION_TOOL_NAMES.has(tc.name) && tc.status === 'completed')
+        .map(tc => tc.name)
+    );
+
+    // 按句子拆分（中文句号、感叹号、问号、换行），逐句检测
+    const sentences = content.split(/[。！？\n]+/).filter(s => s.trim().length > 0);
+    const claimedActions: string[] = [];
+    const seenLabels = new Set<string>();
+
+    for (const sentence of sentences) {
+      // 跳过建议性句子（"可以帮你..."、"需要确认..."等）
+      if (AgentLoop.SUGGESTION_PREFIXES.test(sentence)) {
+        continue;
+      }
+
+      for (const { pattern, requiredTools, label } of AgentLoop.MUTATION_CLAIM_PATTERNS) {
+        if (seenLabels.has(label)) continue; // 同类型只报告一次
+        if (pattern.test(sentence)) {
+          const hasRequiredTool = requiredTools.some(tool => calledMutationTools.has(tool));
+          if (!hasRequiredTool) {
+            claimedActions.push(label);
+            seenLabels.add(label);
+          }
+        }
+      }
+    }
+
+    return {
+      detected: claimedActions.length > 0,
+      claimedActions
+    };
+  }
+
+  /**
    * 带超时的 LLM 调用包装
    */
   private callLLMWithTimeout(
@@ -117,6 +211,7 @@ export class AgentLoop {
     });
 
     const allToolCalls: ToolCallRecord[] = [];
+    const allThinkingSteps: string[] = []; // 累积思考步骤（持久化到数据库）
     let totalTokens = 0;
     let assistantContent = ''; // 仅存储 LLM 的实际输出，不混入思考痕迹
     let iteration = 0;
@@ -151,23 +246,27 @@ export class AgentLoop {
 
         // 发送思考事件（通过 thinking 事件通道，不混入 chunk 流）
         if (iteration === 1) {
+          const thinkingSummary = '正在思考如何回应...';
+          allThinkingSteps.push(thinkingSummary);
           onProgress?.({
             conversationId,
             type: 'thinking',
             data: {
               step: iteration,
               action: 'reasoning',
-              summary: '正在思考如何回应...'
+              summary: thinkingSummary
             }
           });
         } else {
+          const thinkingSummary = `正在分析工具结果并决定下一步 (第 ${toolCallCount} 次工具调用后)...`;
+          allThinkingSteps.push(thinkingSummary);
           onProgress?.({
             conversationId,
             type: 'thinking',
             data: {
               step: iteration,
               action: 'reasoning',
-              summary: `正在分析工具结果并决定下一步 (第 ${toolCallCount} 次工具调用后)...`
+              summary: thinkingSummary
             }
           });
         }
@@ -245,6 +344,8 @@ export class AgentLoop {
           }
 
           // 发送思考事件
+          const toolThinkingSummary = `正在调用 ${toolName}...`;
+          allThinkingSteps.push(toolThinkingSummary);
           onProgress?.({
             conversationId,
             type: 'thinking',
@@ -252,7 +353,7 @@ export class AgentLoop {
               step: iteration,
               action: 'calling_tool',
               toolName,
-              summary: `正在调用 ${toolName}...`
+              summary: toolThinkingSummary
             }
           });
 
@@ -377,6 +478,24 @@ export class AgentLoop {
       });
     }
 
+    // ========== 4.5 幻觉检测：LLM 声称执行了变更操作但未调用工具 ==========
+    const hallucinationCheck = this.detectHallucinatedMutation(assistantContent, allToolCalls);
+    if (hallucinationCheck.detected) {
+      console.warn(`[AgentLoop] ⚠️ Hallucinated mutation detected! Claims: [${hallucinationCheck.claimedActions.join(', ')}], but no mutation tools were called.`);
+      
+      // 追加警告信息到回复
+      const warningMsg = `\n\n⚠️ 系统检测到异常：以上回复声称执行了操作但实际未调用工具，操作并未真正执行。请重新发送你的请求。`;
+      assistantContent += warningMsg;
+      
+      // 流式发送警告到前端
+      callbacks?.onChunk?.(warningMsg);
+      onProgress?.({
+        conversationId,
+        type: 'chunk',
+        data: { chunk: warningMsg }
+      });
+    }
+
     // ========== 5. 保存并返回（无论成功失败都保存，确保 complete 事件一定发出） ==========
     console.log(`[AgentLoop] Saving message. Content length: ${assistantContent.length}, tool calls: ${allToolCalls.length}`);
 
@@ -386,7 +505,8 @@ export class AgentLoop {
         role: 'assistant',
         content: assistantContent || '(无回答)',
         tokenCount: totalTokens,
-        toolCalls: allToolCalls.length > 0 ? allToolCalls as any : undefined
+        toolCalls: allToolCalls.length > 0 ? allToolCalls as any : undefined,
+        thinkingSteps: allThinkingSteps.length > 0 ? allThinkingSteps as any : undefined
       });
 
       await this.conversationRepo.update(conversationId, {});

@@ -19,6 +19,9 @@ import {
   ChatProgressCallback,
   MAX_MESSAGE_LENGTH,
   MAX_HISTORY_MESSAGES,
+  MAX_CONTEXT_TOKENS,
+  trimHistoryByTokenBudget,
+  estimateTokenCount,
   AgentLoop
 } from './chat';
 
@@ -149,8 +152,39 @@ export class ChatService {
     }
 
     // 获取历史消息
-    const history = await this.messageRepo.findLatest(conversationId, MAX_HISTORY_MESSAGES - 1);
-    const isFirstMessage = history.length === 0;
+    const rawHistory = await this.messageRepo.findLatest(conversationId, MAX_HISTORY_MESSAGES - 1);
+    const isFirstMessage = rawHistory.length === 0;
+
+    // 按 token 预算裁剪历史（保留最新的，丢弃最旧的）
+    const { trimmed: history, totalTokens: contextTokens } = trimHistoryByTokenBudget(
+      rawHistory,
+      MAX_CONTEXT_TOKENS
+    );
+    const userMessageTokens = estimateTokenCount(content);
+
+    console.log(`[ChatService] Context: ${history.length}/${rawHistory.length} messages, ~${contextTokens} tokens (budget: ${MAX_CONTEXT_TOKENS})`);
+
+    // 上下文信息快照
+    const contextInfoSnapshot = {
+      messageCount: history.length,
+      totalMessages: rawHistory.length,
+      contextTokens,
+      userMessageTokens,
+      maxContextTokens: MAX_CONTEXT_TOKENS,
+      trimmed: history.length < rawHistory.length
+    };
+
+    // 发送上下文信息到前端
+    onProgress?.({
+      conversationId,
+      type: 'context_info',
+      data: contextInfoSnapshot
+    });
+
+    // 持久化上下文信息到会话（刷新页面后仍可查看）
+    this.conversationRepo.update(conversationId, { contextInfo: contextInfoSnapshot }).catch(err => {
+      console.warn('[ChatService] Failed to persist contextInfo:', err);
+    });
 
     // 保存用户消息
     await this.messageRepo.create({ conversationId, role: 'user', content });

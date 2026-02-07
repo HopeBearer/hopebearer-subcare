@@ -28,7 +28,7 @@ export interface ChatMessageSendRequest {
 
 export interface ChatProgressEvent {
   conversationId: string;
-  type: 'chunk' | 'tool_call' | 'complete' | 'error' | 'title_updated' | 'thinking';
+  type: 'chunk' | 'tool_call' | 'complete' | 'error' | 'title_updated' | 'thinking' | 'context_info';
   data: any;
 }
 
@@ -300,16 +300,46 @@ export class SocketService {
           metadata: { conversationId: convId, socketId: socket.id }
         });
 
+        // ===== Chunk 微合并缓冲（减少 WebSocket 消息频率） =====
+        // 将高频的逐 token chunk 合并为 ~30ms 一次的批量发送
+        const CHUNK_FLUSH_INTERVAL = 30; // ms
+        const CHUNK_FLUSH_THRESHOLD = 20; // 字符数阈值，超过立即 flush
+        let chunkBuffer = '';
+        let chunkFlushTimer: ReturnType<typeof setTimeout> | null = null;
+        let chunkConversationId = '';
+
+        const flushChunkBuffer = () => {
+          if (chunkBuffer.length > 0) {
+            socket.emit('chat:message:chunk', {
+              conversationId: chunkConversationId,
+              chunk: chunkBuffer
+            });
+            chunkBuffer = '';
+          }
+          if (chunkFlushTimer) {
+            clearTimeout(chunkFlushTimer);
+            chunkFlushTimer = null;
+          }
+        };
+
         // Progress callback - sends real-time updates to client
         const onProgress = (event: ChatProgressEvent) => {
           switch (event.type) {
             case 'chunk':
-              socket.emit('chat:message:chunk', {
-                conversationId: event.conversationId,
-                chunk: event.data.chunk
-              });
+              // 微合并：攒入 buffer，定时/阈值 flush
+              chunkConversationId = event.conversationId;
+              chunkBuffer += event.data.chunk;
+              if (chunkBuffer.length >= CHUNK_FLUSH_THRESHOLD) {
+                // 超过阈值，立即发送
+                flushChunkBuffer();
+              } else if (!chunkFlushTimer) {
+                // 启动定时 flush
+                chunkFlushTimer = setTimeout(flushChunkBuffer, CHUNK_FLUSH_INTERVAL);
+              }
               break;
             case 'tool_call':
+              // flush 残余 chunk（工具调用前确保文本已发送）
+              flushChunkBuffer();
               socket.emit('chat:message:tool_call', {
                 conversationId: event.conversationId,
                 toolName: event.data.toolName,
@@ -317,12 +347,16 @@ export class SocketService {
               });
               break;
             case 'complete':
+              // flush 残余 chunk，再发 complete
+              flushChunkBuffer();
               socket.emit('chat:message:complete', {
                 conversationId: event.conversationId,
                 message: event.data.message
               });
               break;
             case 'error':
+              // flush 残余 chunk，再发 error
+              flushChunkBuffer();
               socket.emit('chat:message:error', {
                 conversationId: event.conversationId,
                 code: 'AI_ERROR',
@@ -336,12 +370,25 @@ export class SocketService {
               });
               break;
             case 'thinking':
+              // flush 残余 chunk（思考事件前确保文本已发送）
+              flushChunkBuffer();
               socket.emit('chat:message:thinking', {
                 conversationId: event.conversationId,
                 step: event.data.step,
                 action: event.data.action,
                 toolName: event.data.toolName,
                 summary: event.data.summary
+              });
+              break;
+            case 'context_info':
+              socket.emit('chat:message:context_info', {
+                conversationId: event.conversationId,
+                messageCount: event.data.messageCount,
+                totalMessages: event.data.totalMessages,
+                contextTokens: event.data.contextTokens,
+                userMessageTokens: event.data.userMessageTokens,
+                maxContextTokens: event.data.maxContextTokens,
+                trimmed: event.data.trimmed
               });
               break;
           }

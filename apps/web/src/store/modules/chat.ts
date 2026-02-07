@@ -5,6 +5,16 @@ import { chatService, Conversation, Message, ConversationWithMessages } from '@/
 
 export type SessionStatus = 'idle' | 'sending' | 'streaming';
 
+/** 后端返回的上下文信息 */
+export interface ContextInfo {
+  messageCount: number;      // 实际发送给 AI 的历史消息数
+  totalMessages: number;     // 数据库中该会话的总历史消息数
+  contextTokens: number;     // 历史消息的估算 token 数
+  userMessageTokens: number; // 当前用户消息的估算 token 数
+  maxContextTokens: number;  // token 预算上限
+  trimmed: boolean;          // 是否因超过预算而裁剪了历史
+}
+
 export interface ToolCallEntry {
   id: string;
   toolName: string;
@@ -21,6 +31,7 @@ export interface ToolCallEntry {
 export interface ChunkBuffer {
   content: string;
   toolCalls: ToolCallEntry[];
+  thinkingSteps: string[];     // 累积的思考步骤（持久显示）
   dirty: boolean;              // 自上次 flush 后有新数据
   messagesSnapshot: Message[];  // 发送时的消息快照（用于切换回来恢复）
 }
@@ -32,33 +43,43 @@ export const chunkBuffers = new Map<string, ChunkBuffer>();
 let rafId: number | null = null;
 /** 当前是否有活跃的流式会话 */
 let activeStreamCount = 0;
+/** 帧计数器（用于长内容降频） */
+let frameCount = 0;
+
+/** 长内容降频阈值：内容超过此字符数时降到每 2 帧 flush 一次 */
+const LONG_CONTENT_THRESHOLD = 5000;
 
 /**
  * 启动 RAF flush 循环
  * 每帧最多一次 Zustand set()，仅 flush 活跃会话的内容
+ * 长内容（>5000字符）自动降频到每 2 帧一次（安全阀）
  */
 function startFlushLoop() {
   if (rafId !== null) return; // 已在运行
+  frameCount = 0;
 
   function flush() {
+    frameCount++;
     const state = useChatStore.getState();
     const activeId = state.currentConversationId;
 
     if (activeId) {
       const buffer = chunkBuffers.get(activeId);
       if (buffer && buffer.dirty) {
-        // 单次 set(): 将缓冲区内容推送到 Zustand 可渲染状态
-        useChatStore.setState({
-          activeStreamContent: buffer.content,
-          activeToolCalls: [...buffer.toolCalls]
-        });
-        buffer.dirty = false;
+        // 长内容安全阀：内容超长时降频到每 2 帧 flush 一次
+        const isLongContent = buffer.content.length > LONG_CONTENT_THRESHOLD;
+        const shouldFlush = !isLongContent || frameCount % 2 === 0;
+
+        if (shouldFlush) {
+          // 单次 set(): 将缓冲区内容推送到 Zustand 可渲染状态
+          useChatStore.setState({
+            activeStreamContent: buffer.content,
+            activeToolCalls: [...buffer.toolCalls],
+            activeThinkingSteps: [...buffer.thinkingSteps]
+          });
+          buffer.dirty = false;
+        }
       }
-    }
-    
-    // Debug: 定期输出状态
-    if (activeStreamCount > 0 && Math.random() < 0.02) {
-      console.debug('[RAF Flush] activeId:', activeId, 'buffers:', [...chunkBuffers.keys()], 'streamCount:', activeStreamCount);
     }
 
     // 如果还有活跃流式会话，继续循环
@@ -66,6 +87,7 @@ function startFlushLoop() {
       rafId = requestAnimationFrame(flush);
     } else {
       rafId = null;
+      frameCount = 0;
     }
   }
 
@@ -91,10 +113,16 @@ export function bufferAppendChunk(conversationId: string, chunk: string) {
   const buffer = chunkBuffers.get(conversationId);
   if (!buffer) {
     // 会话已结束或被删除，忽略迟到的 chunk
+    console.warn('[bufferAppendChunk] No buffer for', conversationId, '- chunk dropped:', chunk.substring(0, 50));
     return;
   }
   buffer.content += chunk;
   buffer.dirty = true;
+  
+  // 调试日志（低频输出，避免刷屏）
+  if (buffer.content.length <= chunk.length || buffer.content.length % 200 < chunk.length) {
+    console.debug('[bufferAppendChunk]', conversationId, 'content length:', buffer.content.length, 'chunk:', chunk.substring(0, 30));
+  }
 }
 
 /**
@@ -105,7 +133,7 @@ export function bufferAddToolCall(conversationId: string, toolName: string, stat
   if (!buffer) {
     // 如果 buffer 不存在但是 started 事件，创建它（tool call 可能先于 chunk 到达）
     if (status === 'started') {
-      buffer = { content: '', toolCalls: [], dirty: true, messagesSnapshot: [] };
+      buffer = { content: '', toolCalls: [], thinkingSteps: [], dirty: true, messagesSnapshot: [] };
       chunkBuffers.set(conversationId, buffer);
       // 同时设置 session status
       useChatStore.getState().setSessionStatus(conversationId, 'streaming');
@@ -138,6 +166,7 @@ export function bufferStartSession(conversationId: string, messagesSnapshot: Mes
   chunkBuffers.set(conversationId, {
     content: '',
     toolCalls: [],
+    thinkingSteps: [],
     dirty: false,
     messagesSnapshot
   });
@@ -146,9 +175,25 @@ export function bufferStartSession(conversationId: string, messagesSnapshot: Mes
 }
 
 /**
- * 流式完成 — 清理缓冲区，写入 Zustand
+ * 流式完成 — 最终 flush + 清理缓冲区，写入 Zustand
+ * 
+ * 关键修复：在删除 buffer 前做最终 flush，防止短回复/微合并场景下
+ * complete 事件和最后的 chunk 在同一 tick 到达，RAF flush 来不及运行。
  */
 export function bufferCompleteSession(conversationId: string, message: Message) {
+  // ⚡ 最终 flush：先将 buffer 中未 flush 的内容推送到 Zustand
+  const buffer = chunkBuffers.get(conversationId);
+  if (buffer && buffer.dirty) {
+    const currentState = useChatStore.getState();
+    if (currentState.currentConversationId === conversationId) {
+      useChatStore.setState({
+        activeStreamContent: buffer.content,
+        activeToolCalls: [...buffer.toolCalls],
+        activeThinkingSteps: [...buffer.thinkingSteps]
+      });
+    }
+  }
+
   chunkBuffers.delete(conversationId);
   activeStreamCount = Math.max(0, activeStreamCount - 1);
   if (activeStreamCount === 0) {
@@ -159,14 +204,12 @@ export function bufferCompleteSession(conversationId: string, message: Message) 
   const isCurrentConversation = state.currentConversationId === conversationId;
   const alreadyExists = state.messages.some(m => m.id === message.id);
 
-  // 移除 session status + 更新 Zustand 渲染状态
+  // 先添加完成的消息到 messages（让 ChatMessage 先渲染）
+  // 然后延迟一帧清理流式状态（确保视觉过渡平滑）
   useChatStore.setState(prev => {
     const { [conversationId]: _, ...rest } = prev.sessionStatuses;
     const updates: Partial<ChatState> = {
       sessionStatuses: rest,
-      activeStreamContent: isCurrentConversation ? '' : prev.activeStreamContent,
-      activeToolCalls: isCurrentConversation ? [] : prev.activeToolCalls,
-      activeThinkingStep: isCurrentConversation ? null : prev.activeThinkingStep,
     };
 
     if (isCurrentConversation && !alreadyExists) {
@@ -174,6 +217,18 @@ export function bufferCompleteSession(conversationId: string, message: Message) 
     }
 
     return updates as any;
+  });
+
+  // 延迟一帧清理流式渲染状态，避免 StreamingMessage 和 ChatMessage 同时消失
+  requestAnimationFrame(() => {
+    const afterState = useChatStore.getState();
+    if (afterState.currentConversationId === conversationId) {
+      useChatStore.setState({
+        activeStreamContent: '',
+        activeToolCalls: [],
+        activeThinkingSteps: []
+      });
+    }
   });
 
   // 局部更新 conversations 排序（替代 fetchConversations(true)）
@@ -201,18 +256,36 @@ export function bufferResetSession(conversationId: string) {
       sessionStatuses: rest,
       activeStreamContent: isCurrentConversation ? '' : prev.activeStreamContent,
       activeToolCalls: isCurrentConversation ? [] : prev.activeToolCalls,
-      activeThinkingStep: isCurrentConversation ? null : prev.activeThinkingStep,
+      activeThinkingSteps: isCurrentConversation ? [] : prev.activeThinkingSteps,
     };
   });
 }
 
 /**
- * 设置思考步骤（直接更新 Zustand，低频事件）
+ * 累积思考步骤到缓冲区（通过 RAF flush 推送到 Zustand）
+ * 
+ * 思考步骤是累积的：每个新步骤追加到数组末尾，不覆盖之前的步骤。
+ * 这样用户可以看到完整的思考过程。
  */
 export function bufferSetThinking(conversationId: string, summary: string | null) {
-  const state = useChatStore.getState();
-  if (state.currentConversationId === conversationId) {
-    useChatStore.setState({ activeThinkingStep: summary });
+  if (!summary) return;
+
+  const buffer = chunkBuffers.get(conversationId);
+  if (buffer) {
+    // 避免重复添加相同的思考步骤
+    if (buffer.thinkingSteps[buffer.thinkingSteps.length - 1] !== summary) {
+      buffer.thinkingSteps.push(summary);
+      buffer.dirty = true;
+    }
+  } else {
+    // buffer 不存在时直接更新 Zustand（兼容边缘情况）
+    const state = useChatStore.getState();
+    if (state.currentConversationId === conversationId) {
+      const currentSteps = state.activeThinkingSteps;
+      if (currentSteps[currentSteps.length - 1] !== summary) {
+        useChatStore.setState({ activeThinkingSteps: [...currentSteps, summary] });
+      }
+    }
   }
 }
 
@@ -239,7 +312,10 @@ interface ChatState {
   // ===== 活跃会话的渲染状态（RAF flush，≤60fps） =====
   activeStreamContent: string;
   activeToolCalls: ToolCallEntry[];
-  activeThinkingStep: string | null; // ReAct 思考步骤描述
+  activeThinkingSteps: string[]; // ReAct 思考步骤描述（累积）
+
+  // ===== 上下文信息（后端提供，每次发送消息时更新） =====
+  contextInfo: ContextInfo | null;
 
   // ===== 会话状态枚举（极少变化：start/complete 时才更新） =====
   sessionStatuses: Record<string, SessionStatus>;
@@ -286,7 +362,10 @@ export const useChatStore = create<ChatState>()((set, get) => ({
   // Active session render state (RAF-flushed)
   activeStreamContent: '',
   activeToolCalls: [],
-  activeThinkingStep: null,
+  activeThinkingSteps: [],
+
+  // Context info (from backend)
+  contextInfo: null,
 
   // Session statuses (low-frequency updates)
   sessionStatuses: {},
@@ -298,13 +377,36 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       const page = reset ? 1 : get().conversationsPage;
       const response = await chatService.listConversations({ page, limit: 20 });
       
+      const newConversations = reset 
+        ? response.items 
+        : [...get().conversations, ...response.items];
+
+      // 页面刷新后 fetchConversations 可能晚于 selectConversation 完成，
+      // 此时 contextInfo 仍为 null，需要从新加载的列表中补偿
+      const { currentConversationId, contextInfo } = get();
+      let patchContextInfo: Partial<ChatState> = {};
+      if (currentConversationId && !contextInfo) {
+        const conv = newConversations.find(c => c.id === currentConversationId);
+        if (conv?.contextInfo) {
+          patchContextInfo = {
+            contextInfo: {
+              messageCount: conv.contextInfo.messageCount,
+              totalMessages: conv.contextInfo.totalMessages,
+              contextTokens: conv.contextInfo.contextTokens,
+              userMessageTokens: conv.contextInfo.userMessageTokens,
+              maxContextTokens: conv.contextInfo.maxContextTokens,
+              trimmed: conv.contextInfo.trimmed,
+            }
+          };
+        }
+      }
+
       set({
-        conversations: reset 
-          ? response.items 
-          : [...get().conversations, ...response.items],
+        conversations: newConversations,
         hasMoreConversations: response.items.length === 20,
         conversationsPage: page,
-        isLoadingConversations: false
+        isLoadingConversations: false,
+        ...patchContextInfo
       });
     } catch (error) {
       console.error('[ChatStore] fetchConversations error:', error);
@@ -357,7 +459,8 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         hasMoreMessages: false,
         activeStreamContent: '',
         activeToolCalls: [],
-        activeThinkingStep: null
+        activeThinkingSteps: [],
+        contextInfo: null
       });
       return;
     }
@@ -385,20 +488,30 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         isLoadingConversation: false,
         activeStreamContent: targetBuffer.content,
         activeToolCalls: [...targetBuffer.toolCalls],
-        activeThinkingStep: null
+        activeThinkingSteps: [...targetBuffer.thinkingSteps]
       });
       targetBuffer.dirty = false;
       return;
     }
 
     // 普通切换：从 DB 加载（单次 set() 立即切换 + 异步加载）
+    // 尝试从已加载的 conversations 列表中恢复 contextInfo
+    const cachedConversation = get().conversations.find(c => c.id === id);
     set({
       isLoadingConversation: true,
       currentConversationId: id,
       messages: [],
       activeStreamContent: '',
       activeToolCalls: [],
-      activeThinkingStep: null
+      activeThinkingSteps: [],
+      contextInfo: cachedConversation?.contextInfo ? {
+        messageCount: cachedConversation.contextInfo.messageCount,
+        totalMessages: cachedConversation.contextInfo.totalMessages,
+        contextTokens: cachedConversation.contextInfo.contextTokens,
+        userMessageTokens: cachedConversation.contextInfo.userMessageTokens,
+        maxContextTokens: cachedConversation.contextInfo.maxContextTokens,
+        trimmed: cachedConversation.contextInfo.trimmed,
+      } : null
     });
     
     try {
@@ -408,11 +521,29 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       // 验证：加载完成时仍在同一会话（防止快速切换竞态）
       if (get().currentConversationId !== id) return;
       
+      // 恢复 contextInfo：页面刷新时首次 set 时 conversations 可能尚未加载，
+      // 此时 fetchConversations 大概率已完成，重新从缓存中查找
+      let resolvedContextInfo = get().contextInfo;
+      if (!resolvedContextInfo) {
+        const cachedConv = get().conversations.find(c => c.id === id);
+        if (cachedConv?.contextInfo) {
+          resolvedContextInfo = {
+            messageCount: cachedConv.contextInfo.messageCount,
+            totalMessages: cachedConv.contextInfo.totalMessages,
+            contextTokens: cachedConv.contextInfo.contextTokens,
+            userMessageTokens: cachedConv.contextInfo.userMessageTokens,
+            maxContextTokens: cachedConv.contextInfo.maxContextTokens,
+            trimmed: cachedConv.contextInfo.trimmed,
+          };
+        }
+      }
+
       set({
         currentConversation: null,
         messages: orderedMessages,
         hasMoreMessages: items.length < total,
-        isLoadingConversation: false
+        isLoadingConversation: false,
+        ...(resolvedContextInfo ? { contextInfo: resolvedContextInfo } : {})
       });
     } catch (error) {
       console.error('[ChatStore] selectConversation error:', error);
@@ -501,7 +632,7 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         sessionStatuses: remainingStatuses,
         activeStreamContent: currentConversationId === id ? '' : get().activeStreamContent,
         activeToolCalls: currentConversationId === id ? [] : get().activeToolCalls,
-        activeThinkingStep: currentConversationId === id ? null : get().activeThinkingStep,
+        activeThinkingSteps: currentConversationId === id ? [] : get().activeThinkingSteps,
       });
     } catch (error) {
       console.error('[ChatStore] deleteConversation error:', error);

@@ -27,7 +27,15 @@
     "this_week": "This Week",
     "earlier": "Earlier",
     "thinking": "Thinking...",
-    "waiting_tool": "Waiting for tool response..."
+    "waiting_tool": "Waiting for tool response...",
+    "thinking_and_tools": "{{thinkingCount}} thinking step(s) · {{toolCount}} tool call(s)",
+    "thinking_steps_count": "{{count}} thinking step(s)",
+    "context_info": "Context: {{messageCount}} msg(s) / ~{{tokens}} tokens",
+    "context_trimmed_tooltip": "Total {{totalMessages}} messages, trimmed due to exceeding {{maxTokens}} token budget",
+    "context_trimmed": "(trimmed)",
+    "context_max": "max {{maxTokens}}",
+    "context_placeholder": "Context: displayed after sending",
+    "input_hint": "Enter to send, Shift + Enter for new line"
   },
   "metadata": {
     "dashboard": { "title": "Dashboard", "description": "Overview of your subscriptions and expenses." },

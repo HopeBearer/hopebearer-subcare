@@ -7,6 +7,7 @@ import { AddSubscriptionModal } from '@/components/features/subscriptions/add-su
 import { useLayoutStore } from '@/store';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
+import { useSocketInit } from '@/hooks/use-socket';
 import { useChatStream } from '@/hooks/use-chat-stream';
 
 export default function HomeLayout({
@@ -17,7 +18,9 @@ export default function HomeLayout({
   const { isSidebarCollapsed } = useLayoutStore();
   const [mounted, setMounted] = useState(false);
   
-  // Initialize socket connection and chat stream handlers
+  // 全局唯一 socket 初始化（仅此一处创建连接 + 注册通知事件）
+  useSocketInit();
+  // 注册 Chat 流式事件处理（纯消费 socket，不创建连接）
   useChatStream();
 
   useEffect(() => {

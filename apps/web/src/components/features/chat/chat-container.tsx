@@ -34,7 +34,7 @@ export function ChatContainer({ conversationId }: ChatContainerProps) {
   // 活跃流式内容（RAF flush 推送，≤60fps，已在 buffer 层限频，无需 useDeferredValue）
   const activeStreamContent = useChatStore(state => state.activeStreamContent)
   const activeToolCalls = useChatStore(state => state.activeToolCalls)
-  const activeThinkingStep = useChatStore(state => state.activeThinkingStep)
+  const activeThinkingSteps = useChatStore(state => state.activeThinkingSteps)
 
   const effectiveConversationId = conversationId || storeConversationId || null
 
@@ -206,7 +206,7 @@ export function ChatContainer({ conversationId }: ChatContainerProps) {
             <StreamingMessage
               content={activeStreamContent}
               toolCalls={activeToolCalls}
-              thinkingStep={activeThinkingStep}
+              thinkingSteps={activeThinkingSteps}
             />
           )}
 

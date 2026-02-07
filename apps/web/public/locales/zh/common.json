@@ -27,7 +27,15 @@
     "this_week": "本周",
     "earlier": "更早",
     "thinking": "思考中...",
-    "waiting_tool": "等待工具返回..."
+    "waiting_tool": "等待工具返回...",
+    "thinking_and_tools": "{{thinkingCount}} 个思考步骤 · {{toolCount}} 个工具调用",
+    "thinking_steps_count": "{{count}} 个思考步骤",
+    "context_info": "上下文：{{messageCount}} 条 / ~{{tokens}} tokens",
+    "context_trimmed_tooltip": "历史共 {{totalMessages}} 条，因超过 {{maxTokens}} token 预算已裁剪",
+    "context_trimmed": "(已裁剪)",
+    "context_max": "上限 {{maxTokens}}",
+    "context_placeholder": "上下文：发送消息后显示",
+    "input_hint": "按 Enter 发送，Shift + Enter 换行"
   },
   "metadata": {
     "dashboard": { "title": "仪表盘", "description": "概览您的订阅和支出情况。" },

@@ -438,6 +438,7 @@ model Conversation {
   userId      String
   title       String    @default("New Chat")
   model       String?   // 可选：覆盖用户默认模型
+  contextInfo Json?     // 上下文信息快照 { messageCount, totalMessages, contextTokens, maxContextTokens, trimmed }
   
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -461,6 +462,7 @@ model Message {
   toolCalls       Json?
   toolCallId      String?
   tokenCount      Int?
+  thinkingSteps   Json?     // ReAct 思考步骤 (string[])，持久化保存
   
   createdAt       DateTime  @default(now())
   deletedAt       DateTime?  // 软删除支持

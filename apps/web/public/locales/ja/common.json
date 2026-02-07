@@ -197,7 +197,15 @@
     "this_week": "今週",
     "earlier": "それ以前",
     "thinking": "考え中...",
-    "waiting_tool": "ツールの応答を待っています..."
+    "waiting_tool": "ツールの応答を待っています...",
+    "thinking_and_tools": "{{thinkingCount}} 件の思考ステップ · {{toolCount}} 件のツール呼び出し",
+    "thinking_steps_count": "{{count}} 件の思考ステップ",
+    "context_info": "コンテキスト：{{messageCount}} 件 / 約{{tokens}} トークン",
+    "context_trimmed_tooltip": "合計 {{totalMessages}} 件のメッセージ、{{maxTokens}} トークン予算超過のため削減",
+    "context_trimmed": "(削減済み)",
+    "context_max": "上限 {{maxTokens}}",
+    "context_placeholder": "コンテキスト：送信後に表示",
+    "input_hint": "Enter で送信、Shift + Enter で改行"
   },
   "tools": {
     "used_count": "{{count}}個のツールを使用",

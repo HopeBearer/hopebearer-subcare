@@ -97,12 +97,13 @@ export class ConversationRepository {
    * @param data 更新数据
    * @returns 更新后的对话实体
    */
-  async update(id: string, data: Partial<Pick<Conversation, 'title' | 'model'>>): Promise<Conversation> {
+  async update(id: string, data: Partial<Pick<Conversation, 'title' | 'model'>> & { contextInfo?: any }): Promise<Conversation> {
     return prisma.conversation.update({
       where: { id },
       data: {
         ...(data.title !== undefined && { title: data.title }),
         ...(data.model !== undefined && { model: data.model }),
+        ...(data.contextInfo !== undefined && { contextInfo: data.contextInfo }),
         updatedAt: new Date(),
       },
     });

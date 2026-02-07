@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect, KeyboardEvent, useMemo } from 'react';
-import { Send, Loader2 } from 'lucide-react';
+import { useState, useRef, useEffect, KeyboardEvent } from 'react';
+import { Send, Loader2, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n/hooks';
 import { useChatStore } from '@/store';
@@ -17,18 +17,7 @@ export function ChatInput({ onSend, disabled, isLoading, placeholder }: ChatInpu
   const { t } = useTranslation('common');
   const [message, setMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const messages = useChatStore(state => state.messages);
-  const CONTEXT_MESSAGE_LIMIT = 12;
-
-  const estimatedContextTokens = useMemo(() => {
-    const recent = messages.slice(-CONTEXT_MESSAGE_LIMIT);
-    const estimateTokens = (text: string) => {
-      const cjkCount = (text.match(/[\u4e00-\u9fff]/g) || []).length;
-      const nonCjkCount = text.length - cjkCount;
-      return cjkCount + Math.ceil(nonCjkCount / 4);
-    };
-    return recent.reduce((sum, msg) => sum + estimateTokens(msg.content || ''), 0);
-  }, [messages]);
+  const contextInfo = useChatStore(state => state.contextInfo);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -99,11 +88,36 @@ export function ChatInput({ onSend, disabled, isLoading, placeholder }: ChatInpu
         
         {/* Hint text */}
         <div className="text-xs text-gray-400 mt-2 flex items-center justify-between">
+          {contextInfo ? (
+            <span className="flex items-center gap-1">
+              <Info className="w-3 h-3" />
+              {t('chat.context_info', {
+                messageCount: contextInfo.messageCount,
+                tokens: contextInfo.contextTokens + contextInfo.userMessageTokens
+              })}
+              {contextInfo.trimmed && (
+                <span
+                  className="text-amber-500 ml-1"
+                  title={t('chat.context_trimmed_tooltip', {
+                    totalMessages: contextInfo.totalMessages,
+                    maxTokens: contextInfo.maxContextTokens
+                  })}
+                >
+                  {t('chat.context_trimmed')}
+                </span>
+              )}
+              <span className="text-gray-300 dark:text-gray-600 ml-1">
+                {t('chat.context_max', { maxTokens: contextInfo.maxContextTokens })}
+              </span>
+            </span>
+          ) : (
+            <span className="flex items-center gap-1">
+              <Info className="w-3 h-3" />
+              {t('chat.context_placeholder')}
+            </span>
+          )}
           <span>
-            上下文记忆：{Math.min(messages.length, CONTEXT_MESSAGE_LIMIT)} 条 / ~{estimatedContextTokens} tokens
-          </span>
-          <span>
-            按 Enter 发送，Shift + Enter 换行
+            {t('chat.input_hint')}
           </span>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useSocket } from '@/hooks/use-socket';
-import { useChatStore, bufferAppendChunk, bufferAddToolCall, bufferCompleteSession, bufferResetSession, bufferSetThinking } from '@/store';
+import { useChatStore, ContextInfo, bufferAppendChunk, bufferAddToolCall, bufferCompleteSession, bufferResetSession, bufferSetThinking } from '@/store';
 import { Message } from '@/services';
 
 /**
@@ -47,12 +47,36 @@ export const useChatStream = () => {
       bufferSetThinking(data.conversationId, data.summary);
     };
 
+    // ✅ 低频事件：上下文信息（后端实际发送给 AI 的历史消息数 + token 数）
+    const handleContextInfo = (data: ContextInfo & { conversationId: string }) => {
+      const info: ContextInfo = {
+        messageCount: data.messageCount,
+        totalMessages: data.totalMessages,
+        contextTokens: data.contextTokens,
+        userMessageTokens: data.userMessageTokens,
+        maxContextTokens: data.maxContextTokens,
+        trimmed: data.trimmed
+      };
+      const state = useChatStore.getState();
+      // 更新当前活跃会话的 contextInfo（实时显示）
+      if (state.currentConversationId === data.conversationId) {
+        useChatStore.setState({ contextInfo: info });
+      }
+      // 同步更新 conversations 列表缓存（切换回来时可恢复）
+      useChatStore.setState(prev => ({
+        conversations: prev.conversations.map(c =>
+          c.id === data.conversationId ? { ...c, contextInfo: info } : c
+        )
+      }));
+    };
+
     socket.on('chat:message:chunk', handleChunk);
     socket.on('chat:message:tool_call', handleToolCall);
     socket.on('chat:message:complete', handleComplete);
     socket.on('chat:message:error', handleError);
     socket.on('chat:message:title_updated', handleTitleUpdated);
     socket.on('chat:message:thinking', handleThinking);
+    socket.on('chat:message:context_info', handleContextInfo);
 
     return () => {
       socket.off('chat:message:chunk', handleChunk);
@@ -61,6 +85,7 @@ export const useChatStream = () => {
       socket.off('chat:message:error', handleError);
       socket.off('chat:message:title_updated', handleTitleUpdated);
       socket.off('chat:message:thinking', handleThinking);
+      socket.off('chat:message:context_info', handleContextInfo);
     };
   }, [socket]);
 

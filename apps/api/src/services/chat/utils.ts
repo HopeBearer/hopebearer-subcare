@@ -3,12 +3,26 @@ import { LLMMessage } from '../../infrastructure/ai/interfaces/LLMProvider';
 
 /**
  * 转换历史消息为 LLM 格式
+ * 
+ * 关键：为 assistant 消息添加工具调用标记，让 LLM 意识到
+ * 之前的操作回复是通过实际工具调用完成的（而不是纯文本）。
+ * 这可以有效减少 LLM 跳过工具调用直接生成"已完成"文本的幻觉行为。
  */
 export function convertHistoryToLLMMessages(messages: Message[]): LLMMessage[] {
   return messages.map(msg => {
+    let content = msg.content;
+
+    // 为有工具调用的 assistant 消息添加前缀标记
+    if (msg.role === 'assistant' && msg.toolCalls) {
+      const toolCallSummary = summarizeToolCalls(msg.toolCalls as any);
+      if (toolCallSummary) {
+        content = `[Executed tools: ${toolCallSummary}]\n${content}`;
+      }
+    }
+
     const base: LLMMessage = {
       role: msg.role as 'user' | 'assistant' | 'system' | 'tool',
-      content: msg.content
+      content
     };
 
     if (msg.toolCallId) {
@@ -17,6 +31,17 @@ export function convertHistoryToLLMMessages(messages: Message[]): LLMMessage[] {
 
     return base;
   });
+}
+
+/**
+ * 将工具调用记录转换为简短摘要
+ * 例如: "confirm_bill_payment(✓), get_pending_bills(✓)"
+ */
+function summarizeToolCalls(toolCalls: Array<{ name: string; status: string }>): string {
+  if (!Array.isArray(toolCalls) || toolCalls.length === 0) return '';
+  return toolCalls
+    .map(tc => `${tc.name}(${tc.status === 'completed' ? '✓' : '✗'})`)
+    .join(', ');
 }
 
 /**

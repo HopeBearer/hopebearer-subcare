@@ -7,6 +7,14 @@ export interface Conversation {
   userId: string;
   title: string;
   model?: string;
+  contextInfo?: {
+    messageCount: number;
+    totalMessages: number;
+    contextTokens: number;
+    userMessageTokens: number;
+    maxContextTokens: number;
+    trimmed: boolean;
+  } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -19,6 +27,7 @@ export interface Message {
   toolCalls?: any[];
   toolCallId?: string;
   tokenCount?: number;
+  thinkingSteps?: string[];
   createdAt: string;
 }
 

@@ -44,13 +44,53 @@ export class OpenAIProvider implements LLMProvider {
   }
 
   /**
+   * Safely serialize response data for logging (avoid circular reference errors with streams)
+   */
+  private safeStringifyResponseData(data: unknown): string {
+    if (!data) return '{}';
+    // Stream objects (from responseType: 'stream') have circular refs — skip them
+    if (typeof data === 'object' && data !== null && typeof (data as any).on === 'function') {
+      return '[Stream object - not serializable]';
+    }
+    try {
+      return JSON.stringify(data).substring(0, 500);
+    } catch {
+      return '[Unable to serialize response data]';
+    }
+  }
+
+  /**
+   * Safely extract error details from Axios error response
+   * For streaming requests, response.data is a Stream (not parsed JSON),
+   * so we can't directly access .error.message etc.
+   */
+  private extractErrorDetails(axiosError: AxiosError): {
+    message: string;
+    code?: string;
+    type?: string;
+  } {
+    const responseData = axiosError.response?.data;
+    // If responseData is a parsed object (non-streaming error), extract fields
+    if (responseData && typeof responseData === 'object' && !(typeof (responseData as any).on === 'function')) {
+      const data = responseData as { error?: { message?: string; code?: string; type?: string } };
+      return {
+        message: data.error?.message || axiosError.message || 'Failed to communicate with AI provider',
+        code: data.error?.code,
+        type: data.error?.type,
+      };
+    }
+    // For stream errors or missing data, fall back to axios error message
+    return {
+      message: axiosError.message || 'Failed to communicate with AI provider',
+    };
+  }
+
+  /**
    * Convert error to appropriate AppError
    */
   private handleError(error: unknown): never {
-    const axiosError = error as AxiosError<{ error?: { message?: string; code?: string; type?: string } }>;
-    const errorMessage = axiosError.response?.data?.error?.message || axiosError.message || 'Failed to communicate with AI provider';
-    const errorCode = axiosError.response?.data?.error?.code;
-    const errorType = axiosError.response?.data?.error?.type;
+    const axiosError = error as AxiosError;
+    const { message: errorMessage, code: errorCode, type: errorType } = this.extractErrorDetails(axiosError);
     
     console.error('[OpenAIProvider] Final Error:', {
       status: axiosError.response?.status,
@@ -59,7 +99,7 @@ export class OpenAIProvider implements LLMProvider {
       type: errorType,
       url: axiosError.config?.url,
       baseURL: axiosError.config?.baseURL,
-      responseData: JSON.stringify(axiosError.response?.data || {}).substring(0, 500)
+      responseData: this.safeStringifyResponseData(axiosError.response?.data)
     });
 
     // Map HTTP status to appropriate error
