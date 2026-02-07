@@ -154,24 +154,24 @@ export class PaymentRecordRepository {
   }
 
   /**
-   * Find pending bills that are older than X days for reminder
+   * Find pending bills for subscriptions that have notifications enabled.
+   * Returns all PENDING/UNPAID bills with subscription notification settings,
+   * so the service layer can apply per-subscription notifyDaysBefore logic.
    */
-  async findOverduePendingBills(daysThreshold: number): Promise<any[]> {
+  async findOverduePendingBills(): Promise<any[]> {
     const today = new Date();
-    const thresholdDate = new Date();
-    thresholdDate.setDate(today.getDate() - daysThreshold);
+    today.setHours(0, 0, 0, 0);
 
-    // We want PENDING bills where billingDate <= thresholdDate
-    // Meaning they have been pending for at least `daysThreshold` days since the bill date.
-    
     return prisma.paymentRecord.findMany({
         where: {
             status: { in: ['PENDING', 'UNPAID'] },
             billingDate: {
-                lte: thresholdDate
+                lt: today // Only past-due bills (billing date is before today)
             },
-            // Avoid spamming? Maybe check updated_at to ensure we didn't just notify?
-            // For simplicity, let's just find them. Logic layer can handle frequency if needed.
+            subscription: {
+                enableNotification: true, // Only for subscriptions with notifications enabled
+                status: 'ACTIVE'
+            }
         },
         include: {
             user: {
@@ -183,8 +183,11 @@ export class PaymentRecordRepository {
             },
             subscription: {
                 select: {
+                    id: true,
                     name: true,
-                    currency: true
+                    currency: true,
+                    enableNotification: true,
+                    notifyDaysBefore: true
                 }
             }
         }

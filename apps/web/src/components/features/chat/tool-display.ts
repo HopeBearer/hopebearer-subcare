@@ -139,6 +139,13 @@ export function getToolResultSummary(
         }
         return data.error || t('tools.results.cancel_failed');
       case 'get_spending_summary':
+        if (data.totalSpend !== undefined) {
+          return t('tools.results.get_spending_summary', {
+            currency: data.currency || 'CNY',
+            total: data.totalSpend
+          });
+        }
+        // Legacy fallback
         if (data.total !== undefined) {
           return t('tools.results.get_spending_summary', {
             currency: data.currency || 'CNY',
@@ -147,19 +154,37 @@ export function getToolResultSummary(
         }
         break;
       case 'get_upcoming_renewals':
+        if (data.total !== undefined) {
+          return t('tools.results.get_upcoming_renewals', { count: data.total });
+        }
+        if (Array.isArray(data.subscriptions)) {
+          return t('tools.results.get_upcoming_renewals', { count: data.subscriptions.length });
+        }
+        // Legacy fallback
         if (Array.isArray(data.renewals)) {
           return t('tools.results.get_upcoming_renewals', { count: data.renewals.length });
         }
-        if (Array.isArray(data)) {
-          return t('tools.results.get_upcoming_renewals', { count: data.length });
-        }
         break;
       case 'search_web':
+        // Enhanced search result (new format)
+        if (data.summary) {
+          const priceCount = data.summary.pricesFound?.length || 0;
+          const sourceCount = data.summary.sourcesAfterFilter || data.rankedResults?.length || 0;
+          if (priceCount > 0) {
+            return t('tools.results.search_web_evidence', {
+              defaultValue: `找到 ${sourceCount} 个来源，提取 ${priceCount} 条价格`,
+              sources: sourceCount,
+              prices: priceCount
+            });
+          }
+          return t('tools.results.search_web', { count: sourceCount });
+        }
+        // Legacy format fallback
         if (Array.isArray(data.results)) {
           return t('tools.results.search_web', { count: data.results.length });
         }
-        if (data.answer) {
-          return t('tools.results.search_web_answer');
+        if (data.error) {
+          return data.message || data.error;
         }
         break;
       case 'get_pending_bills':
@@ -183,6 +208,13 @@ export function getToolResultSummary(
         }
         return data.error || t('tools.results.update_bill_failed');
       case 'convert_currency':
+        if (data.converted_amount !== undefined) {
+          return t('tools.results.convert_currency', {
+            currency: data.target_currency,
+            amount: data.converted_amount
+          });
+        }
+        // Legacy fallback
         if (data.convertedAmount !== undefined) {
           return t('tools.results.convert_currency', {
             currency: data.to,
@@ -295,12 +327,26 @@ export function getToolResultDisplay(
           });
         }
         break;
-      case 'get_spending_summary':
-        if (data.total !== undefined) {
-          items.push({ label: t('tools.labels.amount'), value: `${data.currency || 'CNY'} ${data.total}` });
+      case 'get_spending_summary': {
+        const spendTotal = data.totalSpend ?? data.total;
+        if (spendTotal !== undefined) {
+          items.push({ label: t('tools.labels.amount'), value: `${data.currency || 'CNY'} ${spendTotal}` });
+          if (data.periodLabel) {
+            items.push({ label: t('tools.labels.period', { defaultValue: '统计周期' }), value: data.periodLabel });
+          }
           items.push({ label: t('tools.labels.calculation_basis'), value: t('tools.labels.monthly_equivalent') });
+          if (data.subscriptionCount !== undefined) {
+            items.push({ label: t('tools.labels.subscription_count'), value: `${data.subscriptionCount} ${t('tools.labels.unit_items')}` });
+          }
+          if (data.topSubscriptions?.length > 0) {
+            items.push({
+              label: t('tools.labels.top_subscriptions', { defaultValue: '最大支出' }),
+              value: data.topSubscriptions.slice(0, 3).map((s: any) => `${s.name}(${data.currency || 'CNY'} ${s.amount})`).join(', ')
+            });
+          }
         }
         break;
+      }
       case 'confirm_bill_payment':
         if (data.success && data.bill) {
           items.push({ label: t('tools.labels.subscription_name'), value: data.bill.subscriptionName || '-' });
@@ -321,15 +367,74 @@ export function getToolResultDisplay(
         break;
         
       case 'search_web':
-        if (data.results?.length > 0) {
+        // Enhanced search result (new format)
+        if (data.summary) {
+          items.push({ label: t('tools.labels.service', { defaultValue: '服务' }), value: data.summary.serviceName || '-' });
+          items.push({ label: t('tools.labels.queries_used', { defaultValue: '搜索词' }), value: (data.summary.queriesUsed || []).join(' | ') });
+          items.push({
+            label: t('tools.labels.sources', { defaultValue: '来源' }),
+            value: `${data.summary.totalSourcesFound || 0} → ${data.summary.sourcesAfterFilter || 0} (${t('tools.labels.top_tier', { defaultValue: '最高级别' })}: ${data.summary.topTier || '-'})`
+          });
+          if (data.summary.pricesFound?.length > 0) {
+            data.summary.pricesFound.slice(0, 4).forEach((p: any, i: number) => {
+              items.push({
+                label: `💰 ${p.plan || t('tools.labels.price', { defaultValue: '价格' })}`,
+                value: `${p.currency} ${p.amount}/${p.cycle}`
+              });
+            });
+          } else {
+            items.push({ label: t('tools.labels.price', { defaultValue: '价格' }), value: t('tools.labels.no_price_found', { defaultValue: '未提取到价格' }) });
+          }
+          if (data.rankedResults?.length > 0) {
+            data.rankedResults.slice(0, 3).forEach((r: any, i: number) => {
+              items.push({
+                label: `${t('tools.labels.source')} ${i + 1} [${r.tier}]`,
+                value: `${r.title || '-'} (${r.source})`
+              });
+            });
+          }
+        }
+        // Legacy format fallback
+        else if (data.results?.length > 0) {
           items.push({ label: t('tools.labels.result_count'), value: `${data.results.length} ${t('tools.labels.unit_items')}` });
           data.results.slice(0, 3).forEach((r: any, i: number) => {
             items.push({ label: `${t('tools.labels.source')} ${i + 1}`, value: r.title || r.url || '-' });
           });
-        } else if (data.answer) {
-          items.push({ label: t('tools.labels.summary'), value: data.answer.substring(0, 100) + '...' });
+        }
+        // Error result
+        else if (data.error) {
+          items.push({ label: t('tools.labels.status'), value: data.message || data.error });
         }
         break;
+        
+      case 'convert_currency':
+        if (data.converted_amount !== undefined) {
+          items.push({ label: t('tools.labels.original', { defaultValue: '原始金额' }), value: `${data.original_currency} ${data.original_amount}` });
+          items.push({ label: t('tools.labels.converted', { defaultValue: '转换结果' }), value: `${data.target_currency} ${data.converted_amount}` });
+          items.push({ label: t('tools.labels.rate', { defaultValue: '汇率' }), value: `${data.exchange_rate}` });
+        }
+        // Legacy fallback
+        else if (data.convertedAmount !== undefined) {
+          items.push({ label: t('tools.labels.converted', { defaultValue: '转换结果' }), value: `${data.to} ${data.convertedAmount}` });
+        }
+        break;
+
+      case 'get_upcoming_renewals': {
+        const renewals = data.subscriptions || data.renewals || [];
+        if (renewals.length > 0) {
+          items.push({ label: t('tools.labels.result_count'), value: `${renewals.length} ${t('tools.labels.unit_items')}` });
+          renewals.slice(0, 5).forEach((sub: any, i: number) => {
+            const daysText = sub.daysUntilRenewal !== undefined ? ` (${sub.daysUntilRenewal}天后)` : '';
+            items.push({
+              label: `${t('tools.labels.subscription')} ${i + 1}`,
+              value: `${sub.name} - ${sub.currency || 'CNY'} ${sub.price}/${sub.billingCycle}${daysText}`
+            });
+          });
+        } else {
+          items.push({ label: t('tools.labels.result'), value: t('tools.labels.no_upcoming', { defaultValue: '无即将续费的订阅' }) });
+        }
+        break;
+      }
         
       case 'list_categories':
         items.push({ label: t('tools.labels.category_count'), value: `${data.total || 0} ${t('tools.labels.unit_items')}` });

@@ -99,6 +99,8 @@
         "payment_failed": "支払い失敗",
         "budget_exceeded": "予算超過",
         "budget_exceeded_desc": "月間カテゴリー予算を超過した際に通知します。",
+        "pending_reminder": "未払い請求リマインダー",
+        "pending_reminder_desc": "各サブスクリプションの通知日数設定に基づき、期限超過の請求をリマインドします。",
         "price_change": "価格変更アラート"
       },
       "system": {

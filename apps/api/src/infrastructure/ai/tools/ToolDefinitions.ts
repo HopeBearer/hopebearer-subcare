@@ -33,27 +33,35 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     }
   },
 
-  // 2. Web搜索工具
+  // 2. Web搜索工具（增强版：多查询并行 + 信源评分 + 证据抽取）
   {
     type: 'function',
     function: {
       name: 'search_web',
-      description: '搜索互联网获取服务的最新定价、促销活动、替代品信息。当需要查询某个服务的当前价格、优惠活动或寻找替代方案时使用此工具。注意：搜索配额有限，请谨慎使用。',
+      description: `Search the internet for up-to-date pricing, promotions, alternatives, or general info about a service/product.
+This tool uses an enhanced pipeline:
+1. Automatically generates 2-3 English search queries from your input (Chinese is auto-translated).
+2. Executes parallel searches for comprehensive coverage.
+3. Scores and ranks sources (S/A/B/C tiers; D-tier spam is discarded).
+4. Extracts structured evidence: prices, plans, billing cycles.
+The result contains an "instruction" field — you MUST follow it when composing your answer.
+Use ONLY the evidence/facts returned by this tool. Do NOT add pricing info from your training data.
+Note: search quota is limited; use wisely.`,
       parameters: {
         type: 'object',
         properties: {
           query: {
             type: 'string',
-            description: '搜索查询，应该具体明确，如 "Spotify Premium 中国区价格 2026" 或 "Netflix 替代品推荐"'
+            description: 'Search query — can be in any language (Chinese will be auto-translated to English). Be specific, e.g. "Spotify Premium pricing 2026" or "CSDN会员价格"'
           },
           search_type: {
             type: 'string',
             enum: ['pricing', 'promotion', 'alternative', 'general'],
-            description: '搜索类型：pricing(价格查询)、promotion(优惠活动)、alternative(替代品)、general(通用搜索)'
+            description: 'Search type: pricing (price lookup), promotion (deals/discounts), alternative (competing services), general (other info)'
           },
           max_results: {
             type: 'number',
-            description: '最大返回结果数，默认3，最大5'
+            description: 'Max results per query (default 3, max 5). Total results may be higher due to multi-query.'
           }
         },
         required: ['query']
@@ -654,16 +662,59 @@ export interface ConvertCurrencyResult {
   rate_updated_at: string | null;
 }
 
+/**
+ * 增强版搜索结果 — 证据驱动（替代旧的 SearchWebResult）
+ * 由 WebSearchService 的 EnhancedSearchResult 导出
+ */
 export interface SearchWebResult {
-  results: Array<{
+  /** 结构化证据列表 */
+  evidences: Array<{
+    source: string;
+    sourceUrl: string;
+    tier: 'S' | 'A' | 'B' | 'C';
+    facts: string[];
+    prices: Array<{
+      plan: string;
+      amount: number;
+      currency: string;
+      cycle: string;
+      raw: string;
+    }>;
+    confidence: 'high' | 'medium' | 'low';
+  }>;
+  /** 汇总信息 */
+  summary: {
+    serviceName: string;
+    queriesUsed: string[];
+    totalSourcesFound: number;
+    sourcesAfterFilter: number;
+    topTier: string;
+    pricesFound: Array<{
+      plan: string;
+      amount: number;
+      currency: string;
+      cycle: string;
+      raw: string;
+    }>;
+  };
+  /** 评分排序后的搜索结果（供参考） */
+  rankedResults: Array<{
     title: string;
     snippet: string;
     url: string;
-    source?: string;
+    source: string;
+    score: number;
+    tier: string;
   }>;
-  search_time: string;
-  quota_remaining: number;
-  from_cache: boolean;
+  /** 元数据 */
+  metadata: {
+    searchTime: string;
+    quotaRemaining: number;
+    fromCache: boolean;
+    tavilyCallsUsed: number;
+  };
+  /** LLM 指令：必须遵守的证据驱动回答规则 */
+  instruction: string;
 }
 
 export interface SearchWebError {

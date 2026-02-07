@@ -1,6 +1,6 @@
 import { prisma } from '@subcare/database';
 import { logger } from '../../infrastructure/logger/logger';
-import { ALL_NOTIFICATION_KEYS, NOTIFICATION_CATEGORIES } from './notification.constants';
+import { ALL_NOTIFICATION_KEYS, NOTIFICATION_CATEGORIES, NOTIFICATION_EVENTS } from './notification.constants';
 
 export interface UpdateNotificationSettingDTO {
   key: string;
@@ -18,13 +18,16 @@ export class NotificationSettingService {
       where: { userId },
     });
 
-    // Merge existing settings with all known keys
+    // Merge existing settings with all known keys, using event constant defaults
+    const allEventDefs = Object.values(NOTIFICATION_EVENTS).flat();
+
     return ALL_NOTIFICATION_KEYS.map(key => {
       const existing = settings.find(s => s.key === key);
+      const eventDef = allEventDefs.find(e => e.key === key);
       return {
         key,
-        email: existing ? existing.email : true, // Default ON
-        inApp: existing ? existing.inApp : true, // Default ON
+        email: existing ? existing.email : (eventDef?.defaultEmail ?? true),
+        inApp: existing ? existing.inApp : (eventDef?.defaultInApp ?? true),
       };
     });
   }
@@ -120,7 +123,7 @@ export class NotificationSettingService {
 
   /**
    * Check if a specific channel is enabled for a key (Hierarchical)
-   * Optimized for internal use
+   * Priority: Specific DB Setting → Parent DB Setting → Event Constant Default → true
    */
   async isChannelEnabled(userId: string, key: string, channel: 'email' | 'inApp'): Promise<boolean> {
     // Security notifications are always enabled
@@ -152,7 +155,18 @@ export class NotificationSettingService {
         return channel === 'email' ? parentSetting.email : parentSetting.inApp;
     }
 
-    // 3. Default True
+    // 3. Fallback to event constant defaults (from NOTIFICATION_EVENTS definition)
+    const eventDef = Object.values(NOTIFICATION_EVENTS)
+        .flat()
+        .find(e => e.key === key);
+
+    if (eventDef) {
+        return channel === 'email'
+            ? (eventDef.defaultEmail ?? true)
+            : (eventDef.defaultInApp ?? true);
+    }
+
+    // 4. Unknown event → default enabled
     return true;
   }
 }

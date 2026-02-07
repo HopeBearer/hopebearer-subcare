@@ -118,40 +118,64 @@ export class FinancialService {
   /**
    * Check and send reminders for overdue pending bills
    * Run via Cron Job
+   * 
+   * Logic (mirrors renewal reminder approach):
+   * 1. Fetch all PENDING/UNPAID bills where subscription.enableNotification = true
+   * 2. For each bill, use the subscription's notifyDaysBefore as the overdue threshold
+   *    - e.g. notifyDaysBefore = 3 → only remind if bill has been pending >= 3 days
+   *    - If notifyDaysBefore is not set, use default of 3 days
+   * 3. This ensures each subscription's notification preference is respected individually
    */
   async checkAndSendPendingBillReminders() {
-      // Find pending bills older than 3 days
-      const overdueBills = await this.paymentRecordRepository.findOverduePendingBills(3);
+      const DEFAULT_OVERDUE_DAYS = 3;
       
-      console.log(`[Pending Bill Check] Found ${overdueBills.length} overdue bills.`);
+      // Fetch all pending bills for notification-enabled subscriptions
+      const pendingBills = await this.paymentRecordRepository.findOverduePendingBills();
+      
+      console.log(`[Pending Bill Check] Found ${pendingBills.length} pending bills from notification-enabled subscriptions.`);
 
-      for (const bill of overdueBills) {
+      let sentCount = 0;
+
+      for (const bill of pendingBills) {
           try {
-              if (!bill.user) continue;
+              if (!bill.user || !bill.subscription) continue;
 
-              const daysPending = Math.floor((new Date().getTime() - new Date(bill.billingDate).getTime()) / (1000 * 60 * 60 * 24));
+              // Per-subscription threshold: use notifyDaysBefore if set, otherwise default
+              const threshold = bill.subscription.notifyDaysBefore ?? DEFAULT_OVERDUE_DAYS;
+              if (threshold <= 0) continue; // notifyDaysBefore = 0 means no reminder
+
+              const daysPending = Math.floor(
+                  (new Date().getTime() - new Date(bill.billingDate).getTime()) / (1000 * 60 * 60 * 24)
+              );
+
+              // Only send if overdue days >= this subscription's threshold
+              if (daysPending < threshold) continue;
+
               const amount = bill.amount?.toNumber ? bill.amount.toNumber() : Number(bill.amount);
 
               await this.notificationService.notify({
                   userId: bill.userId,
                   key: 'notification.bill.pending_reminder',
                   data: { 
-                      name: bill.subscription?.name || 'Subscription',
+                      name: bill.subscription.name || 'Subscription',
                       days: daysPending,
                       amount: amount,
                       currency: bill.currency
                   },
                   title: 'Pending Bill Reminder',
-                  content: `You have a bill for ${bill.subscription?.name} pending for ${daysPending} days. Please confirm payment.`,
+                  content: `You have a bill for ${bill.subscription.name} pending for ${daysPending} days. Please confirm payment.`,
                   type: 'billing',
-                  channels: { inApp: true, email: true },
+                  eventKey: 'billing.pending_reminder',
                   priority: 'HIGH'
               });
 
+              sentCount++;
           } catch (error) {
               console.error(`[Pending Bill Check] Failed to notify user ${bill.userId} for bill ${bill.id}`, error);
           }
       }
+
+      console.log(`[Pending Bill Check] Sent ${sentCount} reminders (filtered by per-subscription notifyDaysBefore).`);
   }
 
   /**
@@ -202,7 +226,6 @@ export class FinancialService {
             content: `Payment for ${subscription.name} has been confirmed.`,
             type: 'billing',
             eventKey: 'billing.payment_success',
-            // channels: { inApp: true } // Removed hardcoded
         }).catch(console.error);
 
         await this.advanceSubscriptionDate(subscription);
@@ -247,13 +270,12 @@ export class FinancialService {
                                  category: category.name,
                                  current: totalSpent,
                                  limit: Number(category.budgetLimit),
-                                 currency: record.currency // Using current record currency as proxy
+                                 currency: record.currency
                              },
                              title: 'Budget Limit Exceeded',
                              content: `Your spending in ${category.name} this month is ${totalSpent}, exceeding the limit of ${category.budgetLimit}.`,
                              type: 'billing',
                              eventKey: 'billing.budget_exceeded',
-                             channels: { inApp: true, email: true },
                              priority: 'HIGH'
                          }).catch(console.error);
                      }
@@ -301,7 +323,7 @@ export class FinancialService {
             title: 'Subscription Cancelled',
             content: `You have cancelled the renewal for ${subscription.name}.`,
             type: 'billing',
-            channels: { inApp: true }
+            eventKey: 'billing.subscription_created',
         }).catch(console.error);
     }
 

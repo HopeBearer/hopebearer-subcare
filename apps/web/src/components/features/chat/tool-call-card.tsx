@@ -39,7 +39,14 @@ export function SavedToolCallCard({ toolCall }: SavedToolCallCardProps) {
   const displayData = getToolResultDisplay(toolCall.name, toolCall.result, t);
 
   const handleClick = () => {
-    setExpandLevel(prev => (prev + 1) % 3);
+    setExpandLevel(prev => {
+      const next = (prev + 1) % 3;
+      // Skip level 1 (summary) if there are no display items to show
+      if (next === 1 && displayData.items.length === 0) {
+        return toolCall.result ? 2 : 0;
+      }
+      return next;
+    });
   };
 
   return (

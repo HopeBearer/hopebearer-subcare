@@ -110,6 +110,8 @@
         "payment_failed": "支付失败",
         "budget_exceeded": "预算超支",
         "budget_exceeded_desc": "在分类支出超过月度预算时提醒。",
+        "pending_reminder": "逾期账单提醒",
+        "pending_reminder_desc": "根据每个订阅的提醒天数设置，在账单逾期后发送提醒。",
         "price_change": "价格变动"
       },
       "system": {

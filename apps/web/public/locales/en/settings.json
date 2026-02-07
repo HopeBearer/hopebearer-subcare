@@ -110,6 +110,8 @@
         "payment_failed": "Payment Failed",
         "budget_exceeded": "Budget Exceeded",
         "budget_exceeded_desc": "Notifies you when your monthly category budget is exceeded.",
+        "pending_reminder": "Overdue Bill Reminder",
+        "pending_reminder_desc": "Reminds you when a bill is overdue based on each subscription's notification days setting.",
         "price_change": "Price Change Alert"
       },
       "system": {

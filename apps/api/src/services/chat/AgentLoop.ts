@@ -207,7 +207,7 @@ export class AgentLoop {
     const allTools = TOOL_DEFINITIONS;
     const governor = new ToolCallGovernor(TOOL_DEFINITIONS, {
       maxTotalCalls: MAX_TOOL_CALLS,
-      maxPerToolCalls: { search_web: 2 }
+      maxPerToolCalls: { search_web: 3 }
     });
 
     const allToolCalls: ToolCallRecord[] = [];
