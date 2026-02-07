@@ -871,24 +871,34 @@ export class ToolExecutor {
   }
 
   /**
-   * 搜索我的订阅 - 复用 SubscriptionService 和 DashboardService
+   * 搜索我的订阅 - 纯结构化过滤，无 NLP
+   * 
+   * 所有自然语言理解由 LLM 在 AgentLoop 中完成，
+   * 本方法只负责基于结构化 filters 查询和过滤。
+   * 不传 filters 则返回所有订阅。
    */
   private async searchMySubscriptions(
     params: SearchMySubscriptionsParams,
     userId: string
   ): Promise<SearchMySubscriptionsResult> {
-    const { query, filters } = params;
+    const { filters } = params;
     
     try {
       // 复用 SubscriptionService 获取用户订阅
       const { items } = await this.deps.subscriptionService.getUserSubscriptions(userId, filters);
       
-      console.log('[ToolExecutor] searchMySubscriptions - query:', query);
       console.log('[ToolExecutor] searchMySubscriptions - total items from DB:', items.length);
-      console.log('[ToolExecutor] searchMySubscriptions - items:', items.map((s: any) => s.name));
       
-      // 应用过滤器
-      let filtered = items;
+      // 应用结构化过滤
+      let filtered = [...items];
+      
+      if (filters?.nameSearch) {
+        const search = filters.nameSearch.toLowerCase();
+        filtered = filtered.filter((s: any) =>
+          s.name.toLowerCase().includes(search) ||
+          search.includes(s.name.toLowerCase())
+        );
+      }
       
       if (filters?.status) {
         filtered = filtered.filter((s: any) => s.status === filters.status);
@@ -908,62 +918,26 @@ export class ToolExecutor {
         );
       }
 
-      // 自然语言查询处理
-      const queryLower = query.toLowerCase();
-      
-      // 检查是否查询所有订阅
-      const isAllQuery = queryLower.includes('所有') || 
-                         queryLower.includes('全部') || 
-                         queryLower.includes('all') ||
-                         queryLower === '订阅' ||
-                         queryLower === '我的订阅' ||
-                         queryLower.includes('list') ||
-                         queryLower.includes('查看') ||
-                         queryLower.includes('告诉') ||
-                         queryLower.includes('列出') ||
-                         queryLower.includes('显示') ||
-                         queryLower.includes('哪些');
-      
-      console.log('[ToolExecutor] searchMySubscriptions - isAllQuery:', isAllQuery, 'queryLower:', queryLower);
-      
-      // 特殊查询处理
-      if (isAllQuery) {
-        // 不过滤，返回所有订阅
-        // 如果同时指定了"活跃"，则过滤
-        if (queryLower.includes('活跃') || queryLower.includes('active')) {
-          filtered = filtered.filter((s: any) => s.status === 'ACTIVE');
+      // 应用排序
+      if (filters?.sortBy) {
+        switch (filters.sortBy) {
+          case 'price_asc':
+            filtered.sort((a: any, b: any) => Number(a.price) - Number(b.price));
+            break;
+          case 'price_desc':
+            filtered.sort((a: any, b: any) => Number(b.price) - Number(a.price));
+            break;
+          case 'name_asc':
+            filtered.sort((a: any, b: any) => a.name.localeCompare(b.name));
+            break;
+          case 'next_payment_asc':
+            filtered.sort((a: any, b: any) => {
+              if (!a.nextPayment) return 1;
+              if (!b.nextPayment) return -1;
+              return new Date(a.nextPayment).getTime() - new Date(b.nextPayment).getTime();
+            });
+            break;
         }
-      } else if (queryLower.includes('最贵') || queryLower.includes('expensive')) {
-        filtered = filtered.sort((a: any, b: any) => Number(b.price) - Number(a.price));
-      } else if (queryLower.includes('最便宜') || queryLower.includes('cheap')) {
-        filtered = filtered.sort((a: any, b: any) => Number(a.price) - Number(b.price));
-      } else if (queryLower.includes('即将') || queryLower.includes('下个月') || queryLower.includes('upcoming')) {
-        const now = new Date();
-        const nextMonth = new Date();
-        nextMonth.setMonth(nextMonth.getMonth() + 1);
-        
-        filtered = filtered.filter((s: any) => {
-          if (!s.nextPayment) return false;
-          const payment = new Date(s.nextPayment);
-          return payment >= now && payment <= nextMonth;
-        }).sort((a: any, b: any) => 
-          new Date(a.nextPayment).getTime() - new Date(b.nextPayment).getTime()
-        );
-      } else if (queryLower.includes('活跃') || queryLower.includes('active')) {
-        filtered = filtered.filter((s: any) => s.status === 'ACTIVE');
-      } else if (queryLower.includes('流媒体') || queryLower.includes('streaming')) {
-        filtered = filtered.filter((s: any) => 
-          s.category?.toLowerCase().includes('streaming') ||
-          ['netflix', 'spotify', 'youtube', 'disney', 'hbo', 'bilibili', '爱奇艺', '腾讯视频', '优酷']
-            .some(name => s.name.toLowerCase().includes(name))
-        );
-      } else {
-        // 通用模糊匹配
-        filtered = filtered.filter((s: any) =>
-          s.name.toLowerCase().includes(queryLower) ||
-          queryLower.includes(s.name.toLowerCase()) ||
-          s.category?.toLowerCase().includes(queryLower)
-        );
       }
 
       // 直接复用 DashboardService 获取支出数据，保持数据一致
@@ -973,12 +947,9 @@ export class ToolExecutor {
 
       return {
         total: filtered.length,
-        subscriptions: filtered.slice(0, 10).map((s: any, index: number) => ({
-          // 使用 id 字段（类型要求），但实际上前端应该用 displayId
+        subscriptions: filtered.slice(0, 20).map((s: any, index: number) => ({
           id: s.id,
-          // 使用序号+名称首字母作为用户友好的标识符
           displayId: `#${index + 1}`,
-          // 保留完整ID供内部操作使用，但不在AI回复中展示
           _internalId: s.id,
           name: s.name,
           price: Number(s.price),

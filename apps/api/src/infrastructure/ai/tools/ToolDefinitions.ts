@@ -162,38 +162,42 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     type: 'function',
     function: {
       name: 'search_my_subscriptions',
-      description: '搜索用户的订阅列表。支持自然语言查询。示例: "流媒体类的订阅"、"最贵的订阅"、"下个月要付款的"、"所有活跃订阅"',
+      description: '搜索用户的订阅列表。不传任何参数则返回所有订阅。可通过 filters 筛选。示例用法：查所有订阅→不传参数；按分类查→filters.category；按名字查→filters.nameSearch；按价格排序→filters.sortBy="price_desc"',
       parameters: {
         type: 'object',
         properties: {
-          query: {
-            type: 'string',
-            description: '搜索条件，自然语言描述'
-          },
           filters: {
             type: 'object',
             properties: {
+              nameSearch: {
+                type: 'string',
+                description: '按订阅名称模糊搜索，如 "Netflix"、"Spotify"'
+              },
               category: {
                 type: 'string',
-                description: '分类名称过滤'
+                description: '按分类名称过滤，如 "Streaming"、"Productivity"'
               },
               status: {
                 type: 'string',
                 enum: ['ACTIVE', 'PAUSED', 'CANCELLED'],
-                description: '状态过滤'
+                description: '按状态过滤'
               },
               minPrice: {
                 type: 'number',
-                description: '最低价格'
+                description: '最低价格过滤'
               },
               maxPrice: {
                 type: 'number',
-                description: '最高价格'
+                description: '最高价格过滤'
+              },
+              sortBy: {
+                type: 'string',
+                enum: ['price_asc', 'price_desc', 'name_asc', 'next_payment_asc'],
+                description: '排序方式：price_asc(价格升序)、price_desc(价格降序)、name_asc(名称)、next_payment_asc(续费日期最近)'
               }
             }
           }
-        },
-        required: ['query']
+        }
       }
     }
   },
@@ -560,12 +564,13 @@ export interface QuickAddSubscriptionParams {
 }
 
 export interface SearchMySubscriptionsParams {
-  query: string;
   filters?: {
+    nameSearch?: string;
     category?: string;
     status?: 'ACTIVE' | 'PAUSED' | 'CANCELLED';
     minPrice?: number;
     maxPrice?: number;
+    sortBy?: 'price_asc' | 'price_desc' | 'name_asc' | 'next_payment_asc';
   };
 }
 

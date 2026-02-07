@@ -36,18 +36,17 @@ export function Sidebar() {
   const { t, i18n } = useTranslation('common');
   const { user } = useAuthStore();
   const { isSidebarCollapsed, toggleSidebar } = useLayoutStore();
-  const {
-    conversations,
-    isLoadingConversations,
-    hasMoreConversations,
-    currentConversationId,
-    streamingSessions,
-    fetchConversations,
-    loadMoreConversations,
-    createConversation,
-    selectConversation,
-    deleteConversation
-  } = useChatStore();
+  // 精细订阅：sidebar 不订阅 activeStreamContent / activeToolCalls
+  const conversations = useChatStore(state => state.conversations);
+  const isLoadingConversations = useChatStore(state => state.isLoadingConversations);
+  const hasMoreConversations = useChatStore(state => state.hasMoreConversations);
+  const currentConversationId = useChatStore(state => state.currentConversationId);
+  const sessionStatuses = useChatStore(state => state.sessionStatuses);
+  const fetchConversations = useChatStore(state => state.fetchConversations);
+  const loadMoreConversations = useChatStore(state => state.loadMoreConversations);
+  const createConversation = useChatStore(state => state.createConversation);
+  const selectConversation = useChatStore(state => state.selectConversation);
+  const deleteConversation = useChatStore(state => state.deleteConversation);
 
   const isSettingsPage = pathname?.startsWith('/settings');
   const isChatPage = pathname?.startsWith('/chat');
@@ -85,9 +84,9 @@ export function Sidebar() {
     router.push('/chat');
   };
 
-  // 选择对话
-  const handleSelectConversation = async (id: string) => {
-    await selectConversation(id);
+  // 选择对话 — 先同步更新 state（如果有 buffer 则即时恢复），再跳转路由
+  const handleSelectConversation = (id: string) => {
+    selectConversation(id); // 同步路径（buffer 恢复）立即更新 Zustand，避免渲染空白帧
     router.push(`/chat/${id}`);
   };
 
@@ -246,7 +245,7 @@ export function Sidebar() {
                   <div className="space-y-1">
                     {conversations.map((conversation) => {
                       const isActive = currentConversationId === conversation.id || pathname === `/chat/${conversation.id}`;
-                      const isStreamingConversation = !!streamingSessions[conversation.id];
+                      const isStreamingConversation = !!sessionStatuses[conversation.id];
                       
                       return (
                         <div

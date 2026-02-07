@@ -1,6 +1,9 @@
 /**
  * Chat Service
- * 聊天服务 - 主入口，负责意图分类和路由
+ * 聊天服务 - 主入口
+ * 
+ * ReAct 架构：所有消息统一由 AgentLoop 处理
+ * 不再使用 IntentClassifier 路由到不同 Handler
  */
 
 import { Conversation, Message, prisma } from '@subcare/database';
@@ -10,27 +13,14 @@ import { LLMFactory } from '../infrastructure/ai/LLMFactory';
 import { AppError } from '../utils/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { ToolExecutor } from '../infrastructure/ai/tools/ToolExecutor';
-import { 
-  intentClassifier, 
-  QueryIntent, 
-  DbQueryHandler,
-  validateOutput,
-  buildSafeResponse,
-  detectLanguage
-} from './intent';
-import { buildDbOnlyPrompt } from './prompts/db-only-prompt';
-import { LLMMessage } from '../infrastructure/ai/interfaces/LLMProvider';
 import {
   ChatStreamCallbacks,
   ChatProgressEvent,
   ChatProgressCallback,
   MAX_MESSAGE_LENGTH,
   MAX_HISTORY_MESSAGES,
-  MutationHandler,
-  ServiceInfoHandler,
-  GeneralHandler
+  AgentLoop
 } from './chat';
-import { isContextDependentMessage, isLikelyMutationContext, isFollowUpMutationMessage } from './chat/utils';
 
 export type { ChatStreamCallbacks, ChatProgressEvent, ChatProgressCallback };
 
@@ -45,22 +35,20 @@ export class ChatService {
   private messageRepo: MessageRepository;
   private toolExecutor: ToolExecutor;
   
-  // 各类型处理器
-  private dbQueryHandler: DbQueryHandler;
-  private mutationHandler: MutationHandler;
-  private serviceInfoHandler: ServiceInfoHandler;
-  private generalHandler: GeneralHandler;
+  // 统一的 ReAct 代理循环
+  private agentLoop: AgentLoop;
 
   constructor(deps: ChatServiceDeps) {
     this.conversationRepo = deps.conversationRepo;
     this.messageRepo = deps.messageRepo;
     this.toolExecutor = deps.toolExecutor;
     
-    // 初始化各处理器
-    this.dbQueryHandler = new DbQueryHandler(deps.toolExecutor);
-    this.mutationHandler = new MutationHandler(deps.messageRepo, deps.conversationRepo, deps.toolExecutor);
-    this.serviceInfoHandler = new ServiceInfoHandler(deps.messageRepo, deps.conversationRepo, deps.toolExecutor);
-    this.generalHandler = new GeneralHandler(deps.messageRepo, deps.conversationRepo, deps.toolExecutor);
+    // 初始化统一的 AgentLoop（替代旧的 4 个 Handler）
+    this.agentLoop = new AgentLoop(
+      deps.messageRepo,
+      deps.conversationRepo,
+      deps.toolExecutor
+    );
   }
 
   // ==================== 对话管理 ====================
@@ -124,7 +112,7 @@ export class ChatService {
 
   /**
    * 发送消息并获取 AI 回复
-   * 三层判断模型：Intent 分类 -> 强制工具调用 -> 输出校验
+   * 统一由 AgentLoop (ReAct 循环) 处理
    */
   async sendMessage(params: {
     conversationId: string;
@@ -163,21 +151,6 @@ export class ChatService {
     // 获取历史消息
     const history = await this.messageRepo.findLatest(conversationId, MAX_HISTORY_MESSAGES - 1);
     const isFirstMessage = history.length === 0;
-    const lastAssistantMessage = [...history].reverse().find(msg => msg.role === 'assistant');
-
-    // 意图分类
-    let intentResult = intentClassifier.classify(content);
-    const contextDependent = isContextDependentMessage(content);
-    const followUpMutation = isFollowUpMutationMessage(content);
-    if ((contextDependent || followUpMutation) && lastAssistantMessage?.content && isLikelyMutationContext(lastAssistantMessage.content)) {
-      intentResult = {
-        ...intentResult,
-        intent: QueryIntent.DB_MUTATION,
-        requiresDbCall: false,
-        requiresServiceLookup: false
-      };
-    }
-    console.log('[ChatService] Intent:', intentResult.intent, 'confidence:', intentResult.confidence);
 
     // 保存用户消息
     await this.messageRepo.create({ conversationId, role: 'user', content });
@@ -185,45 +158,30 @@ export class ChatService {
     // 获取用户信息
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { currency: true }
+      select: { currency: true, name: true }
     });
 
     // 创建 LLM Provider
     const provider = await this.createProvider(aiConfig);
 
-    // 首条消息时启动标题生成
+    // 首条消息时启动标题生成（异步，不阻塞主流程）
     if (isFirstMessage) {
       void this.generateTitleAndNotify(conversationId, content, provider, onProgress);
     }
 
     try {
-      // 根据 Intent 选择处理路径
-      if (intentResult.requiresDbCall) {
-        return await this.handleDbQuery({
-          conversationId, userId, content,
-          intent: intentResult.intent,
-          provider, userCurrency: user?.currency,
-          callbacks, onProgress
-        });
-      } else if (intentResult.intent === QueryIntent.DB_MUTATION) {
-        return await this.mutationHandler.handle({
-          conversationId, userId, content,
-          provider, userCurrency: user?.currency,
-          callbacks, onProgress
-        });
-      } else if (intentResult.requiresServiceLookup) {
-        return await this.serviceInfoHandler.handle({
-          conversationId, userId, content,
-          provider, userCurrency: user?.currency,
-          callbacks, onProgress
-        });
-      } else {
-        return await this.generalHandler.handle({
-          conversationId, userId, content, history,
-          provider, userCurrency: user?.currency,
-          callbacks, onProgress
-        });
-      }
+      // 统一由 AgentLoop 处理所有类型的请求
+      return await this.agentLoop.run({
+        conversationId,
+        userId,
+        content,
+        history,
+        provider,
+        userCurrency: user?.currency,
+        userName: user?.name || undefined,
+        callbacks,
+        onProgress
+      });
     } catch (error: any) {
       await this.messageRepo.create({
         conversationId,
@@ -237,92 +195,6 @@ export class ChatService {
   }
 
   // ==================== 内部方法 ====================
-
-  /**
-   * 处理数据库查询（DB_QUERY / DB_FACT / DB_AGGREGATE）
-   */
-  private async handleDbQuery(params: {
-    conversationId: string;
-    userId: string;
-    content: string;
-    intent: QueryIntent;
-    provider: any;
-    userCurrency?: string | null;
-    callbacks?: ChatStreamCallbacks;
-    onProgress?: ChatProgressCallback;
-  }): Promise<Message> {
-    const { conversationId, userId, content, intent, provider, userCurrency, callbacks, onProgress } = params;
-
-    // 预先确定工具名称
-    const { determineRequiredTool } = await import('./intent/DbQueryHandler');
-    const predictedToolName = determineRequiredTool(intent, content);
-    
-    onProgress?.({
-      conversationId,
-      type: 'tool_call',
-      data: { toolName: predictedToolName, status: 'started' }
-    });
-
-    const startTime = Date.now();
-    const dbResult = await this.dbQueryHandler.executeQuery(intent, content, userId);
-    const duration = Date.now() - startTime;
-
-    onProgress?.({
-      conversationId,
-      type: 'tool_call',
-      data: { toolName: dbResult.tool, status: 'completed', result: dbResult.data, duration }
-    });
-
-    // 检测语言并构建提示词
-    const detectedLanguage = detectLanguage(content);
-    const dbOnlyPrompt = buildDbOnlyPrompt(dbResult.data, userCurrency || undefined);
-    
-    const messages: LLMMessage[] = [
-      { role: 'system', content: dbOnlyPrompt },
-      { role: 'user', content }
-    ];
-
-    const streamCallbacks = {
-      onChunk: (chunk: string) => {
-        callbacks?.onChunk?.(chunk);
-        onProgress?.({ conversationId, type: 'chunk', data: { chunk } });
-      }
-    };
-
-    const response = provider.chatStream 
-      ? await provider.chatStream(messages, streamCallbacks)
-      : await provider.chat(messages);
-
-    let assistantContent = response.content || '';
-
-    // 输出校验
-    const validation = validateOutput(assistantContent, dbResult, content);
-    if (!validation.valid) {
-      console.warn('[ChatService] Output validation failed:', validation.errors);
-      assistantContent = buildSafeResponse(dbResult, content, detectedLanguage);
-      onProgress?.({ conversationId, type: 'chunk', data: { chunk: `\n\n[校正] ${assistantContent}` } });
-    }
-
-    // 保存消息
-    const assistantMessage = await this.messageRepo.create({
-      conversationId,
-      role: 'assistant',
-      content: assistantContent,
-      tokenCount: response.usage?.totalTokens || 0,
-      toolCalls: [{
-        name: dbResult.tool,
-        arguments: JSON.stringify({ intent, query: content }),
-        result: dbResult.data,
-        status: dbResult.success ? 'completed' : 'failed'
-      }] as any
-    });
-
-    await this.conversationRepo.update(conversationId, {});
-    callbacks?.onComplete?.(assistantMessage);
-    onProgress?.({ conversationId, type: 'complete', data: { message: assistantMessage } });
-
-    return assistantMessage;
-  }
 
   /**
    * 获取活跃 AI 配置

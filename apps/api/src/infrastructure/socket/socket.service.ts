@@ -28,7 +28,7 @@ export interface ChatMessageSendRequest {
 
 export interface ChatProgressEvent {
   conversationId: string;
-  type: 'chunk' | 'tool_call' | 'complete' | 'error' | 'title_updated';
+  type: 'chunk' | 'tool_call' | 'complete' | 'error' | 'title_updated' | 'thinking';
   data: any;
 }
 
@@ -333,6 +333,15 @@ export class SocketService {
               socket.emit('chat:message:title_updated', {
                 conversationId: event.conversationId,
                 title: event.data.title
+              });
+              break;
+            case 'thinking':
+              socket.emit('chat:message:thinking', {
+                conversationId: event.conversationId,
+                step: event.data.step,
+                action: event.data.action,
+                toolName: event.data.toolName,
+                summary: event.data.summary
               });
               break;
           }

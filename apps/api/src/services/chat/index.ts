@@ -1,11 +1,15 @@
 /**
- * Chat Handlers Module
- * 导出所有聊天处理器
+ * Chat Module
+ * 
+ * ReAct 架构：所有消息统一由 AgentLoop 处理
+ * 
+ * 已弃用的处理器（保留文件但不导出）：
+ * - MutationHandler
+ * - ServiceInfoHandler
+ * - GeneralHandler
  */
 
 export * from './types';
 export * from './utils';
-export { MutationHandler } from './MutationHandler';
-export { ServiceInfoHandler } from './ServiceInfoHandler';
-export { GeneralHandler } from './GeneralHandler';
-export type { GeneralHandlerParams } from './GeneralHandler';
+export { AgentLoop } from './AgentLoop';
+export type { AgentLoopParams } from './AgentLoop';

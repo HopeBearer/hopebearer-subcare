@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { useChatStore } from '@/store'
+import { useChatStore, bufferStartSession, chunkBuffers, SessionStatus } from '@/store'
 import { useSocket } from '@/hooks/use-socket'
 import { ChatMessage } from './chat-message'
 import { StreamingMessage } from './streaming-message'
@@ -21,28 +21,29 @@ export function ChatContainer({ conversationId }: ChatContainerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const prevConversationIdRef = useRef<string | null>(null)
 
-  const {
-    messages,
-    isLoadingConversation,
-    isLoadingMessages,
-    hasMoreMessages,
-    streamingSessions,
-    selectConversation,
-    loadMoreMessages,
-    createConversation,
-    startSending
-  } = useChatStore()
-
-  // 获取 store 中的 currentConversationId
+  // ===== 精细 Zustand 订阅 =====
+  const messages = useChatStore(state => state.messages)
+  const isLoadingConversation = useChatStore(state => state.isLoadingConversation)
+  const isLoadingMessages = useChatStore(state => state.isLoadingMessages)
+  const hasMoreMessages = useChatStore(state => state.hasMoreMessages)
+  const selectConversation = useChatStore(state => state.selectConversation)
+  const loadMoreMessages = useChatStore(state => state.loadMoreMessages)
+  const createConversation = useChatStore(state => state.createConversation)
   const storeConversationId = useChatStore(state => state.currentConversationId)
+
+  // 活跃流式内容（RAF flush 推送，≤60fps，已在 buffer 层限频，无需 useDeferredValue）
+  const activeStreamContent = useChatStore(state => state.activeStreamContent)
+  const activeToolCalls = useChatStore(state => state.activeToolCalls)
+  const activeThinkingStep = useChatStore(state => state.activeThinkingStep)
+
   const effectiveConversationId = conversationId || storeConversationId || null
 
-  // 从 per-conversation streamingSessions 读取当前会话的流式状态
-  const currentSession = effectiveConversationId ? streamingSessions[effectiveConversationId] : undefined
-  const isCurrentStreaming = !!currentSession
-  const streamingContent = currentSession?.content || ''
-  const toolCallHistory = currentSession?.toolCallHistory || []
-  const isSending = currentSession?.isSending || false
+  // 精细订阅：只订阅当前会话的 sessionStatus（其他会话的状态变化不触发 re-render）
+  const currentSessionStatus = useChatStore(state =>
+    effectiveConversationId ? state.sessionStatuses[effectiveConversationId] : undefined
+  ) as SessionStatus | undefined
+  const isCurrentStreaming = currentSessionStatus === 'streaming'
+  const isSending = currentSessionStatus === 'sending' || currentSessionStatus === 'streaming'
 
   const { handleScroll, messagesEndRef } = useChatScroll({
     containerRef,
@@ -52,19 +53,20 @@ export function ChatContainer({ conversationId }: ChatContainerProps) {
     loadMoreMessages,
     isStreaming: isCurrentStreaming,
     isLoadingConversation,
-    streamingContent,
+    streamingContent: activeStreamContent,
     conversationId: effectiveConversationId || undefined
   })
 
-  /** 会话切换 */
+  /** 会话切换 — 防重复：sidebar 已同步调过 selectConversation 时不重复调用 */
   useEffect(() => {
     if (conversationId && prevConversationIdRef.current !== conversationId) {
       prevConversationIdRef.current = conversationId
-      selectConversation(conversationId)
+      // 如果 store 已经切换到此会话（sidebar 提前调用了），跳过
+      if (useChatStore.getState().currentConversationId !== conversationId) {
+        selectConversation(conversationId)
+      }
     }
   }, [conversationId, selectConversation])
-
-  // Chat stream handlers are registered globally in layout
 
   /** 发送消息 */
   const handleSend = async (content: string) => {
@@ -73,10 +75,10 @@ export function ChatContainer({ conversationId }: ChatContainerProps) {
     let targetConversationId = conversationId || useChatStore.getState().currentConversationId
     let isNewConversation = false
 
-    // 竞态防护：如果该会话已经在发送中，阻止重复发送
+    // 竞态防护：如果该会话已经在发送/流式中，阻止重复发送
     if (targetConversationId) {
-      const existingSession = useChatStore.getState().streamingSessions[targetConversationId]
-      if (existingSession?.isSending) {
+      const existingStatus = useChatStore.getState().sessionStatuses[targetConversationId]
+      if (existingStatus === 'sending' || existingStatus === 'streaming') {
         console.warn('[ChatContainer] 竞态防护: 会话正在发送中，忽略重复请求', targetConversationId)
         return
       }
@@ -102,36 +104,28 @@ export function ChatContainer({ conversationId }: ChatContainerProps) {
       createdAt: new Date().toISOString()
     }
 
-    // 使用 per-conversation streaming state
-    // 同时保存消息快照用于竞态防护（切换会话时恢复）
-    useChatStore.setState(state => {
-      const updatedMessages = [...state.messages, tempMessage]
-      return {
-        messages: updatedMessages,
-        streamingSessions: {
-          ...state.streamingSessions,
-          [targetConversationId!]: {
-            content: '',
-            isSending: true,
-            toolCallHistory: [],
-            messagesSnapshot: updatedMessages
-          }
-        }
-      }
-    })
+    // 单次 set(): 添加临时消息 + 直接设为 streaming（省去 sending→streaming 的额外 render）
+    const updatedMessages = [...useChatStore.getState().messages, tempMessage]
+    useChatStore.setState(state => ({
+      messages: updatedMessages,
+      pendingMessage: null,
+      sessionStatuses: { ...state.sessionStatuses, [targetConversationId!]: 'streaming' as const }
+    }))
 
-    // 获取当前语言设置（从 i18n 实例获取更可靠）
+    // 初始化 buffer（传入消息快照用于切换恢复）
+    bufferStartSession(targetConversationId!, updatedMessages)
+
+    // 获取当前语言设置
     const currentLanguage = i18n.language || 'zh'
-    console.log('[ChatContainer] Sending message with language:', currentLanguage)
     socket.emit('chat:message:send', { conversationId: targetConversationId, content, language: currentLanguage })
 
-    // 更新 URL 但不触发组件重新渲染（避免 socket 断开重连导致消息丢失）
+    // 更新 URL 但不触发组件重新渲染
     if (isNewConversation) {
       window.history.replaceState(null, '', `/chat/${targetConversationId}`)
     }
   }
 
-  // 判断是否显示欢迎页：没有 URL 参数且没有正在进行的会话
+  // 判断是否显示欢迎页
   const showWelcome = !conversationId && !storeConversationId && messages.length === 0 && !isCurrentStreaming
 
   // 新对话欢迎页面
@@ -210,8 +204,9 @@ export function ChatContainer({ conversationId }: ChatContainerProps) {
 
           {isCurrentStreaming && (
             <StreamingMessage
-              content={streamingContent}
-              toolCalls={toolCallHistory}
+              content={activeStreamContent}
+              toolCalls={activeToolCalls}
+              thinkingStep={activeThinkingStep}
             />
           )}
 

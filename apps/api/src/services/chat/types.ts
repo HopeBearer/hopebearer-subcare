@@ -11,7 +11,7 @@ export interface ChatStreamCallbacks {
 // Chat Progress Event (for WebSocket)
 export interface ChatProgressEvent {
   conversationId: string;
-  type: 'chunk' | 'tool_call' | 'complete' | 'error' | 'title_updated';
+  type: 'chunk' | 'tool_call' | 'complete' | 'error' | 'title_updated' | 'thinking';
   data: any;
 }
 
