@@ -67,12 +67,23 @@
   },
   "categories": {
     "entertainment": "Entertainment",
+    "streaming": "Streaming",
     "tools": "Tools",
     "productivity": "Productivity",
     "cloud": "Cloud",
     "utility": "Utility",
     "social": "Social",
     "education": "Education",
+    "developer": "Developer",
+    "ai": "AI",
+    "security": "Security",
+    "gaming": "Gaming",
+    "fitness": "Fitness",
+    "news": "News",
+    "reading": "Reading",
+    "hosting": "Hosting",
+    "music": "Music",
+    "communication": "Communication",
     "other": "Other"
   },
   "cycle_options": {

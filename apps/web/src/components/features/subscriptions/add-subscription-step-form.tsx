@@ -98,7 +98,10 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
       icon: item.icon
   }));
   
-  const defaultStartDate = initialValues?.startDate ? new Date(initialValues.startDate).toISOString().split('T')[0] : '';
+  const defaultStartDate = initialValues?.startDate ? (() => {
+    const d = new Date(initialValues.startDate);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })() : '';
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),

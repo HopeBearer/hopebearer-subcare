@@ -5,3 +5,5 @@ export * from './modules/subscription';
 export * from './modules/user';
 export * from './modules/currency';
 export * from './modules/ai-provider';
+export * from './modules/chat';
+export * from './modules/category';

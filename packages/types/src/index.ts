@@ -128,6 +128,7 @@ export interface SubscriptionDTO {
   nextPayment?: Date | null;
   status: string;
   category: string;
+  categoryColor?: string | null; // Color from Category table
   icon?: string | null;
   description?: string | null;
   userId: string;
@@ -161,12 +162,21 @@ export interface Money {
 
 export interface ExpenseStats {
   total: Money;
+  deletedExpense: Money; // Expense from cancelled/deleted subscriptions this month
+  /** Monthly equivalent cost of all active (non-deleted) subscriptions */
+  equivalentExpense: Money;
   trend: {
     percentage: number;
     direction: 'up' | 'down' | 'flat';
     diffAmount: Money;
   };
   history: number[];
+  /** Per-cycle breakdown of the equivalent total (for visual chart on flip side) */
+  equivalentBreakdown: {
+    cycle: string;       // e.g. 'monthly', 'yearly', 'weekly'
+    amount: number;      // monthly-equivalent amount for this cycle group
+    count: number;       // number of subscriptions in this cycle
+  }[];
 }
 
 export interface SubscriptionStats {
@@ -204,6 +214,10 @@ export interface DashboardStatsResponse {
   subscriptions: SubscriptionStats;
   budget: BudgetStats;
   renewals: RenewalStats;
+  /** Included for atomic loading — same data as standalone trend endpoint (1y default) */
+  trend: ExpenseTrendData;
+  /** Included for atomic loading — same data as standalone distribution endpoint */
+  distribution: CategoryDistributionData;
 }
 
 export interface ExpenseTrendData {
@@ -264,7 +278,7 @@ export interface SpendingAnomaly {
 }
 
 export interface MonthlyProjection {
-  month: string; // YYYY-MM or MMM
+  month: string; // yyyy-MM format (e.g. "2026-02")
   amount: number;
   currency?: string;
   items?: Array<{

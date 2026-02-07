@@ -1,11 +1,11 @@
 'use client';
 
 import { useTranslation } from '@/lib/i18n/hooks';
-import { useAuthStore } from '@/store';
+import { useAuthStore, useChatStore } from '@/store';
 import { useModalStore } from '@/store';
 import { useSettingsStore } from '@/store';
 import { useRouter, usePathname } from 'next/navigation';
-import { LogOut, Plus, ArrowLeft } from 'lucide-react';
+import { LogOut, Plus, ArrowLeft, MessageCircle } from 'lucide-react';
 import { ThemeToggle } from '@/components/common/theme-toggle';
 import { LanguageSwitcher } from '@/components/common/language-switcher';
 import { cn } from '@/lib/utils';
@@ -17,8 +17,14 @@ export function Header() {
   const { user, logout } = useAuthStore();
   const { openAddSubscription } = useModalStore();
   const { activeTab } = useSettingsStore();
+  const { conversations, currentConversationId } = useChatStore();
   const router = useRouter();
   const pathname = usePathname();
+  
+  const isChatPage = pathname?.startsWith('/chat');
+  
+  // 获取当前会话
+  const currentConversation = conversations.find(c => c.id === currentConversationId);
 
   const handleLogout = () => {
     logout();
@@ -36,6 +42,14 @@ export function Header() {
       return `${t('nav.settings', { ns: 'common' })} —— ${tabLabel}`;
     }
 
+    // Chat page - show conversation title
+    if (isChatPage) {
+      if (currentConversation?.title) {
+        return currentConversation.title;
+      }
+      return t('chat.new_chat', { ns: 'common', defaultValue: '新对话' });
+    }
+
     if (pathname?.includes('/dashboard')) return t('nav.dashboard', { ns: 'common' });
     if (pathname?.includes('/subscriptions')) return t('nav.subscriptions', { ns: 'common' });
     if (pathname?.includes('/finance')) return t('nav.finance', { ns: 'common' });
@@ -47,6 +61,10 @@ export function Header() {
     if (isSettingsPage) {
       const activeTabConfig = settingsConfig.find(tab => tab.id === activeTab) || settingsConfig[0];
       return t(activeTabConfig.description || '', { ns: 'settings' });
+    }
+    // Chat page - show AI assistant subtitle
+    if (isChatPage) {
+      return t('chat.ai_assistant', { ns: 'common', defaultValue: 'AI 智能助手' });
     }
     return t('header.welcome', { ns: 'dashboard', name: user?.name || 'User' });
   };
@@ -64,6 +82,11 @@ export function Header() {
               <ArrowLeft className="w-5 h-5" />
             </button>
           )}
+          {isChatPage && (
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <MessageCircle className="w-5 h-5 text-primary" />
+            </div>
+          )}
           <div className="flex flex-col">
             <h1 className="text-xl font-bold mb-0 mt-0 text-gray-900 dark:text-white tracking-tight leading-tight">
               {getPageTitle()}
@@ -78,7 +101,7 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-4">
-        {!isSettingsPage && (
+        {!isSettingsPage && !isChatPage && (
           <button
             onClick={() => openAddSubscription()}
             className={cn(

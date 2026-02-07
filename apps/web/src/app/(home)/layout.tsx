@@ -7,7 +7,7 @@ import { AddSubscriptionModal } from '@/components/features/subscriptions/add-su
 import { useLayoutStore } from '@/store';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
-import { useSocket } from '@/hooks/use-socket';
+import { useChatStream } from '@/hooks/use-chat-stream';
 
 export default function HomeLayout({
   children,
@@ -17,8 +17,8 @@ export default function HomeLayout({
   const { isSidebarCollapsed } = useLayoutStore();
   const [mounted, setMounted] = useState(false);
   
-  // Initialize socket connection for real-time updates
-  useSocket();
+  // Initialize socket connection and chat stream handlers
+  useChatStream();
 
   useEffect(() => {
     setMounted(true);

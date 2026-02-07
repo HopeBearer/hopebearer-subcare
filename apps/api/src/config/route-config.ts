@@ -87,5 +87,21 @@ export const routeConfig: Record<string, string> = {
   'GET /message-templates': 'v1',
   'GET /message-templates/:id': 'v1',
   'PATCH /message-templates/:id': 'v1',
-  'DELETE /message-templates/:id': 'v1'
+  'DELETE /message-templates/:id': 'v1',
+
+  // Chat (AI Conversations)
+  'POST /chat/conversations': 'v1',
+  'GET /chat/conversations': 'v1',
+  'GET /chat/conversations/:id': 'v1',
+  'PATCH /chat/conversations/:id': 'v1',
+  'DELETE /chat/conversations/:id': 'v1',
+  'GET /chat/conversations/:id/messages': 'v1',
+  'POST /chat/conversations/:id/messages': 'v1',
+
+  // Categories
+  'GET /categories': 'v1',
+  'GET /categories/:id': 'v1',
+  'POST /categories': 'v1',
+  'PATCH /categories/:id': 'v1',
+  'DELETE /categories/:id': 'v1'
 };

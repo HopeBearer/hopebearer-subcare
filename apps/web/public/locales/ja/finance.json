@@ -37,6 +37,12 @@
         "subtitle": "予算がカテゴリー間でどのように分配されているかを可視化します。",
         "no_data": "データがありません"
     },
+    "tooltips": {
+        "ytd_expense_actual": "年初からの支払い記録（実績）。",
+        "projected_annual_total": "現在のサブスクに基づく予測（請求サイクル）。",
+        "projection": "請求サイクルに基づく今後12ヶ月の予測。",
+        "sankey": "月額換算のカテゴリー別金額。"
+    },
     "overview": "概要",
     "history": "請求履歴",
     "total_expense": "年間総支出",

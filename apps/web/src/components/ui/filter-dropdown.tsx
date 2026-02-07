@@ -69,7 +69,8 @@ export function FilterDropdown({
 
       <div
         className={cn(
-          'absolute right-0 top-full mt-2 min-w-[160px] p-2 bg-white dark:bg-gray-800 rounded-xl shadow-md ring-1 ring-black/5 dark:ring-white/10 py-1 overflow-hidden origin-top-right transition-all duration-200 ease z-30',
+          'absolute right-0 top-full mt-2 min-w-[160px] p-2 bg-white dark:bg-gray-800 rounded-xl shadow-md ring-1 ring-black/5 dark:ring-white/10 py-1 origin-top-right transition-all duration-200 ease z-30',
+          'max-h-[320px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700',
           isOpen
             ? 'opacity-100 scale-100 translate-y-0 visible'
             : 'opacity-0 scale-95 -translate-y-2 invisible'

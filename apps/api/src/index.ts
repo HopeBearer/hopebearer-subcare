@@ -8,6 +8,7 @@ import { exchangeRateJob } from './jobs/exchangeRate.job';
 import { aiModelSyncJob } from './jobs/ai-model-sync.job';
 import { SocketService } from './infrastructure/socket/socket.service';
 import { TokenService } from './services/TokenService';
+import { initializeVectorServices } from './infrastructure/vector';
 
 const PORT = process.env.PORT || 3001;
 
@@ -34,6 +35,19 @@ if (services.agent) {
             focus: request.focus,
             forceRefresh: request.forceRefresh ?? true
         }, onProgress);
+    });
+}
+
+// Inject Chat Message handler into Socket Service
+if (services.chat) {
+    socketService.setChatMessageHandler(async (userId, request, onProgress) => {
+        return services.chat.sendMessage({
+            conversationId: request.conversationId,
+            userId,
+            content: request.content,
+            language: request.language,
+            onProgress
+        });
     });
 }
 
@@ -87,6 +101,11 @@ server.listen(PORT, async () => {
 
     // Optional: Run seeding on startup or via separate script
     await seedTemplates().catch(console.error);
+
+    // Initialize Vector Services (for AI Agent semantic search)
+    await initializeVectorServices().catch(err => {
+        console.warn('[Startup] Vector services initialization failed (non-critical):', err.message);
+    });
 
     // Seed AI Providers on startup
     if (services.aiProvider) {

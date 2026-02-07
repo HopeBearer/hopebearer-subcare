@@ -37,6 +37,12 @@
     "subtitle": "Visualize how your budget distributes across categories.",
     "no_data": "No data available"
   },
+  "tooltips": {
+    "ytd_expense_actual": "Actual payment records since the start of the year.",
+    "projected_annual_total": "Forecast based on current subscriptions (by billing cycle).",
+    "projection": "Projected next 12 months based on billing cycles.",
+    "sankey": "Monthly-equivalent amounts by category."
+  },
   "overview": "Overview",
   "history": "Billing History",
   "total_expense": "Total Annual Expense",

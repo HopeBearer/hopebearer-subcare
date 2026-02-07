@@ -67,12 +67,23 @@
   },
   "categories": {
     "entertainment": "娱乐",
+    "streaming": "流媒体",
     "tools": "工具",
     "productivity": "生产力",
     "cloud": "云服务",
     "utility": "实用工具",
     "social": "社交",
     "education": "教育",
+    "developer": "开发工具",
+    "ai": "AI 服务",
+    "security": "安全",
+    "gaming": "游戏",
+    "fitness": "健身",
+    "news": "新闻",
+    "reading": "阅读",
+    "hosting": "托管",
+    "music": "音乐",
+    "communication": "通讯",
     "other": "其他"
   },
   "cycle_options": {

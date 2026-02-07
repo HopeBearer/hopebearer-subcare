@@ -1,36 +1,41 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { graphic } from 'echarts';
 import { useTranslation } from '@/lib/i18n/hooks';
 import { DashboardService } from '@/services';
 import { ExpenseTrendData } from '@subcare/types';
+import { HelpCircle } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 
 import { useThemeStore } from '@/store';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useDashboardStats } from '@/hooks/use-dashboard-stats';
 
 export function ExpenseTrendChart() {
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
   const { t } = useTranslation('dashboard');
   const [period, setPeriod] = useState<'6m' | '1y' | 'all'>('6m');
-  const [data, setData] = useState<ExpenseTrendData | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const result = await DashboardService.getTrend(period);
-        setData(result);
-      } catch (error) {
-        console.error('Failed to fetch trend data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [period]);
+  // For the default 1y period, read from the atomic dashboard stats cache.
+  // For other periods (6m, all), fetch from the standalone trend endpoint.
+  const { data: dashboardStats, isLoading: statsLoading } = useDashboardStats();
+
+  const { data: standaloneTrend, isLoading: trendLoading } = useQuery<ExpenseTrendData>({
+    queryKey: ['dashboard', 'trend', period],
+    queryFn: () => DashboardService.getTrend(period),
+    // Only fetch standalone when period is NOT 1y (1y data comes from the atomic stats)
+    enabled: period !== '1y',
+  });
+
+  // Resolve which data to render
+  const data: ExpenseTrendData | null = period === '1y'
+    ? (dashboardStats?.trend ?? null)
+    : (standaloneTrend ?? null);
+
+  const loading = period === '1y' ? statsLoading : trendLoading;
 
   const option = {
     color: ['#A5A6F6'],
@@ -51,10 +56,7 @@ export function ExpenseTrendChart() {
         const item = params[0];
         if (!item) return '';
         
-        // Use YYYY-MM format directly
         const dateDisplay = item.name;
-
-        // Use currency code format (e.g. CNY 1,200)
         const currencyCode = data?.currency || 'CNY';
         return `
           <div class="font-medium ${isDark ? 'text-white' : 'text-gray-900'} mb-2">${dateDisplay}</div>
@@ -85,7 +87,7 @@ export function ExpenseTrendChart() {
         fontSize: 12,
         margin: 20,
         fontFamily: 'inherit',
-        formatter: (value: string) => value // Keep YYYY-MM format
+        formatter: (value: string) => value
       },
       boundaryGap: false,
     },
@@ -153,7 +155,21 @@ export function ExpenseTrendChart() {
       <div className="flex justify-between items-start mb-6">
         <div>
           <h3 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">{t('charts.spending_trends.title')}</h3>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1 font-medium">{t('charts.spending_trends.subtitle')}</p>
+          <div className="flex items-center gap-2">
+            <div className="text-sm text-gray-400 dark:text-gray-500 mt-1 font-medium">
+              {t('charts.spending_trends.subtitle')}
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 mt-1">
+                    <HelpCircle className="w-3.5 h-3.5" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{t('charts.spending_trends.tooltip')}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
         <div className="bg-gray-50 dark:bg-gray-700/50 rounded-full p-1 flex items-center">
           {(['6m', '1y', 'all'] as const).map((item) => (

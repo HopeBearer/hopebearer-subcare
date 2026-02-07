@@ -6,6 +6,8 @@ import { useThemeStore } from '@/store';
 import { useTranslation } from '@/lib/i18n/hooks';
 import { MonthlyProjection } from '@subcare/types';
 import { Card } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HelpCircle } from 'lucide-react';
 
 interface ProjectionChartProps {
   data: MonthlyProjection[];
@@ -102,7 +104,19 @@ export const ProjectionChart = ({ data, className }: ProjectionChartProps) => {
     <Card className={`p-6 h-full flex flex-col ${className}`}>
       <div className="mb-4 flex-none shrink-0">
         <h3 className="text-lg font-bold text-base-content">{t('projection.title')}</h3>
-        <p className="text-sm text-muted-foreground">{t('projection.subtitle')}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-muted-foreground">{t('projection.subtitle')}</p>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
+                  <HelpCircle className="w-3.5 h-3.5" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{t('tooltips.projection')}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
       <div className="flex-1 w-full min-h-[250px]">
          <ReactECharts 

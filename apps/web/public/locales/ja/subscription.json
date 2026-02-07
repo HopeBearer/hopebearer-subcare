@@ -65,12 +65,23 @@
   },
   "categories": {
     "entertainment": "エンターテイメント",
+    "streaming": "ストリーミング",
     "tools": "ツール",
     "productivity": "生産性",
     "cloud": "クラウド",
     "utility": "ユーティリティ",
     "social": "ソーシャル",
     "education": "教育",
+    "developer": "開発",
+    "ai": "AI",
+    "security": "セキュリティ",
+    "gaming": "ゲーム",
+    "fitness": "フィットネス",
+    "news": "ニュース",
+    "reading": "読書",
+    "hosting": "ホスティング",
+    "music": "音楽",
+    "communication": "コミュニケーション",
     "other": "その他"
   },
   "cycle_options": {

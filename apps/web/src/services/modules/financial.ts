@@ -29,7 +29,12 @@ export const financialService = {
   },
 
   confirmPayment: async (id: string, data?: { amount?: number, date?: Date }): Promise<PaymentRecordDTO> => {
-    const response = await api.patch<any, ApiResponse<PaymentRecordDTO>>(`/finance/records/${id}/confirm`, data);
+    // Backend expects { actualAmount, actualDate } field names
+    const payload = data ? {
+      actualAmount: data.amount,
+      actualDate: data.date,
+    } : undefined;
+    const response = await api.patch<any, ApiResponse<PaymentRecordDTO>>(`/finance/records/${id}/confirm`, payload);
     return response.data;
   },
 

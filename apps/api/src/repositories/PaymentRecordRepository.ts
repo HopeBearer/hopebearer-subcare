@@ -32,7 +32,9 @@ export class PaymentRecordRepository {
         status: 'PAID'
       },
       include: {
-        subscription: true // Useful for getting subscription details
+        subscription: {
+          include: { category: true } // Include category relation for distribution calculations
+        }
       },
       orderBy: {
         billingDate: 'desc'

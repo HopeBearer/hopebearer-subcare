@@ -92,13 +92,14 @@ export class AgentController {
   getRecommendations = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = (req as any).user?.userId;
-      const { focus, forceRefresh, model } = req.query;
+      const { focus, forceRefresh, model, cacheOnly } = req.query;
 
       const result = await this.agentService.getRecommendations({
         userId,
         focus: focus as string,
         forceRefresh: forceRefresh === 'true',
-        model: model as string
+        model: model as string,
+        cacheOnly: cacheOnly === 'true'
       });
       
       res.status(StatusCodes.OK).json({

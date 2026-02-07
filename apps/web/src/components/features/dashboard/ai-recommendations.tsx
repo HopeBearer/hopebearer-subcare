@@ -15,7 +15,8 @@ import {
   Zap,
   Search,
   Check,
-  Loader2
+  Loader2,
+  Key
 } from 'lucide-react';
 import { useState, useRef, MouseEvent, useEffect, useMemo } from 'react';
 import { agentService } from '@/services/modules/agent';
@@ -42,12 +43,13 @@ export function AIRecommendations() {
     fetchRecommendations: wsFetch 
   } = useAIRecommendations();
   
-  // Local state for cached data and HTTP fallback
+  // Local state for persisting data across wsData resets
   const [localData, setLocalData] = useState<RecommendationResponse | null>(null);
-  const [isHttpLoading, setIsHttpLoading] = useState(false);
+  // Queue state: when WS not yet connected on mount, queue fetch for when it connects
+  const [pendingFetch, setPendingFetch] = useState<{ model: string; forceRefresh: boolean } | null>(null);
   
-  // Combined loading and data state
-  const isLoading = wsLoading || isHttpLoading;
+  // All loading and data go through WebSocket
+  const isLoading = wsLoading;
   const data = wsData || localData;
   
   const [config, setConfig] = useState<AgentConfigDTO | null>(null);
@@ -67,6 +69,13 @@ export function AIRecommendations() {
       toast.error(wsError.message || 'AI 推荐获取失败');
     }
   }, [wsError]);
+
+  // When WS connects and there's a pending fetch, execute it
+  useEffect(() => {
+    if (!pendingFetch || !wsConnected || wsLoading) return;
+    wsFetch(pendingFetch);
+    setPendingFetch(null);
+  }, [pendingFetch, wsConnected, wsLoading, wsFetch]);
   
   // Config Modal State
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -80,8 +89,9 @@ export function AIRecommendations() {
   const [selectedModelId, setSelectedModelId] = useState<string>('');
   const [isLoadingProviders, setIsLoadingProviders] = useState(false);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
-  const [showFreeOnly, setShowFreeOnly] = useState(true);
+  const [showFreeOnly, setShowFreeOnly] = useState(false);
   const [modelSearch, setModelSearch] = useState('');
+  const [modelsLoaded, setModelsLoaded] = useState(false);
 
   // Helper to get text based on current language
   const getLocalizedText = (textObj: LocalizedString) => {
@@ -108,42 +118,24 @@ export function AIRecommendations() {
       const active = configs.find(c => c.isActive);
       setConfig(active || null);
       if (active) {
-        if (active.model) setSelectedModel(active.model);
-        // Load cached recommendations via HTTP (no force refresh)
-        fetchCachedRecommendations(active.model);
+        const model = active.model || '';
+        if (active.model) setSelectedModel(model);
+        // Always use WebSocket (handles cache check + fresh generation)
+        fetchRecommendations(false, model);
       }
     } catch (e) {
       console.error('Failed to check AI config', e);
     }
   };
 
-  // Fetch cached recommendations via HTTP (fast, no AI call)
-  const fetchCachedRecommendations = async (modelOverride?: string) => {
-    setIsHttpLoading(true);
-    try {
-      const result = await agentService.getRecommendations(undefined, false, modelOverride || selectedModel);
-      setLocalData(result);
-    } catch (e: any) {
-      console.error('Failed to fetch cached recommendations', e);
-      if (e?.response?.status === 400) {
-        setConfig(null);
-      }
-    } finally {
-      setIsHttpLoading(false);
-    }
-  };
-
-  // Fetch fresh recommendations via WebSocket (with real-time progress)
-  const fetchRecommendations = (force: boolean = false, modelOverride?: string) => {
-    if (force && wsConnected) {
-      // Use WebSocket for forced refresh (real-time progress)
-      wsFetch({
-        model: modelOverride || selectedModel,
-        forceRefresh: true
-      });
+  // Unified fetch: always through WebSocket
+  const fetchRecommendations = (forceRefresh: boolean = false, modelOverride?: string) => {
+    const model = modelOverride || selectedModel;
+    if (wsConnected) {
+      wsFetch({ model, forceRefresh });
     } else {
-      // Use HTTP for cached data
-      fetchCachedRecommendations(modelOverride);
+      // WS not connected yet, queue for when it connects
+      setPendingFetch({ model, forceRefresh });
     }
   };
 
@@ -160,23 +152,46 @@ export function AIRecommendations() {
     }
   };
 
-  // Load models for selected provider
-  const loadModels = async (providerId: string) => {
+  // Load models from cache (for PUBLIC/MANUAL strategies)
+  const loadModelsFromCache = async (providerId: string) => {
     setIsLoadingModels(true);
     setModelSearch('');
     try {
       const data = await aiProviderService.getModelsByProviderId(providerId);
       setModels(data);
-      // Auto select first free model if available
-      const firstFree = data.find(m => m.isFree);
-      if (firstFree) {
-        setSelectedModelId(firstFree.modelId);
-      } else if (data.length > 0) {
+      setModelsLoaded(true);
+      if (data.length > 0) {
         setSelectedModelId(data[0].modelId);
       }
     } catch (e) {
-      console.error('Failed to load models', e);
+      console.error('Failed to load models from cache', e);
       setModels([]);
+    } finally {
+      setIsLoadingModels(false);
+    }
+  };
+
+  // Fetch models using API Key (for DYNAMIC strategy)
+  const fetchModelsWithApiKey = async () => {
+    if (!selectedProviderId || !apiKey) {
+      toast.error(t('ai.apikey_required') || 'Please enter your API Key first');
+      return;
+    }
+    setIsLoadingModels(true);
+    setModelSearch('');
+    try {
+      const result = await aiProviderService.fetchModelsWithApiKey(selectedProviderId, apiKey);
+      setModels(result.models);
+      setModelsLoaded(true);
+      if (result.models.length > 0) {
+        setSelectedModelId(result.models[0].modelId);
+      }
+    } catch (e: any) {
+      console.error('Failed to fetch models', e);
+      setModels([]);
+      setModelsLoaded(false);
+      const message = e?.response?.data?.message || e?.message || 'Failed to load models';
+      toast.error(message);
     } finally {
       setIsLoadingModels(false);
     }
@@ -189,21 +204,32 @@ export function AIRecommendations() {
     }
   }, [showConfigModal]);
 
-  // Load models when provider changes
+  // When provider changes, handle model loading based on strategy
   useEffect(() => {
     if (selectedProviderId) {
-      loadModels(selectedProviderId);
+      const provider = providers.find(p => p.id === selectedProviderId);
+      setModels([]);
+      setSelectedModelId('');
+      setModelsLoaded(false);
+      // For PUBLIC/MANUAL strategies, load models from cache immediately
+      if (provider && (provider.modelFetchStrategy === 'PUBLIC' || provider.modelFetchStrategy === 'MANUAL')) {
+        loadModelsFromCache(selectedProviderId);
+      }
+    } else {
+      setModels([]);
+      setSelectedModelId('');
+      setModelsLoaded(false);
     }
-  }, [selectedProviderId]);
+  }, [selectedProviderId, providers]);
 
   const handleSaveConfig = async () => {
-    const provider = providers.find(p => p.id === selectedProviderId);
-    if (!provider || !apiKey) return;
+    if (!selectedProvider || !apiKey) return;
 
     setIsSaving(true);
     try {
       await agentService.configure({
-        provider: provider.slug as any,
+        provider: selectedProvider.slug,
+        providerId: selectedProvider.id,
         apiKey,
         model: selectedModelId || undefined
       });
@@ -257,7 +283,8 @@ export function AIRecommendations() {
       const search = modelSearch.toLowerCase();
       result = result.filter(m => 
         m.name.toLowerCase().includes(search) || 
-        m.modelId.toLowerCase().includes(search)
+        m.modelId.toLowerCase().includes(search) ||
+        m.description?.toLowerCase().includes(search)
       );
     }
     
@@ -268,6 +295,26 @@ export function AIRecommendations() {
   const selectedProvider = useMemo(() => {
     return providers.find(p => p.id === selectedProviderId);
   }, [providers, selectedProviderId]);
+
+  // Check if provider requires API key to fetch models
+  const requiresApiKeyForModels = useMemo(() => {
+    return selectedProvider?.modelFetchStrategy === 'DYNAMIC';
+  }, [selectedProvider]);
+
+  // Format pricing for display
+  const formatPricing = (model: AIModelDTO) => {
+    if (model.isFree) return 'Free';
+    if (!model.pricingPrompt && !model.pricingCompletion) return 'N/A';
+    const prompt = parseFloat(model.pricingPrompt || '0');
+    const completion = parseFloat(model.pricingCompletion || '0');
+    if (prompt === 0 && completion === 0) return 'Free';
+    const formatPrice = (price: number) => {
+      if (price >= 1) return price.toFixed(2);
+      if (price >= 0.01) return price.toFixed(3);
+      return price.toFixed(4);
+    };
+    return `$${formatPrice(prompt)} / $${formatPrice(completion)}`;
+  };
 
   // If not configured, show simple setup card
   if (!config && !isLoading && !data) {
@@ -299,7 +346,7 @@ export function AIRecommendations() {
         {/* Config Modal */}
         <Modal isOpen={showConfigModal} onClose={() => setShowConfigModal(false)} title={t('ai.config_title')} className="max-w-md">
           <div className="space-y-4 py-4">
-            {/* Provider Selection - 下拉选择器 */}
+            {/* Provider Selection */}
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('ai.provider_label')}</label>
               <Select
@@ -308,6 +355,8 @@ export function AIRecommendations() {
                 onChange={(val) => {
                   setSelectedProviderId(val);
                   setSelectedModelId('');
+                  setModels([]);
+                  setModelsLoaded(false);
                 }}
                 placeholder={isLoadingProviders ? 'Loading...' : (t('ai.select_provider') || 'Select a provider')}
                 disabled={isLoadingProviders}
@@ -327,13 +376,39 @@ export function AIRecommendations() {
             {/* API Key */}
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('ai.apikey_label')}</label>
-              <Input 
-                type="password" 
-                placeholder={t('ai.apikey_placeholder')} 
-                value={apiKey} 
-                onChange={(e) => setApiKey(e.target.value)} 
-              />
-              <p className="text-xs text-muted-foreground">{t('ai.apikey_note')}</p>
+              <div className="flex gap-2">
+                <Input 
+                  type="password" 
+                  placeholder={t('ai.apikey_placeholder')} 
+                  value={apiKey} 
+                  onChange={(e) => setApiKey(e.target.value)} 
+                  className="flex-1"
+                />
+                {/* Load Models Button - Only show for DYNAMIC strategy */}
+                {requiresApiKeyForModels && selectedProviderId && (
+                  <Button
+                    variant="outline"
+                    onClick={fetchModelsWithApiKey}
+                    disabled={!apiKey || isLoadingModels}
+                    className="shrink-0"
+                  >
+                    {isLoadingModels ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Key className="w-4 h-4 mr-2" />
+                        {t('ai.load_models') || 'Load Models'}
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {requiresApiKeyForModels && !modelsLoaded
+                  ? (t('ai.apikey_required_for_models') || 'Enter your API Key and click "Load Models" to see available models.')
+                  : (t('ai.apikey_note'))
+                }
+              </p>
             </div>
 
             {/* Model Selection */}
@@ -341,95 +416,137 @@ export function AIRecommendations() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium">{t('ai.model_label') || 'Model'}</label>
-                  <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={showFreeOnly}
-                      onChange={(e) => setShowFreeOnly(e.target.checked)}
-                      className="rounded border-gray-300"
-                    />
-                    <Zap className="w-3 h-3 text-yellow-500" />
-                    {t('ai.free_only') || 'Free only'}
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={showFreeOnly}
+                        onChange={(e) => setShowFreeOnly(e.target.checked)}
+                        className="rounded border-gray-300"
+                      />
+                      <Zap className="w-3 h-3 text-yellow-500" />
+                      {t('ai.free_only') || 'Free only'}
+                    </label>
+                    {modelsLoaded && (
+                      <button
+                        onClick={() => {
+                          if (requiresApiKeyForModels) {
+                            fetchModelsWithApiKey();
+                          } else {
+                            loadModelsFromCache(selectedProviderId);
+                          }
+                        }}
+                        className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                        disabled={isLoadingModels}
+                      >
+                        <RefreshCw className={cn('w-3.5 h-3.5', isLoadingModels && 'animate-spin')} />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                {/* Model Search */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder={t('ai.search_models') || 'Search models...'}
-                    value={modelSearch}
-                    onChange={(e) => setModelSearch(e.target.value)}
-                    className="pl-9 h-9"
-                  />
-                </div>
+                {/* DYNAMIC strategy: show hint before models are loaded */}
+                {requiresApiKeyForModels && !modelsLoaded && !isLoadingModels && (
+                  <div className="p-4 text-center rounded-xl bg-gray-50/50 dark:bg-gray-900/30 border-2 border-dashed border-gray-200 dark:border-gray-700">
+                    <Key className="w-6 h-6 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-xs text-muted-foreground">
+                      {t('ai.model_manual_hint') || 'Enter your API Key above and click "Load Models" to view available models.'}
+                    </p>
+                  </div>
+                )}
 
-                {/* Model List */}
-                <div className="max-h-[200px] overflow-y-auto rounded-xl bg-gray-50/50 dark:bg-gray-900/30 p-1.5">
-                  {isLoadingModels ? (
-                    <div className="space-y-1.5">
-                      {[1, 2, 3].map(i => (
-                        <div key={i} className="h-12 bg-white dark:bg-gray-800 rounded-lg animate-pulse border border-gray-200 dark:border-gray-700" />
-                      ))}
+                {/* Model Search & List - Only show when models are loaded */}
+                {modelsLoaded && (
+                  <>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder={t('ai.search_models') || 'Search models...'}
+                        value={modelSearch}
+                        onChange={(e) => setModelSearch(e.target.value)}
+                        className="pl-9 h-9"
+                      />
                     </div>
-                  ) : filteredModels.length === 0 ? (
-                    <div className="p-6 text-center text-sm text-muted-foreground">
-                      {models.length === 0 
-                        ? (t('ai.no_models') || 'No models available')
-                        : (t('ai.no_models_match') || 'No models match')
-                      }
-                    </div>
-                  ) : (
-                    <div className="space-y-1.5">
-                      {filteredModels.slice(0, 20).map(model => (
-                        <button
-                          key={model.id}
-                          onClick={() => setSelectedModelId(model.modelId)}
-                          className={cn(
-                            'w-full p-2.5 text-left transition-all duration-200 rounded-lg',
-                            'bg-white dark:bg-gray-800',
-                            'border-2',
-                            'hover:shadow-sm hover:scale-[1.01]',
-                            selectedModelId === model.modelId 
-                              ? 'border-primary shadow-sm shadow-primary/10 bg-primary/5 dark:bg-primary/10' 
-                              : 'border-gray-200 dark:border-gray-700 hover:border-primary/50'
+
+                    <div className="max-h-[200px] overflow-y-auto rounded-xl bg-gray-50/50 dark:bg-gray-900/30 p-1.5">
+                      {isLoadingModels ? (
+                        <div className="space-y-1.5">
+                          {[1, 2, 3].map(i => (
+                            <div key={i} className="h-14 bg-white dark:bg-gray-800 rounded-lg animate-pulse border border-gray-200 dark:border-gray-700" />
+                          ))}
+                        </div>
+                      ) : filteredModels.length === 0 ? (
+                        <div className="p-6 text-center text-sm text-muted-foreground">
+                          {models.length === 0 
+                            ? (t('ai.no_models') || 'No models available')
+                            : (t('ai.no_models_match') || 'No models match')
+                          }
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {filteredModels.slice(0, 30).map(model => (
+                            <button
+                              key={model.id || model.modelId}
+                              onClick={() => setSelectedModelId(model.modelId)}
+                              className={cn(
+                                'w-full p-2.5 text-left transition-all duration-200 rounded-lg',
+                                'bg-white dark:bg-gray-800',
+                                'border-2',
+                                'hover:shadow-sm hover:scale-[1.01]',
+                                selectedModelId === model.modelId 
+                                  ? 'border-primary shadow-sm shadow-primary/10 bg-primary/5 dark:bg-primary/10' 
+                                  : 'border-gray-200 dark:border-gray-700 hover:border-primary/50'
+                              )}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className={cn(
+                                      "text-sm font-medium truncate",
+                                      selectedModelId === model.modelId && "text-primary"
+                                    )}>
+                                      {model.name}
+                                    </span>
+                                    {model.isFree && (
+                                      <span className="px-1.5 py-0.5 text-[9px] font-bold bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full shrink-0">
+                                        FREE
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    {model.contextLength && (
+                                      <span className="text-[10px] text-muted-foreground px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">
+                                        {(model.contextLength / 1000).toFixed(0)}K
+                                      </span>
+                                    )}
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {formatPricing(model)}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className={cn(
+                                  "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all",
+                                  selectedModelId === model.modelId 
+                                    ? "border-primary bg-primary text-white" 
+                                    : "border-gray-300 dark:border-gray-600"
+                                )}>
+                                  {selectedModelId === model.modelId && (
+                                    <Check className="w-3 h-3" />
+                                  )}
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                          {filteredModels.length > 30 && (
+                            <div className="p-2 text-center text-xs text-muted-foreground bg-white dark:bg-gray-800 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+                              +{filteredModels.length - 30} more
+                            </div>
                           )}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className={cn(
-                                "text-sm font-medium truncate",
-                                selectedModelId === model.modelId && "text-primary"
-                              )}>
-                                {model.name}
-                              </span>
-                              {model.isFree && (
-                                <span className="px-1.5 py-0.5 text-[9px] font-bold bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full shrink-0">
-                                  FREE
-                                </span>
-                              )}
-                            </div>
-                            <div className={cn(
-                              "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all",
-                              selectedModelId === model.modelId 
-                                ? "border-primary bg-primary text-white" 
-                                : "border-gray-300 dark:border-gray-600"
-                            )}>
-                              {selectedModelId === model.modelId && (
-                                <Check className="w-3 h-3" />
-                              )}
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                      {filteredModels.length > 20 && (
-                        <div className="p-2 text-center text-xs text-muted-foreground bg-white dark:bg-gray-800 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
-                          +{filteredModels.length - 20} more
                         </div>
                       )}
                     </div>
-                  )}
-                </div>
+                  </>
+                )}
               </div>
             )}
 

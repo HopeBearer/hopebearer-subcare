@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import { LLMProvider, LLMMessage, LLMResponse, ToolDefinition, ToolCall } from './interfaces/LLMProvider';
+import { LLMProvider, LLMMessage, LLMResponse, ToolDefinition, ToolCall, StreamCallbacks } from './interfaces/LLMProvider';
 import { AppError } from '../../utils/AppError';
 import { StatusCodes } from 'http-status-codes';
 
@@ -47,16 +47,19 @@ export class OpenAIProvider implements LLMProvider {
    * Convert error to appropriate AppError
    */
   private handleError(error: unknown): never {
-    const axiosError = error as AxiosError<{ error?: { message?: string; code?: string } }>;
+    const axiosError = error as AxiosError<{ error?: { message?: string; code?: string; type?: string } }>;
     const errorMessage = axiosError.response?.data?.error?.message || axiosError.message || 'Failed to communicate with AI provider';
     const errorCode = axiosError.response?.data?.error?.code;
+    const errorType = axiosError.response?.data?.error?.type;
     
     console.error('[OpenAIProvider] Final Error:', {
       status: axiosError.response?.status,
       message: errorMessage,
       code: errorCode,
+      type: errorType,
       url: axiosError.config?.url,
-      baseURL: axiosError.config?.baseURL
+      baseURL: axiosError.config?.baseURL,
+      responseData: JSON.stringify(axiosError.response?.data || {}).substring(0, 500)
     });
 
     // Map HTTP status to appropriate error
@@ -191,6 +194,151 @@ export class OpenAIProvider implements LLMProvider {
         completionTokens: data.usage?.completion_tokens || 0
       }
     };
+  }
+
+  /**
+   * 流式聊天请求
+   */
+  async chatStream(
+    messages: LLMMessage[], 
+    callbacks: StreamCallbacks,
+    tools?: ToolDefinition[]
+  ): Promise<LLMResponse> {
+    // 转换消息格式
+    const apiMessages = messages.map(msg => {
+      if (msg.role === 'tool') {
+        return {
+          role: 'tool' as const,
+          content: msg.content,
+          tool_call_id: msg.tool_call_id
+        };
+      }
+      if (msg.role === 'assistant' && msg.tool_calls) {
+        return {
+          role: 'assistant' as const,
+          content: msg.content || null,
+          tool_calls: msg.tool_calls
+        };
+      }
+      return {
+        role: msg.role,
+        content: msg.content
+      };
+    });
+
+    const payload: any = {
+      model: this.model,
+      messages: apiMessages,
+      temperature: 0.7,
+      stream: true
+    };
+
+    if (tools && tools.length > 0) {
+      payload.tools = tools;
+      payload.tool_choice = "auto";
+    }
+
+    try {
+      const response = await this.client.post('/chat/completions', payload, {
+        responseType: 'stream'
+      });
+
+      let content = '';
+      let toolCalls: ToolCall[] = [];
+      let finishReason: string = 'stop';
+      const toolCallsInProgress: Map<number, { id: string; type: string; name: string; arguments: string }> = new Map();
+
+      return new Promise((resolve, reject) => {
+        let buffer = '';
+
+        response.data.on('data', (chunk: Buffer) => {
+          buffer += chunk.toString();
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const data = line.slice(6);
+            if (data === '[DONE]') continue;
+
+            try {
+              const parsed = JSON.parse(data);
+              const delta = parsed.choices?.[0]?.delta;
+              const finish = parsed.choices?.[0]?.finish_reason;
+
+              if (finish) {
+                finishReason = finish;
+              }
+
+              if (delta?.content) {
+                content += delta.content;
+                callbacks.onChunk?.(delta.content);
+              }
+
+              // Handle streaming tool calls
+              if (delta?.tool_calls) {
+                for (const tc of delta.tool_calls) {
+                  const index = tc.index;
+                  
+                  if (!toolCallsInProgress.has(index)) {
+                    toolCallsInProgress.set(index, {
+                      id: tc.id || '',
+                      type: tc.type || 'function',
+                      name: tc.function?.name || '',
+                      arguments: ''
+                    });
+                  }
+                  
+                  const existing = toolCallsInProgress.get(index)!;
+                  
+                  if (tc.id) existing.id = tc.id;
+                  if (tc.function?.name) {
+                    existing.name = tc.function.name;
+                    // Notify tool call started
+                    callbacks.onToolCall?.({
+                      id: existing.id,
+                      type: 'function',
+                      function: { name: existing.name, arguments: '' }
+                    }, 'started');
+                  }
+                  if (tc.function?.arguments) {
+                    existing.arguments += tc.function.arguments;
+                  }
+                }
+              }
+            } catch (e) {
+              // Ignore parse errors for partial JSON
+            }
+          }
+        });
+
+        response.data.on('end', () => {
+          // Convert toolCallsInProgress to array
+          toolCalls = Array.from(toolCallsInProgress.values()).map(tc => ({
+            id: tc.id,
+            type: 'function' as const,
+            function: {
+              name: tc.name,
+              arguments: tc.arguments
+            }
+          }));
+
+          resolve({
+            content,
+            tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
+            finish_reason: finishReason === 'tool_calls' ? 'tool_calls' : 
+                          finishReason === 'stop' ? 'stop' :
+                          finishReason === 'length' ? 'length' : 'stop'
+          });
+        });
+
+        response.data.on('error', (error: Error) => {
+          reject(error);
+        });
+      });
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
   async checkHealth(): Promise<boolean> {

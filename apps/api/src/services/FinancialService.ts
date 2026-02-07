@@ -7,6 +7,7 @@ import { BillGeneratorService } from "./BillGeneratorService";
 import { AppError } from "../utils/AppError";
 import { StatusCodes } from "http-status-codes";
 import { addMonths, addWeeks, addYears, addDays, format, isBefore, startOfYear, startOfMonth, endOfMonth } from 'date-fns';
+import { calculateMonthlyEquivalent } from '../utils/billing-utils';
 import { NotificationService } from "../modules/notification/notification.service";
 
 export class FinancialService {
@@ -65,7 +66,9 @@ export class FinancialService {
     const getAmount = (val: any) => val?.toNumber ? val.toNumber() : Number(val);
 
     for (const record of yearRecords) {
-        const dateKey = record.billingDate.toISOString().split('T')[0];
+        // Use local date (not UTC) to avoid timezone shift (e.g. Feb 6 UTC+8 → Feb 5 UTC)
+        const d = record.billingDate;
+        const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         // Count transactions per day
         heatmapMap.set(dateKey, (heatmapMap.get(dateKey) || 0) + 1);
         
@@ -341,10 +344,11 @@ export class FinancialService {
     const projections = new Map<string, number>();
     let grandTotal = 0;
     
-    // Initialize buckets
+    // Initialize buckets using yyyy-MM format to avoid locale issues
+    // and ensure unique keys even if projection spans > 12 months in the future
     for (let i = 0; i < months; i++) {
         const d = addMonths(startOfMonth(today), i);
-        const key = format(d, 'MMM'); // Jan, Feb, etc.
+        const key = format(d, 'yyyy-MM');
         projections.set(key, 0);
     }
 
@@ -376,7 +380,7 @@ export class FinancialService {
         const convertedPrice = rawPrice * rate;
 
         while (isBefore(currentDate, endDate)) {
-            const monthKey = format(currentDate, 'MMM');
+            const monthKey = format(currentDate, 'yyyy-MM');
             if (projections.has(monthKey)) {
                 projections.set(monthKey, (projections.get(monthKey) || 0) + convertedPrice);
                 grandTotal += convertedPrice;
@@ -414,6 +418,7 @@ export class FinancialService {
         const convertedPrice = sub.currency !== baseCurrency
             ? await this.currencyService.convert(rawPrice, sub.currency, baseCurrency)
             : rawPrice;
+        const monthlyAmount = calculateMonthlyEquivalent(convertedPrice, String(sub.billingCycle || 'monthly'));
 
         // Add Category Node
         if (!nodes.has(categoryName)) {
@@ -428,7 +433,7 @@ export class FinancialService {
         links.push({
             source: categoryName,
             target: subName,
-            value: Number(convertedPrice.toFixed(2))
+            value: Number(monthlyAmount.toFixed(2))
         });
     }
 

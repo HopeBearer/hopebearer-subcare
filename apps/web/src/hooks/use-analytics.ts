@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
-import { projectionService, ProjectionOptions } from '@/lib/logic/projection';
+import { useState, useCallback } from 'react';
 import { SubscriptionDTO, HeatmapItem, MonthlyProjection, SpendingAnomaly, SankeyData } from '@subcare/types';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { financialService } from '@/services';

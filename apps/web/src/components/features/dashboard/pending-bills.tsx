@@ -36,7 +36,9 @@ export function PendingBills() {
       toast.success(t('pending_bills.confirmed_msg'));
       queryClient.invalidateQueries({ queryKey: ['pending-bills'] });
       queryClient.invalidateQueries({ queryKey: ['financial-history'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['financial', 'overview'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'trend'] });
       queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
       handleCloseModal();
     },
@@ -50,7 +52,9 @@ export function PendingBills() {
     onSuccess: () => {
       toast.success(t('pending_bills.cancelled_msg'));
       queryClient.invalidateQueries({ queryKey: ['pending-bills'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['financial', 'overview'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
+      queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
     },
     onError: () => {
       toast.error(t('common.error') || 'Something went wrong');

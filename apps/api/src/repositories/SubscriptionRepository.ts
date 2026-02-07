@@ -7,6 +7,33 @@ import { SubscriptionFilterDTO } from "@subcare/types";
  */
 export class SubscriptionRepository {
   /**
+   * 内部辅助方法：获取所有分类的颜色映射
+   */
+  private async getCategoryColorMap(): Promise<Map<string, string>> {
+    const categories = await prisma.category.findMany({
+      where: { deletedAt: null },
+      select: { name: true, color: true }
+    });
+    const colorMap = new Map<string, string>();
+    categories.forEach(cat => {
+      colorMap.set(cat.name.toLowerCase(), cat.color || '#9CA3AF');
+    });
+    return colorMap;
+  }
+
+  /**
+   * 内部辅助方法：为订阅添加颜色信息
+   */
+  private addCategoryColor(item: any, colorMap: Map<string, string>): any {
+    const categoryName = item.category?.name || item.categoryName || 'Other';
+    return {
+      ...item,
+      category: categoryName,
+      categoryColor: item.category?.color || colorMap.get(categoryName.toLowerCase()) || '#9CA3AF'
+    };
+  }
+
+  /**
    * Check if a subscription with the same normalized name exists for the user
    */
   async findByNormalizedName(userId: string, normalizedName: string): Promise<Subscription | null> {
@@ -23,30 +50,25 @@ export class SubscriptionRepository {
    * Modified to perform unique filtering in application code to handle legacy data where normalizedName might be empty
    */
   async findAllNames(userId: string): Promise<{ name: string, icon: string | null }[]> {
-    
-    try {
-      const items = await prisma.subscription.findMany({
-        where: { userId },
-        select: { name: true, icon: true }, 
-      });
+    const items = await prisma.subscription.findMany({
+      where: { userId },
+      select: { name: true, icon: true }, 
+    });
 
-      // Application-level distinct by normalized name
-      const seen = new Set<string>();
-      const uniqueItems: { name: string, icon: string | null }[] = [];
+    // Application-level distinct by normalized name
+    const seen = new Set<string>();
+    const uniqueItems: { name: string, icon: string | null }[] = [];
 
-      for (const item of items) {
-          if (!item.name) continue; 
-          const normalized = item.name.trim().toLowerCase();
-          if (!seen.has(normalized)) {
-              seen.add(normalized);
-              uniqueItems.push(item);
-          }
-      }
-      
-      return uniqueItems;
-    } catch (e) {
-      throw e;
+    for (const item of items) {
+        if (!item.name) continue; 
+        const normalized = item.name.trim().toLowerCase();
+        if (!seen.has(normalized)) {
+            seen.add(normalized);
+            uniqueItems.push(item);
+        }
     }
+    
+    return uniqueItems;
   }
 
   /**
@@ -69,17 +91,22 @@ export class SubscriptionRepository {
   async findByUserId(userId: string, filters?: SubscriptionFilterDTO): Promise<{ items: any[]; total: number }> {
     const { search, status, category, billingCycle, page, limit, expiringInDays } = filters || {};
     
-    // Note: 'category' column in DB is 'categoryName' in Prisma Client
     const where: Prisma.SubscriptionWhereInput = {
       userId,
       ...(status && status !== 'All' ? { status: status } : {}),
-      // Fix: map filter 'category' string to 'categoryName' field
-      ...(category && category !== 'All' ? { categoryName: category } : {}),
       ...(billingCycle && billingCycle !== 'All' ? { billingCycle } : {}),
       ...(search ? {
         name: { contains: search }
       } : {})
     };
+
+    // 支持通过分类名称或分类ID过滤
+    if (category && category !== 'All') {
+      where.OR = [
+        { categoryName: category },
+        { category: { name: category } }
+      ];
+    }
 
     if (expiringInDays) {
       const today = new Date();
@@ -103,23 +130,22 @@ export class SubscriptionRepository {
     const skip = page && limit ? (page - 1) * limit : undefined;
 
     try {
-      const [items, total] = await Promise.all([
+      const [items, total, colorMap] = await Promise.all([
         prisma.subscription.findMany({
           where,
+          include: {
+            category: true // 关联查询分类
+          },
           orderBy: { createdAt: 'desc' },
           skip,
           take
         }),
-        prisma.subscription.count({ where })
+        prisma.subscription.count({ where }),
+        this.getCategoryColorMap()
       ]);
 
-      // MAP BACK FOR FRONTEND COMPATIBILITY
-      // Prisma now returns 'categoryName' instead of 'category' string field.
-      // We map it back to 'category' property so frontend DTO remains valid.
-      const mappedItems = items.map(item => ({
-        ...item,
-        category: item.categoryName
-      }));
+      // MAP: 优先使用关联的分类，其次使用旧的 categoryName 字段
+      const mappedItems = items.map(item => this.addCategoryColor(item, colorMap));
 
       return { items: mappedItems, total };
     } catch (error) {
@@ -136,12 +162,14 @@ export class SubscriptionRepository {
   async findById(id: string): Promise<any | null> {
     const item = await prisma.subscription.findUnique({
       where: { id },
+      include: {
+        category: true
+      }
     });
     if (!item) return null;
-    return {
-      ...item,
-      category: item.categoryName
-    };
+    
+    const colorMap = await this.getCategoryColorMap();
+    return this.addCategoryColor(item, colorMap);
   }
   
   /**
@@ -153,12 +181,14 @@ export class SubscriptionRepository {
   async update(id: string, data: Prisma.SubscriptionUpdateInput): Promise<any> {
     const item = await prisma.subscription.update({
         where: { id },
-        data
+        data,
+        include: {
+          category: true
+        }
     });
-    return {
-      ...item,
-      category: item.categoryName
-    };
+    
+    const colorMap = await this.getCategoryColorMap();
+    return this.addCategoryColor(item, colorMap);
   }
 
   /**
@@ -186,17 +216,20 @@ export class SubscriptionRepository {
    * @returns 活跃订阅列表
    */
   async findActiveByUserId(userId: string): Promise<any[]> {
-    const items = await prisma.subscription.findMany({
-      where: { 
-        userId,
-        status: 'ACTIVE'
-      },
-      orderBy: { price: 'desc' },
-    });
-    return items.map(item => ({
-      ...item,
-      category: item.categoryName
-    }));
+    const [items, colorMap] = await Promise.all([
+      prisma.subscription.findMany({
+        where: { 
+          userId,
+          status: 'ACTIVE'
+        },
+        include: {
+          category: true
+        },
+        orderBy: { price: 'desc' },
+      }),
+      this.getCategoryColorMap()
+    ]);
+    return items.map(item => this.addCategoryColor(item, colorMap));
   }
 
   /**
@@ -213,22 +246,25 @@ export class SubscriptionRepository {
     futureDate.setDate(today.getDate() + days);
     futureDate.setHours(23, 59, 59, 999); // Set to end of the target day
 
-    const items = await prisma.subscription.findMany({
-      where: {
-        userId,
-        status: 'ACTIVE',
-        nextPayment: {
-          gte: today,
-          lte: futureDate
-        }
-      },
-      orderBy: { nextPayment: 'asc' }
-    });
+    const [items, colorMap] = await Promise.all([
+      prisma.subscription.findMany({
+        where: {
+          userId,
+          status: 'ACTIVE',
+          nextPayment: {
+            gte: today,
+            lte: futureDate
+          }
+        },
+        include: {
+          category: true
+        },
+        orderBy: { nextPayment: 'asc' }
+      }),
+      this.getCategoryColorMap()
+    ]);
     
-    return items.map(item => ({
-      ...item,
-      category: item.categoryName
-    }));
+    return items.map(item => this.addCategoryColor(item, colorMap));
   }
 
   /**

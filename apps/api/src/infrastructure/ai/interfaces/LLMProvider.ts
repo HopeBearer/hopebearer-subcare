@@ -34,11 +34,29 @@ export interface ToolDefinition {
   };
 }
 
+// Streaming callback types
+export type StreamChunkCallback = (chunk: string) => void;
+export type StreamToolCallCallback = (toolCall: ToolCall, status: 'started' | 'completed') => void;
+
+export interface StreamCallbacks {
+  onChunk?: StreamChunkCallback;
+  onToolCall?: StreamToolCallCallback;
+}
+
 export interface LLMProvider {
   /**
    * 发送聊天请求
    */
   chat(messages: LLMMessage[], tools?: ToolDefinition[]): Promise<LLMResponse>;
+  
+  /**
+   * 发送聊天请求（流式）
+   */
+  chatStream?(
+    messages: LLMMessage[], 
+    callbacks: StreamCallbacks,
+    tools?: ToolDefinition[]
+  ): Promise<LLMResponse>;
   
   /**
    * 检查 API Key 是否有效

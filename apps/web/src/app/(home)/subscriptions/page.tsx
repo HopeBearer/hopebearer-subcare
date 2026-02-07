@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { SubscriptionCard } from '@/components/features/subscriptions/subscription-card';
 import { SubscriptionDetailDrawer } from '@/components/features/subscriptions/drawer/subscription-detail-drawer';
 import { Input } from '@/components/ui/input';
@@ -9,15 +9,14 @@ import { Search, Loader2, RotateCcw } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/hooks';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { subscriptionService } from '@/services';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { subscriptionService, categoryService } from '@/services';
 import { SubscriptionDTO } from '@subcare/types';
 import { useInView } from 'react-intersection-observer';
 import { useSearchParams } from 'next/navigation';
 import { PageMeta } from '@/components/common/page-meta';
 
 // Constants
-const CATEGORIES = ['Entertainment', 'Tools', 'Productivity', 'Cloud', 'Utility', 'Education'];
 const STATUSES = ['Active', 'Paused', 'Cancelled'];
 const CYCLES = ['Monthly', 'Yearly'];
 const ITEMS_PER_PAGE = 12;
@@ -38,6 +37,27 @@ export default function SubscriptionsPage() {
   // Drawer State
   const [selectedSubscription, setSelectedSubscription] = useState<SubscriptionDTO | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Fetch categories from API - 使用长缓存时间，减少请求
+  const { data: categoriesData } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => categoryService.getCategories(),
+    staleTime: 1000 * 60 * 30, // 30 minutes - 分类数据不常变化
+    gcTime: 1000 * 60 * 60, // 1 hour cache
+    refetchOnWindowFocus: false, // 不在窗口聚焦时重新请求
+    refetchOnMount: false, // 已有缓存时不重新请求
+  });
+  
+  // 构建分类颜色映射 - 从 API 数据中获取
+  const categoryColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    categoriesData?.forEach(c => {
+      if (c.color) {
+        map[c.name.toLowerCase()] = c.color;
+      }
+    });
+    return map;
+  }, [categoriesData]);
 
   const EXPIRING_OPTIONS = [
     { label: t('filter_all_time', 'All Time'), value: 'All' },
@@ -209,7 +229,10 @@ export default function SubscriptionsPage() {
               onChange={handleCategoryChange}
               options={[
                 { label: t('filter_all_categories'), value: 'All' },
-                ...CATEGORIES.map(c => ({ label: t(`categories.${c.toLowerCase()}`, { defaultValue: c }), value: c }))
+                ...(categoriesData || []).map(c => ({ 
+                  label: t(`categories.${c.name.toLowerCase()}`, { defaultValue: c.name }), 
+                  value: c.name 
+                }))
               ]}
             />
           </div>

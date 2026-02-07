@@ -14,6 +14,8 @@ import { PriceChangeTimeline } from '@/components/features/finance/anomalies/pri
 import { SpendingSankey } from '@/components/features/finance/classification/spending-sankey';
 import { PageMeta } from '@/components/common/page-meta';
 import { Card } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HelpCircle } from 'lucide-react';
 
 export default function FinancePage() {
   const { t } = useTranslation('finance');
@@ -67,7 +69,21 @@ export default function FinancePage() {
                         <h3 className="text-2xl font-bold text-base-content">
                             {summaryLoading ? '...' : `${summary.currency} ${summary.totalExpense}`}
                         </h3>
-                        <p className="text-sm text-muted-foreground">{t('ytd_expense_actual')}</p>
+                        <div className="relative inline-flex items-center justify-center">
+                          <p className="text-sm text-muted-foreground whitespace-nowrap">
+                            {t('ytd_expense_actual')}
+                          </p>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="absolute -right-5 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
+                                  <HelpCircle className="w-3.5 h-3.5" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>{t('tooltips.ytd_expense_actual')}</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                     </div>
                     <div className="border-t border-border pt-4">
                          <div className="p-2 bg-purple-500/10 rounded-full text-purple-500 w-fit mx-auto mb-2">
@@ -78,7 +94,21 @@ export default function FinancePage() {
                         <h3 className="text-2xl font-bold text-base-content">
                            {summaryLoading ? '...' : `${summary.currency} ${summary.projectedTotal}`}
                         </h3>
-                        <p className="text-sm text-muted-foreground">{t('projected_annual_total')}</p>
+                        <div className="relative inline-flex items-center justify-center">
+                          <p className="text-sm text-muted-foreground whitespace-nowrap">
+                            {t('projected_annual_total')}
+                          </p>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="absolute -right-5 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
+                                  <HelpCircle className="w-3.5 h-3.5" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>{t('tooltips.projected_annual_total')}</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                     </div>
                 </div>
              </Card>

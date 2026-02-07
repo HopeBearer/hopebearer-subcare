@@ -5,6 +5,8 @@ import ReactECharts from 'echarts-for-react';
 import { useThemeStore } from '@/store';
 import { useTranslation } from '@/lib/i18n/hooks';
 import { Card } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HelpCircle } from 'lucide-react';
 import { SankeyData } from '@subcare/types';
 
 interface SpendingSankeyProps {
@@ -79,9 +81,21 @@ export const SpendingSankey = ({ data, isLoading }: SpendingSankeyProps) => {
         <h3 className="text-lg font-bold text-base-content">
             {t('sankey.title')}
         </h3>
-        <p className="text-sm text-muted-foreground">
-            {t('sankey.subtitle')}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-muted-foreground">
+              {t('sankey.subtitle')}
+          </p>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
+                  <HelpCircle className="w-3.5 h-3.5" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{t('tooltips.sankey')}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
       
       <div className="flex-1 min-h-0 w-full">

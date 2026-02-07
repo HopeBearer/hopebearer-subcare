@@ -1,38 +1,54 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore, useNotificationStore } from '@/store';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 
+// 全局 socket 实例，保持单例
+let globalSocket: Socket | null = null;
+let globalSocketUserId: string | null = null;
+
 export const useSocket = () => {
-  const socketRef = useRef<Socket | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(globalSocket);
   const { user, accessToken, isAuthenticated } = useAuthStore();
-  const { incrementUnread, decrementUnread, resetUnread } = useNotificationStore();
+  const { incrementUnread, decrementUnread, resetUnread, consumeLocalRead } = useNotificationStore();
   const queryClient = useQueryClient();
+  const isInitializing = useRef(false);
 
   useEffect(() => {
-    console.log('[useSocket] Hook triggered. Auth state:', { isAuthenticated, hasToken: !!accessToken, userId: user?.id });
-
     // Only connect if authenticated
     if (!isAuthenticated || !accessToken || !user) {
       console.log('[useSocket] Not authenticated, skipping connection.');
-      if (socketRef.current) {
+      if (globalSocket) {
         console.log('[useSocket] Disconnecting existing socket.');
-        socketRef.current.disconnect();
-        socketRef.current = null;
+        globalSocket.disconnect();
+        globalSocket = null;
+        globalSocketUserId = null;
+        setSocket(null);
       }
       return;
     }
 
+    // 如果已有相同用户的连接，复用它
+    if (globalSocket && globalSocketUserId === user.id && globalSocket.connected) {
+      console.log('[useSocket] Reusing existing socket connection.');
+      setSocket(globalSocket);
+      return;
+    }
+
+    // 防止重复初始化
+    if (isInitializing.current) {
+      return;
+    }
+    isInitializing.current = true;
+
     console.log('[useSocket] Attempting to connect to socket...');
 
     // Socket URL is configured via NEXT_PUBLIC_SOCKET_URL environment variable
-    // - Development (.env.local): http://localhost:3001
-    // - Production (docker-compose): empty string (uses current origin via nginx proxy)
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || '';
     console.log('[useSocket] Connecting to:', socketUrl || '(current origin)');
 
-    const socket = io(socketUrl, {
+    const newSocket = io(socketUrl, {
       path: '/socket.io',
       auth: {
         token: accessToken,
@@ -45,65 +61,62 @@ export const useSocket = () => {
       reconnectionDelay: 1000,
     });
 
-    socket.on('connect', () => {
-      console.log('[useSocket] Socket connected successfully. ID:', socket.id);
+    newSocket.on('connect', () => {
+      console.log('[useSocket] Socket connected successfully. ID:', newSocket.id);
+      globalSocket = newSocket;
+      globalSocketUserId = user.id;
+      setSocket(newSocket);
+      isInitializing.current = false;
     });
 
-    socket.on('connect_error', (err) => {
-      // Suppress authentication errors as requested to keep console clean
+    newSocket.on('connect_error', (err) => {
+      isInitializing.current = false;
       if (err.message && (err.message.includes('Authentication error') || err.message.includes('Invalid token'))) {
         return;
       }
       console.error('[useSocket] Socket connection error:', err);
     });
 
-    socket.on('disconnect', (reason) => {
+    newSocket.on('disconnect', (reason) => {
       console.log('[useSocket] Socket disconnected:', reason);
+      // 不立即清除 globalSocket，让重连逻辑有机会恢复
     });
 
-    socket.on('notification:new', (data) => {
+    newSocket.on('notification:new', (data) => {
       console.log('[useSocket] New Notification received:', data);
-
-      // Update store
       incrementUnread();
-
-      // Refresh notification list if active
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
-
       toast(data.title || 'New Notification', {
         description: data.content,
         action: data.actionLabel ? {
           label: data.actionLabel,
           onClick: () => {
             if (data.link) {
-              window.location.href = data.link; // or router.push
+              window.location.href = data.link;
             }
           }
         } : undefined,
       });
     });
 
-    socket.on('notification:read', (data) => {
+    newSocket.on('notification:read', (data) => {
       console.log('[useSocket] Notification read event received:', data);
-
       if (data && data.id) {
-        decrementUnread();
+        const handledLocally = consumeLocalRead(data.id);
+        if (!handledLocally) {
+          decrementUnread();
+        }
       } else {
         resetUnread();
       }
-
-      // Refresh notification list if active
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     });
 
-    socketRef.current = socket;
-
+    // 不在 cleanup 中断开连接，保持全局连接
     return () => {
-      console.log('[useSocket] Cleanup: disconnecting socket.');
-      socket.disconnect();
-      socketRef.current = null;
+      // 只有在用户登出时才断开（通过 isAuthenticated 判断）
     };
   }, [isAuthenticated, accessToken, user, queryClient, incrementUnread, decrementUnread, resetUnread]);
 
-  return socketRef.current;
+  return socket;
 };

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Calendar, Edit, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/hooks';
-import { getCategoryColor } from '@/lib/constants/colors';
 import { SubscriptionDTO } from '@subcare/types';
 import { ActionDropdown, ActionItem } from '@/components/ui/action-dropdown';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
@@ -41,7 +40,8 @@ export function SubscriptionCard({ subscription, onClick, readonly }: Subscripti
     'Renewal Soon': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300', // Backend might not have this state directly
   };
 
-  const categoryColor = getCategoryColor(subscription.category);
+  // Use categoryColor from API, fallback to default gray
+  const categoryColor = subscription.categoryColor || '#9CA3AF';
 
   const handleEdit = () => {
     openAddSubscription(subscription);

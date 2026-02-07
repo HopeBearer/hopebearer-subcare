@@ -37,6 +37,12 @@
     "subtitle": "可视化您的预算在各分类中的分布。",
     "no_data": "暂无数据"
   },
+  "tooltips": {
+    "ytd_expense_actual": "统计今年以来已发生的支付记录。",
+    "projected_annual_total": "基于当前订阅预测未来支出（按账期）。",
+    "projection": "按订阅账期推算未来12个月金额。",
+    "sankey": "按月度等价金额展示分类分布。"
+  },
   "overview": "概览",
   "history": "账单历史",
   "total_expense": "年度总支出",

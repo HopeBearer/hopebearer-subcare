@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { io, Socket } from 'socket.io-client';
-import { useAuthStore } from '@/store';
+import { useEffect, useState, useCallback } from 'react';
+import { useSocket } from '@/hooks/use-socket';
 import { RecommendationResponse } from '@subcare/types';
 
 // Progress event from backend
@@ -11,7 +10,7 @@ export interface AIProgressEvent {
   messageKey: string;  // i18n key for frontend translation
   toolName?: string;
   loop?: number;
-  data?: any;
+  data?: unknown;
 }
 
 export interface UseAIRecommendationsReturn {
@@ -24,91 +23,75 @@ export interface UseAIRecommendationsReturn {
 }
 
 export const useAIRecommendations = (): UseAIRecommendationsReturn => {
-  const socketRef = useRef<Socket | null>(null);
-  const { user, accessToken, isAuthenticated } = useAuthStore();
-  
+  // Reuse the global shared socket (same as chat, notifications, etc.)
+  const socket = useSocket();
+
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState<AIProgressEvent | null>(null);
   const [data, setData] = useState<RecommendationResponse | null>(null);
   const [error, setError] = useState<{ code: string; message: string } | null>(null);
 
+  // Track connection state based on shared socket
   useEffect(() => {
-    // Only connect if authenticated
-    if (!isAuthenticated || !accessToken || !user) {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-        setIsConnected(false);
-      }
+    if (!socket) {
+      setIsConnected(false);
       return;
     }
 
-    // Socket URL is configured via NEXT_PUBLIC_SOCKET_URL environment variable
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || '';
+    // If socket is already connected, set state immediately
+    setIsConnected(socket.connected);
 
-    const socket = io(socketUrl, {
-      path: '/socket.io',
-      auth: {
-        token: accessToken,
-      },
-      query: {
-        userId: user.id
-      },
-      transports: ['websocket', 'polling'],
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
+    const handleConnect = () => setIsConnected(true);
+    const handleDisconnect = () => setIsConnected(false);
 
-    socket.on('connect', () => {
-      setIsConnected(true);
-    });
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
 
-    socket.on('connect_error', (err) => {
-      // Suppress authentication errors
-      if (err.message?.includes('Authentication error') || err.message?.includes('Invalid token')) {
-        return;
-      }
-      setIsConnected(false);
-    });
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+    };
+  }, [socket]);
 
-    socket.on('disconnect', () => {
-      setIsConnected(false);
-    });
+  // Register AI Recommendation event listeners on the shared socket
+  useEffect(() => {
+    if (!socket) return;
 
-    // AI Recommendations events
-    socket.on('ai:recommendations:progress', (event: AIProgressEvent) => {
+    const handleProgress = (event: AIProgressEvent) => {
       setProgress(event);
-    });
+    };
 
-    socket.on('ai:recommendations:complete', (response: { status: string; data: RecommendationResponse }) => {
+    const handleComplete = (response: { status: string; data: RecommendationResponse }) => {
       setData(response.data);
       setIsLoading(false);
       setProgress(null);
       setError(null);
-    });
+    };
 
-    socket.on('ai:recommendations:error', (err: { code: string; message: string }) => {
+    const handleError = (err: { code: string; message: string }) => {
       setError(err);
       setIsLoading(false);
       setProgress(null);
-    });
+    };
 
-    socketRef.current = socket;
+    socket.on('ai:recommendations:progress', handleProgress);
+    socket.on('ai:recommendations:complete', handleComplete);
+    socket.on('ai:recommendations:error', handleError);
 
     return () => {
-      socket.disconnect();
-      socketRef.current = null;
-      setIsConnected(false);
+      socket.off('ai:recommendations:progress', handleProgress);
+      socket.off('ai:recommendations:complete', handleComplete);
+      socket.off('ai:recommendations:error', handleError);
     };
-  }, [isAuthenticated, accessToken, user]);
+  }, [socket]);
 
   const fetchRecommendations = useCallback((options?: { 
     model?: string; 
     focus?: string; 
     forceRefresh?: boolean 
   }) => {
-    if (!socketRef.current || !isConnected) {
+    if (!socket || !socket.connected) {
       setError({ code: 'NOT_CONNECTED', message: 'WebSocket not connected' });
       return;
     }
@@ -116,12 +99,12 @@ export const useAIRecommendations = (): UseAIRecommendationsReturn => {
     setIsLoading(true);
     setError(null);
     setProgress({ stage: 'started', messageKey: 'ai.progress.connecting' });
-    socketRef.current.emit('ai:recommendations:request', {
+    socket.emit('ai:recommendations:request', {
       model: options?.model,
       focus: options?.focus,
       forceRefresh: options?.forceRefresh ?? true
     });
-  }, [isConnected]);
+  }, [socket]);
 
   return {
     isConnected,

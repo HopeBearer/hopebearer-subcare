@@ -5,7 +5,7 @@
     "logout": "Logout"
   },
   "stats": {
-    "total_expenses": "Total Expenses This Month",
+    "total_expenses": "Monthly Expenses",
     "active_subs": "Active Subscriptions",
     "remaining_budget": "Remaining Budget",
     "over_budget": "Over Budget",
@@ -19,12 +19,26 @@
       "active_subs": "Covering {{count}} different service categories",
       "remaining_budget": "Budget usage this month",
       "upcoming_renewals": "Renewals in the next {{days}} days"
+    },
+    "includes_deleted": "incl. deleted {{amount}}",
+    "excludes_deleted": "Excludes deleted subscriptions",
+    "equivalent_expenses": "Monthly Equivalent",
+    "equivalent_diff": "Differs from actual by {{amount}}",
+    "cycle_monthly": "Monthly",
+    "cycle_yearly": "Yearly",
+    "cycle_weekly": "Weekly",
+    "cycle_other": "Other",
+    "subs_count": "{{count}} subs",
+    "tooltips": {
+      "total_expenses": "Based on payment records this month. Annual plans count in full when charged.",
+      "equivalent_expenses": "Total monthly-equivalent cost of all active subscriptions. Annual plans ÷12. Shows the true recurring monthly cost."
     }
   },
   "charts": {
     "spending_trends": {
       "title": "Spending Trends",
       "subtitle": "Monthly Subscription Cost Changes",
+      "tooltip": "Actual spend trend based on payment records.",
       "periods": {
         "6m": "6 Months",
         "1y": "1 Year",
@@ -34,6 +48,7 @@
     "category_distribution": {
       "title": "Category Distribution",
       "subtitle": "Spending by Category",
+      "tooltip": "Monthly-equivalent amounts (normalized by billing cycle), not actual payments.",
       "percentage": "Percentage",
       "amount": "Amount"
     }

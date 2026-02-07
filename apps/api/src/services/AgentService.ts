@@ -3,15 +3,18 @@ import { LLMFactory } from '../infrastructure/ai/LLMFactory';
 import { LLMMessage, LLMResponse, ToolDefinition } from '../infrastructure/ai/interfaces/LLMProvider';
 import { EncryptionUtil } from '../utils/EncryptionUtil';
 import { AppError } from '../utils/AppError';
+import { calculateMonthlyEquivalent } from '../utils/billing-utils';
 import { StatusCodes } from 'http-status-codes';
 import { ToolExecutor } from '../infrastructure/ai/tools/ToolExecutor';
 import { TOOL_DEFINITIONS } from '../infrastructure/ai/tools/ToolDefinitions';
 import { CurrencyService } from './CurrencyService';
+import { DashboardService } from './DashboardService';
 
 interface AIRecommendationRequest {
   userId: string;
   focus?: string; // e.g. "save_money", "discover_tools"
   forceRefresh?: boolean;
+  cacheOnly?: boolean;
 }
 
 // Progress callback for WebSocket updates
@@ -28,6 +31,7 @@ export type AIProgressCallback = (event: AIProgressEvent) => void;
 interface AgentServiceDeps {
   toolExecutor: ToolExecutor;
   currencyService: CurrencyService;
+  dashboardService?: DashboardService;
 }
 
 // Tool call limits
@@ -37,6 +41,7 @@ const MAX_SEARCH_CALLS = 2;
 export class AgentService {
   private toolExecutor: ToolExecutor | null = null;
   private currencyService: CurrencyService | null = null;
+  private dashboardService: DashboardService | null = null;
 
   /**
    * 设置依赖（用于依赖注入）
@@ -44,6 +49,7 @@ export class AgentService {
   setDependencies(deps: AgentServiceDeps) {
     this.toolExecutor = deps.toolExecutor;
     this.currencyService = deps.currencyService;
+    this.dashboardService = deps.dashboardService || null;
   }
   
   /**
@@ -229,6 +235,12 @@ export class AgentService {
           return cached.content;
         }
       }
+
+      if (req.cacheOnly) {
+        throw new AppError('AI_RECOMMENDATION_CACHE_MISS', StatusCodes.NOT_FOUND, {
+          message: 'No cached recommendation for today'
+        });
+      }
     }
 
     // 2. Get User's Active AI Config with AIProvider relation
@@ -306,21 +318,47 @@ export class AgentService {
       user.currency
     );
 
-    // Calculate total after conversion
-    const totalSpent = normalizedSubscriptions.reduce(
-      (sum, sub) => sum + sub.convertedPrice, 
+    const normalizedWithMonthly = normalizedSubscriptions.map(sub => ({
+      ...sub,
+      monthlyEquivalent: calculateMonthlyEquivalent(
+        sub.convertedPrice,
+        String(sub.billingCycle || 'monthly')
+      )
+    }));
+
+    // Calculate monthly-equivalent total for consistent comparisons
+    const totalSpent = normalizedWithMonthly.reduce(
+      (sum, sub) => sum + sub.monthlyEquivalent,
       0
     );
+
+    // Also get actual payment total from DashboardService for reference
+    // This ensures the AI knows both perspectives: ongoing cost vs actual this-month payment
+    let actualMonthlyPayment: number | undefined;
+    try {
+      if (this.dashboardService) {
+        const dashboardStats = await this.dashboardService.getStats(req.userId);
+        actualMonthlyPayment = Number(dashboardStats.expenses.total.amount.toFixed(2));
+      }
+    } catch (e) {
+      console.warn('[AgentService] Failed to get actual monthly payment:', e);
+    }
     
     const context = {
       userProfile: {
         baseCurrency: user.currency,
         monthlyBudget: Number(user.monthlyBudget),
-        currentTotalMonthlySpend: Number(totalSpent.toFixed(2))
+        currentTotalMonthlySpend: Number(totalSpent.toFixed(2)),
+        currentTotalMonthlySpendNote: 'Monthly-equivalent total (annual plans divided by 12, etc.)',
+        ...(actualMonthlyPayment !== undefined && {
+          actualMonthlyPayment,
+          actualMonthlyPaymentNote: 'Actual payment records this month (matches dashboard total)'
+        })
       },
-      subscriptions: normalizedSubscriptions.map(sub => ({
+      subscriptions: normalizedWithMonthly.map(sub => ({
         name: sub.name,
         price: sub.convertedPrice,
+        monthlyEquivalent: Number(sub.monthlyEquivalent.toFixed(2)),
         originalPrice: sub.originalPrice,
         originalCurrency: sub.originalCurrency,
         currency: user.currency,

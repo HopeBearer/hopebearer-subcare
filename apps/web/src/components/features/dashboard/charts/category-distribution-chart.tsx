@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import ReactECharts from 'echarts-for-react';
 import { useTranslation } from '@/lib/i18n/hooks';
-import { DashboardService } from '@/services';
-import { CategoryDistributionData } from '@subcare/types';
-import { getCategoryColor } from '@/lib/constants/colors';
+import { HelpCircle } from 'lucide-react';
 
 import { useThemeStore } from '@/store';
 import { useAuthStore } from '@/store';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useDashboardStats } from '@/hooks/use-dashboard-stats';
 
 export function CategoryDistributionChart() {
   const { theme } = useThemeStore();
@@ -16,30 +16,17 @@ export function CategoryDistributionChart() {
   const currency = user?.currency || 'CNY';
   const isDark = theme === 'dark';
   const { t } = useTranslation(['subscription', 'dashboard']);
-  const [data, setData] = useState<CategoryDistributionData>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const result = await DashboardService.getDistribution();
-        setData(result);
-      } catch (error) {
-        console.error('Failed to fetch distribution data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  // Read distribution from the atomic dashboard stats cache
+  const { data: dashboardStats, isLoading: loading } = useDashboardStats();
+  const data = dashboardStats?.distribution ?? [];
 
   const processedData = data.map(item => ({
     value: item.value, // This is the amount
     name: t(`categories.${item.name.toLowerCase()}`, item.name),
     percentage: item.percentage,
     itemStyle: { 
-      color: getCategoryColor(item.name)
+      color: item.color || '#9CA3AF' // Use API color, fallback to gray
     },
     // Adding custom properties to access in formatter
     formattedValue: item.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }),
@@ -133,7 +120,23 @@ export function CategoryDistributionChart() {
     <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-base border-gray-100 dark:border-gray-700 h-full flex flex-col">
        <div className="mb-2">
           <h3 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">{t('charts.category_distribution.title', { ns: 'dashboard' })}</h3>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1 font-medium">{t('charts.category_distribution.subtitle', { ns: 'dashboard' })}</p>
+          <div className="flex items-center gap-2">
+            <div className="text-sm text-gray-400 dark:text-gray-500 mt-1 font-medium">
+              {t('charts.category_distribution.subtitle', { ns: 'dashboard' })}
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 mt-1">
+                    <HelpCircle className="w-3.5 h-3.5" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {t('charts.category_distribution.tooltip', { ns: 'dashboard' })}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
         <div className="flex-1 min-h-0 flex items-center justify-center -mt-4">
            {loading ? (

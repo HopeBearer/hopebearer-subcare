@@ -10,6 +10,8 @@ import { financialRegistry } from './registries/financial.registry';
 import { currencyRegistry } from './registries/currency.registry';
 import { agentRegistry } from './registries/agent.registry';
 import { aiProviderRegistry } from './registries/ai-provider.registry';
+import { chatRegistry } from './registries/chat.registry';
+import { categoryRegistry } from './registries/category.registry';
 
 export interface RouteImplementation {
   handler: RequestHandler;
@@ -36,4 +38,6 @@ export const routeRegistry: Record<string, RouteVersions> = {
   ...currencyRegistry,
   ...agentRegistry,
   ...aiProviderRegistry,
+  ...chatRegistry,
+  ...categoryRegistry,
 };

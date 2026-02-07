@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  reactStrictMode: true,
+  reactStrictMode: false, // Disabled to prevent double rendering/effects in development
   typescript: {
     ignoreBuildErrors: true,
   },

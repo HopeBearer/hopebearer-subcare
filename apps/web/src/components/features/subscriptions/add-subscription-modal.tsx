@@ -28,11 +28,14 @@ export function AddSubscriptionModal() {
         toast.success(t('created_success', { ns: 'subscription', defaultValue: 'Subscription created successfully' }));
       }
       
-      // Invalidate queries to refresh the list
+      // Invalidate queries to refresh all related data
       queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
       queryClient.invalidateQueries({ queryKey: ['subscription-names'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'trend'] });
       queryClient.invalidateQueries({ queryKey: ['pending-bills'] });
+      queryClient.invalidateQueries({ queryKey: ['financial', 'overview'] });
+      queryClient.invalidateQueries({ queryKey: ['financial-history'] });
       
       closeAddSubscription();
     } catch (error) {

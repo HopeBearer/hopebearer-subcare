@@ -4,3 +4,4 @@ export * from './modules/settings';
 export * from './modules/theme';
 export * from './modules/layout';
 export * from './modules/notification';
+export * from './modules/chat';

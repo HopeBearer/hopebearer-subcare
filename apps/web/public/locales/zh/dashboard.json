@@ -19,12 +19,26 @@
       "active_subs": "涵盖 {{count}} 个不同的服务分类",
       "remaining_budget": "本月额度使用占比",
       "upcoming_renewals": "未来 {{days}} 天内将有扣款"
+    },
+    "includes_deleted": "含已删除订阅 {{amount}}",
+    "excludes_deleted": "不包含已删除订阅",
+    "equivalent_expenses": "本月等价支出",
+    "equivalent_diff": "与实际支出相差 {{amount}}",
+    "cycle_monthly": "月付",
+    "cycle_yearly": "年付",
+    "cycle_weekly": "周付",
+    "cycle_other": "其他",
+    "subs_count": "{{count}} 项",
+    "tooltips": {
+      "total_expenses": "仅统计本月实际支付记录，年付在扣款当月全额计入。",
+      "equivalent_expenses": "将所有活跃订阅按月折算后的总金额。年付÷12，用于评估每月订阅的真实成本。"
     }
   },
   "charts": {
     "spending_trends": {
       "title": "支出趋势",
       "subtitle": "月度订阅成本变化",
+      "tooltip": "基于支付记录的实际支出趋势。",
       "periods": {
         "6m": "6个月",
         "1y": "1年",
@@ -34,6 +48,7 @@
     "category_distribution": {
       "title": "分类占比",
       "subtitle": "按分类统计支出",
+      "tooltip": "这里展示的是月度等价金额（按账期折算），不是当月实付。",
       "percentage": "占比",
       "amount": "金额"
     }

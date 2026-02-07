@@ -1,9 +1,9 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation } from '@/lib/i18n/hooks';
-import { useAuthStore, useLayoutStore } from '@/store';
+import { useAuthStore, useLayoutStore, useChatStore } from '@/store';
 import { 
   LayoutDashboard, 
   CreditCard, 
@@ -11,18 +11,102 @@ import {
   Bell, 
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  MessageSquarePlus,
+  MessageCircle,
+  Trash2,
+  MoreHorizontal,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SettingsPageSidebar } from './settings-sidebar';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { formatDistanceToNow } from 'date-fns';
+import { zhCN, enUS, ja } from 'date-fns/locale';
+
+// 虚拟滚动配置 - 已禁用，使用普通滚动避免抖动
+// 对话列表通常不会有太多项目，普通滚动性能足够
+const ENABLE_VIRTUAL_SCROLL = false;
+const ITEM_HEIGHT = 52; // 增加高度以匹配实际内容
+const BUFFER_SIZE = 5;
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { t } = useTranslation('common');
+  const router = useRouter();
+  const { t, i18n } = useTranslation('common');
   const { user } = useAuthStore();
   const { isSidebarCollapsed, toggleSidebar } = useLayoutStore();
+  const {
+    conversations,
+    isLoadingConversations,
+    hasMoreConversations,
+    currentConversationId,
+    streamingSessions,
+    fetchConversations,
+    loadMoreConversations,
+    createConversation,
+    selectConversation,
+    deleteConversation
+  } = useChatStore();
 
   const isSettingsPage = pathname?.startsWith('/settings');
+  const isChatPage = pathname?.startsWith('/chat');
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showDeleteMenu, setShowDeleteMenu] = useState<string | null>(null);
+
+  // 加载对话列表
+  useEffect(() => {
+    fetchConversations(true);
+  }, [fetchConversations]);
+
+  // 获取日期 locale
+  const getDateLocale = () => {
+    const lang = i18n?.language || 'zh';
+    if (lang === 'zh') return zhCN;
+    if (lang === 'ja') return ja;
+    return enUS;
+  };
+
+  // 处理滚动 - 触底加载更多
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLDivElement;
+    const { scrollHeight, scrollTop, clientHeight } = target;
+    
+    // 距离底部 100px 时触发加载更多
+    if (scrollHeight - scrollTop - clientHeight < 100 && hasMoreConversations && !isLoadingConversations) {
+      loadMoreConversations();
+    }
+  }, [hasMoreConversations, isLoadingConversations, loadMoreConversations]);
+
+  // 创建新对话 - 只跳转到 /chat，不创建会话
+  const handleNewChat = () => {
+    // 清除当前会话状态
+    selectConversation(null);
+    router.push('/chat');
+  };
+
+  // 选择对话
+  const handleSelectConversation = async (id: string) => {
+    await selectConversation(id);
+    router.push(`/chat/${id}`);
+  };
+
+  // 点击导航项时清除当前会话（确保只有一个高亮）
+  const handleNavClick = () => {
+    if (currentConversationId) {
+      selectConversation(null);
+    }
+  };
+
+  // 删除对话
+  const handleDeleteConversation = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await deleteConversation(id);
+    setShowDeleteMenu(null);
+    if (currentConversationId === id) {
+      router.push('/chat');
+    }
+  };
 
   const navItems = [
     {
@@ -70,50 +154,178 @@ export function Sidebar() {
       <div className={cn("flex items-center transition-all duration-300", isSidebarCollapsed ? "justify-center gap-0" : "px-8 pt-8 gap-3")}>
         <img src="/images/logo.png" alt="SubCare Logo" className="h-8 w-auto" />
         <span className={cn(
-          "font-logo  font-normal text-gray-900 dark:text-white tracking-tight transition-opacity duration-300",
+          "font-logo font-normal text-gray-900 dark:text-white tracking-tight transition-opacity duration-300",
           isSidebarCollapsed ? "opacity-0 w-0 overflow-hidden" : "text-3xl opacity-100"
         )}>
           {t('app_name')}
         </span>
       </div>
 
-      {/* Navigation */}
+      {/* Content Area */}
       {isSettingsPage ? (
         <SettingsPageSidebar />
       ) : (
-        <nav className="flex-1 px-4 space-y-2 py-4">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
-            const Icon = item.icon;
-            
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1",
-                  isActive 
-                    ? "bg-primary-soft text-primary font-medium shadow-sm" 
-                    : "text-secondary hover:bg-primary-pale hover:text-primary dark:hover:bg-gray-800",
-                  isSidebarCollapsed && "justify-center px-2 gap-0"
-                )}
-                title={isSidebarCollapsed ? item.label : undefined}
-              >
-                <Icon className={cn("w-5 h-5 transition-colors", isActive ? "text-primary" : "text-gray-400 group-hover:text-primary")} />
-                <span className={cn(
-                  "transition-all duration-300 whitespace-nowrap overflow-hidden",
-                  isSidebarCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
-                )}>
-                  {item.label}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* New Chat Button */}
+          <div className="px-4 pt-4 pb-2">
+            <button
+              onClick={handleNewChat}
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
+                "bg-primary text-white hover:bg-primary-600 shadow-sm",
+                isSidebarCollapsed && "justify-center px-2 gap-0"
+              )}
+              title={isSidebarCollapsed ? t('nav.new_chat') : undefined}
+            >
+              <MessageSquarePlus className="w-5 h-5" />
+              <span className={cn(
+                "font-medium transition-all duration-300 whitespace-nowrap overflow-hidden",
+                isSidebarCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
+              )}>
+                {t('nav.new_chat')}
+              </span>
+            </button>
+          </div>
+
+          {/* Navigation Items */}
+          <nav className="px-4 space-y-2 py-4">
+            {navItems.map((item) => {
+              // 只有当前路径匹配且没有选中任何会话时才高亮
+              const isActive = !currentConversationId && (pathname === item.href || pathname?.startsWith(item.href + '/'));
+              const Icon = item.icon;
+              
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={handleNavClick}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1",
+                    isActive 
+                      ? "bg-primary-soft text-primary font-medium shadow-sm" 
+                      : "text-secondary hover:bg-primary-pale hover:text-primary dark:hover:bg-gray-800",
+                    isSidebarCollapsed && "justify-center px-2 gap-0"
+                  )}
+                  title={isSidebarCollapsed ? item.label : undefined}
+                >
+                  <Icon className={cn("w-5 h-5 transition-colors", isActive ? "text-primary" : "text-gray-400 group-hover:text-primary")} />
+                  <span className={cn(
+                    "transition-all duration-300 whitespace-nowrap overflow-hidden",
+                    isSidebarCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
+                  )}>
+                    {item.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Conversation List (Virtual Scroll) */}
+          {!isSidebarCollapsed && (
+            <div className="flex-1 flex flex-col min-h-0 px-4 pt-2">
+              {/* Section Title */}
+              <div className="flex items-center justify-between px-2 mb-2">
+                <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  {t('chat.conversations')}
                 </span>
+              </div>
+
+              {/* Conversation List Container - 普通滚动模式 */}
+              <div 
+                ref={scrollContainerRef}
+                className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 overscroll-contain"
+                onScroll={handleScroll}
+              >
+                {conversations.length === 0 && !isLoadingConversations ? (
+                  <div className="text-center py-8 text-gray-400 text-sm">
+                    <MessageCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p>{t('chat.no_conversations')}</p>
+                    <p className="text-xs mt-1">{t('chat.start_chatting')}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {conversations.map((conversation) => {
+                      const isActive = currentConversationId === conversation.id || pathname === `/chat/${conversation.id}`;
+                      const isStreamingConversation = !!streamingSessions[conversation.id];
+                      
+                      return (
+                        <div
+                          key={conversation.id}
+                          className={cn(
+                            "group flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 relative",
+                            isActive 
+                              ? "bg-primary-soft text-primary font-medium shadow-sm" 
+                              : "text-secondary hover:bg-primary-pale hover:text-primary dark:hover:bg-gray-800"
+                          )}
+                          onClick={() => handleSelectConversation(conversation.id)}
+                        >
+                          <MessageCircle className={cn(
+                            "w-4 h-4 flex-shrink-0 transition-colors",
+                            isActive ? "text-primary" : "text-gray-400 group-hover:text-primary"
+                          )} />
+                          <div className="flex-1 min-w-0 leading-tight">
+                            <span className="text-sm truncate block">{conversation.title}</span>
+                            <span className="text-xs text-gray-400 truncate block">
+                              {formatDistanceToNow(new Date(conversation.updatedAt), {
+                                addSuffix: true,
+                                locale: getDateLocale()
+                              })}
+                            </span>
+                          </div>
+
+                          {isStreamingConversation && (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                          )}
+                          
+                          {/* Delete Button */}
+                          <button
+                            className={cn(
+                              "p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity",
+                              "hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-400 hover:text-red-500"
+                            )}
+                            onClick={(e) => handleDeleteConversation(conversation.id, e)}
+                            title={t('chat.delete_conversation')}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Loading indicator */}
+                {isLoadingConversations && (
+                  <div className="text-center py-4">
+                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Collapsed state: Chat icon */}
+          {isSidebarCollapsed && (
+            <div className="px-4 py-2">
+              <Link
+                href="/chat"
+                className={cn(
+                  "flex items-center justify-center p-3 rounded-xl transition-all duration-200",
+                  isChatPage 
+                    ? "bg-primary-soft text-primary" 
+                    : "text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary"
+                )}
+                title={t('nav.chat')}
+              >
+                <MessageCircle className="w-5 h-5" />
               </Link>
-            );
-          })}
-        </nav>
+            </div>
+          )}
+        </div>
       )}
 
       {/* User Profile Section */}
-      <div className="border-t border-base p-4">
+      <div className="border-t border-base p-4 mt-auto">
         <Link
           href="/settings"
           className={cn(
@@ -125,17 +337,6 @@ export function Sidebar() {
           )}
           title={isSidebarCollapsed ? (user?.name || 'User') : undefined}
         >
-          {/* Always show avatar or icon? User asked for 'settings icon' when collapsed. 
-              The current design uses avatar as the main icon. 
-              But there is also a Settings icon at the end.
-              If collapsed, maybe show Settings icon instead of Avatar? 
-              Or Avatar and Settings icon is hidden? 
-              Let's look at the request: "折叠的时候留下logo，icon，和设置的icon即可"
-              "Settings icon" might mean the actual gear icon.
-              If I hide avatar and show gear icon, it might be confusing if the user expects avatar.
-              But I will follow the text "settings icon".
-          */}
-           
           {isSidebarCollapsed ? (
              <Settings className={cn("w-5 h-5 transition-colors", isSettingsPage ? "text-primary" : "text-gray-400 group-hover:text-primary")} />
           ) : (

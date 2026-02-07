@@ -22,7 +22,7 @@ export function NotificationList() {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebounce(searchTerm, 300);
   const queryClient = useQueryClient();
-  const { decrementUnread, resetUnread } = useNotificationStore();
+  const { decrementUnread, resetUnread, registerLocalRead } = useNotificationStore();
 
   // Client-side pagination state
   const [displayCount, setDisplayCount] = useState(20);
@@ -126,7 +126,8 @@ export function NotificationList() {
         );
       }
       
-      // Update unread count optimistically
+      // Update unread count optimistically and mark local read
+      registerLocalRead(id);
       decrementUnread();
       
       return { previousNotifications };

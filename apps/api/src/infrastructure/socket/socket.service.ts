@@ -19,6 +19,19 @@ export interface AIProgressEvent {
   data?: any;
 }
 
+// Types for Chat events
+export interface ChatMessageSendRequest {
+  conversationId: string;
+  content: string;
+  language?: string;  // 用户当前选择的语言，用于 AI 回复
+}
+
+export interface ChatProgressEvent {
+  conversationId: string;
+  type: 'chunk' | 'tool_call' | 'complete' | 'error' | 'title_updated';
+  data: any;
+}
+
 // Event handler type for AI recommendations
 type AIRecommendationHandler = (
   userId: string,
@@ -26,10 +39,25 @@ type AIRecommendationHandler = (
   onProgress: (event: AIProgressEvent) => void
 ) => Promise<any>;
 
+// Event handler type for Chat messages
+type ChatMessageHandler = (
+  userId: string,
+  request: ChatMessageSendRequest,
+  onProgress: (event: ChatProgressEvent) => void
+) => Promise<any>;
+
 export class SocketService {
   private io: Server;
   private tokenService: TokenService;
   private aiRecommendationHandler: AIRecommendationHandler | null = null;
+  private chatMessageHandler: ChatMessageHandler | null = null;
+  
+  /**
+   * Per-conversation mutex: 防止同一会话的消息被并发处理
+   * Key: conversationId, Value: Promise chain
+   * 使用 Promise 链实现简单的 FIFO 队列，保证同一会话的消息串行处理
+   */
+  private conversationLocks: Map<string, Promise<void>> = new Map();
 
   constructor(httpServer: HttpServer, tokenService: TokenService) {
     this.tokenService = tokenService;
@@ -123,6 +151,9 @@ export class SocketService {
 
       // Handle AI Recommendation request via WebSocket
       this.setupAIRecommendationHandler(socket);
+
+      // Handle Chat message request via WebSocket
+      this.setupChatMessageHandler(socket);
 
       socket.on('disconnect', (reason) => {
         logger.info({
@@ -220,6 +251,140 @@ export class SocketService {
    */
   public setAIRecommendationHandler(handler: AIRecommendationHandler) {
     this.aiRecommendationHandler = handler;
+  }
+
+  /**
+   * Setup Chat message event handlers for a socket
+   */
+  private setupChatMessageHandler(socket: Socket) {
+    socket.on('chat:message:send', async (request: ChatMessageSendRequest) => {
+      const userId = socket.data.user?.userId;
+      
+      if (!userId) {
+        socket.emit('chat:message:error', {
+          conversationId: request.conversationId,
+          code: 'AUTH_ERROR',
+          message: 'User not authenticated'
+        });
+        return;
+      }
+
+      if (!request.conversationId || !request.content) {
+        socket.emit('chat:message:error', {
+          conversationId: request.conversationId,
+          code: 'INVALID_REQUEST',
+          message: 'Missing conversationId or content'
+        });
+        return;
+      }
+
+      if (!this.chatMessageHandler) {
+        socket.emit('chat:message:error', {
+          conversationId: request.conversationId,
+          code: 'NOT_CONFIGURED',
+          message: 'Chat handler not configured'
+        });
+        return;
+      }
+
+      // 竞态防护：per-conversation mutex
+      // 同一会话的消息必须串行处理，避免历史记录读取冲突和 AI 回复交错
+      const convId = request.conversationId;
+      const previousLock = this.conversationLocks.get(convId) || Promise.resolve();
+      
+      const currentLock = previousLock.then(async () => {
+        logger.info({
+          domain: 'SOCKET',
+          action: 'chat_message_start',
+          userId,
+          metadata: { conversationId: convId, socketId: socket.id }
+        });
+
+        // Progress callback - sends real-time updates to client
+        const onProgress = (event: ChatProgressEvent) => {
+          switch (event.type) {
+            case 'chunk':
+              socket.emit('chat:message:chunk', {
+                conversationId: event.conversationId,
+                chunk: event.data.chunk
+              });
+              break;
+            case 'tool_call':
+              socket.emit('chat:message:tool_call', {
+                conversationId: event.conversationId,
+                toolName: event.data.toolName,
+                status: event.data.status
+              });
+              break;
+            case 'complete':
+              socket.emit('chat:message:complete', {
+                conversationId: event.conversationId,
+                message: event.data.message
+              });
+              break;
+            case 'error':
+              socket.emit('chat:message:error', {
+                conversationId: event.conversationId,
+                code: 'AI_ERROR',
+                message: event.data.error
+              });
+              break;
+            case 'title_updated':
+              socket.emit('chat:message:title_updated', {
+                conversationId: event.conversationId,
+                title: event.data.title
+              });
+              break;
+          }
+        };
+
+        try {
+          await this.chatMessageHandler!(userId, request, onProgress);
+          
+          logger.info({
+            domain: 'SOCKET',
+            action: 'chat_message_complete',
+            userId,
+            metadata: { conversationId: convId, socketId: socket.id }
+          });
+        } catch (error: any) {
+          const errorMessage = error?.message || 'Unknown error occurred';
+          const errorCode = error?.reason || 'CHAT_ERROR';
+          
+          socket.emit('chat:message:error', {
+            conversationId: convId,
+            code: errorCode,
+            message: errorMessage
+          });
+
+          logger.error({
+            domain: 'SOCKET',
+            action: 'chat_message_error',
+            userId,
+            metadata: { error: errorMessage, conversationId: convId, socketId: socket.id }
+          });
+        }
+      }).catch(() => {
+        // 确保锁链不会因为前一个请求的异常而断裂
+      });
+      
+      this.conversationLocks.set(convId, currentLock);
+      
+      // 清理：当锁链完成且没有新的请求排队时，移除引用防止内存泄漏
+      currentLock.then(() => {
+        if (this.conversationLocks.get(convId) === currentLock) {
+          this.conversationLocks.delete(convId);
+        }
+      });
+    });
+  }
+
+  /**
+   * Set the handler for Chat messages
+   * This is called during app initialization to inject the ChatService method
+   */
+  public setChatMessageHandler(handler: ChatMessageHandler) {
+    this.chatMessageHandler = handler;
   }
 
   /**

@@ -19,12 +19,26 @@
       "active_subs": "{{count}} 種類のサービスカテゴリーをカバー",
       "remaining_budget": "今月の予算使用率",
       "upcoming_renewals": "今後 {{days}} 日以内に更新予定"
+    },
+    "includes_deleted": "削除済み {{amount}} を含む",
+    "excludes_deleted": "削除済みサブスクは含みません",
+    "equivalent_expenses": "月額換算支出",
+    "equivalent_diff": "実際の支出との差額 {{amount}}",
+    "cycle_monthly": "月払い",
+    "cycle_yearly": "年払い",
+    "cycle_weekly": "週払い",
+    "cycle_other": "その他",
+    "subs_count": "{{count}} 件",
+    "tooltips": {
+      "total_expenses": "今月の支払い記録のみ。年払いは請求月に全額計上。",
+      "equivalent_expenses": "全アクティブサブスクの月額換算合計。年払い÷12。真の月間コストを表します。"
     }
   },
   "charts": {
     "spending_trends": {
       "title": "支出推移",
       "subtitle": "月間サブスクリプション費用の変化",
+      "tooltip": "支払い記録に基づく実支出の推移。",
       "periods": {
         "6m": "6ヶ月",
         "1y": "1年",
@@ -34,6 +48,7 @@
     "category_distribution": {
       "title": "カテゴリー別割合",
       "subtitle": "カテゴリー別支出統計",
+      "tooltip": "月額換算の金額（請求サイクルで正規化）。実支払いではありません。",
       "percentage": "割合",
       "amount": "金額"
     }
