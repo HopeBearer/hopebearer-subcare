@@ -8,12 +8,11 @@ import { Select } from '@/components/ui/select';
 import { useState, useEffect, useMemo } from 'react';
 import { agentService } from '@/services/modules/agent';
 import { aiProviderService } from '@/services/modules/ai-provider';
-import { AIProviderDTO, AIModelDTO
-
- } from '@subcare/types';
+import { AIProviderDTO, AIModelDTO } from '@subcare/types';
 import { toast } from 'sonner';
 import { Search, Zap, RefreshCw, Check, ExternalLink, Key, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/store';
 
 export function ApiSettings() {
   const { t } = useTranslation('settings');
@@ -196,6 +195,12 @@ export function ApiSettings() {
       toast.success(t('api.success_config') || 'Configuration saved successfully');
       setApiKey('');
       checkCurrentConfig();
+      
+      // 更新全局用户状态，标记已配置 AI 服务
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser) {
+        useAuthStore.getState().updateUser({ ...currentUser, hasAIConfig: true });
+      }
     } catch (e) {
       toast.error(t('api.error_config') || 'Failed to save configuration');
     } finally {

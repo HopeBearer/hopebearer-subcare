@@ -35,7 +35,11 @@
     "context_trimmed": "(trimmed)",
     "context_max": "max {{maxTokens}}",
     "context_placeholder": "Context: displayed after sending",
-    "input_hint": "Enter to send, Shift + Enter for new line"
+    "input_hint": "Enter to send, Shift + Enter for new line",
+    "no_api_key_title": "AI Service Configuration Required",
+    "no_api_key_description": "Please configure your AI service API Key in Settings before using the AI Chat feature.",
+    "no_api_key_toast": "Please configure your AI service API Key first",
+    "go_to_settings": "Go to Settings"
   },
   "metadata": {
     "dashboard": { "title": "Dashboard", "description": "Overview of your subscriptions and expenses." },

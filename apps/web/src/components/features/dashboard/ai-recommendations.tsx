@@ -237,6 +237,12 @@ export function AIRecommendations() {
       setShowConfigModal(false);
       setApiKey('');
       checkConfig();
+      
+      // 更新全局用户状态，标记已配置 AI 服务
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser) {
+        useAuthStore.getState().updateUser({ ...currentUser, hasAIConfig: true });
+      }
     } catch (e) {
       toast.error(t('ai.error_config'));
     } finally {

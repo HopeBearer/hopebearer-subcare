@@ -1,15 +1,18 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { useChatStore, bufferStartSession, chunkBuffers, SessionStatus } from '@/store'
+import { useAuthStore, useSettingsStore } from '@/store'
 import { useSocket } from '@/hooks/use-socket'
 import { ChatMessage } from './chat-message'
 import { StreamingMessage } from './streaming-message'
 import { ChatInput } from './chat-input'
 import { Message } from '@/services'
-import { Bot, Sparkles, Loader2 } from 'lucide-react'
+import { Bot, Sparkles, Loader2, Settings, KeyRound } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n/hooks'
 import { useChatScroll } from '@/hooks/use-chat-scroll'
+import { toast } from 'sonner'
 
 interface ChatContainerProps {
   conversationId?: string
@@ -17,9 +20,14 @@ interface ChatContainerProps {
 
 export function ChatContainer({ conversationId }: ChatContainerProps) {
   const { t, i18n } = useTranslation('common')
+  const router = useRouter()
   const socket = useSocket()
   const containerRef = useRef<HTMLDivElement>(null)
   const prevConversationIdRef = useRef<string | null>(null)
+  
+  // AI Config check
+  const user = useAuthStore(state => state.user)
+  const hasAIConfig = user?.hasAIConfig ?? false
 
   // ===== 精细 Zustand 订阅 =====
   const messages = useChatStore(state => state.messages)
@@ -123,6 +131,48 @@ export function ChatContainer({ conversationId }: ChatContainerProps) {
     if (isNewConversation) {
       window.history.replaceState(null, '', `/chat/${targetConversationId}`)
     }
+  }
+
+  // 跳转到设置页 API Key 配置区域
+  const handleGoToSettings = () => {
+    useSettingsStore.getState().setActiveTab('api')
+    router.push('/settings')
+    toast.info(t('chat.no_api_key_toast'))
+  }
+
+  // 未配置 AI 服务 — 显示引导页
+  if (!hasAIConfig) {
+    return (
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="max-w-md mx-auto px-6 text-center">
+            {/* 图标 */}
+            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-50 dark:from-amber-900/30 dark:to-amber-900/10 flex items-center justify-center shadow-lg">
+              <KeyRound className="w-10 h-10 text-amber-500" />
+            </div>
+            
+            {/* 标题 */}
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">
+              {t('chat.no_api_key_title')}
+            </h1>
+            
+            {/* 描述 */}
+            <p className="text-gray-500 dark:text-gray-400 mb-8 leading-relaxed">
+              {t('chat.no_api_key_description')}
+            </p>
+            
+            {/* 按钮 */}
+            <button
+              onClick={handleGoToSettings}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-medium shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all"
+            >
+              <Settings className="w-5 h-5" />
+              {t('chat.go_to_settings')}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // 判断是否显示欢迎页

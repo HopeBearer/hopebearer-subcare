@@ -14,7 +14,7 @@ import { NotificationService } from "../modules/notification/notification.servic
  * 认证响应接口
  */
 export interface AuthResponse {
-  user: Omit<User, 'password' | 'refreshToken'>;
+  user: Omit<User, 'password' | 'refreshToken'> & { hasAIConfig?: boolean };
   tokens: {
     accessToken: string;
     refreshToken: string;
@@ -44,6 +44,16 @@ export class AuthService {
   getPublicKey() {
     // Encryption removed
     return { publicKey: "" };
+  }
+
+  /**
+   * 检查用户是否有活跃的 AI 配置
+   */
+  private async checkHasAIConfig(userId: string): Promise<boolean> {
+    const count = await prisma.userAIConfig.count({
+      where: { userId, isActive: true, deletedAt: null }
+    });
+    return count > 0;
   }
 
   /**
@@ -101,7 +111,7 @@ export class AuthService {
     const { password, refreshToken: rt, ...userWithoutPassword } = user;
 
     return {
-      user: userWithoutPassword,
+      user: { ...userWithoutPassword, hasAIConfig: false },
       tokens,
     };
   }
@@ -253,9 +263,10 @@ export class AuthService {
     });
 
     const { password, refreshToken: rt, ...userWithoutPassword } = user;
+    const hasAIConfig = await this.checkHasAIConfig(user.id);
 
     return {
-      user: userWithoutPassword,
+      user: { ...userWithoutPassword, hasAIConfig },
       tokens,
     };
   }
@@ -298,9 +309,10 @@ export class AuthService {
     });
 
     const { password, refreshToken: rt, ...userWithoutPassword } = user;
+    const hasAIConfig = await this.checkHasAIConfig(user.id);
 
     return {
-      user: userWithoutPassword,
+      user: { ...userWithoutPassword, hasAIConfig },
       tokens,
     };
   }

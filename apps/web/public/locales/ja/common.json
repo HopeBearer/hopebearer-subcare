@@ -205,7 +205,11 @@
     "context_trimmed": "(削減済み)",
     "context_max": "上限 {{maxTokens}}",
     "context_placeholder": "コンテキスト：送信後に表示",
-    "input_hint": "Enter で送信、Shift + Enter で改行"
+    "input_hint": "Enter で送信、Shift + Enter で改行",
+    "no_api_key_title": "AIサービスの設定が必要です",
+    "no_api_key_description": "AIチャット機能を使用する前に、設定でAIサービスのAPIキーを設定してください。",
+    "no_api_key_toast": "まずAIサービスのAPIキーを設定してください",
+    "go_to_settings": "設定へ移動"
   },
   "tools": {
     "used_count": "{{count}}個のツールを使用",

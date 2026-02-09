@@ -21,6 +21,7 @@ export interface UserDTO {
   currency?: string;
   monthlyBudget?: number | string; // Decimal often comes as string or number
   bio?: string | null;
+  hasAIConfig?: boolean; // Whether the user has an active AI provider configuration
 }
 
 export interface LoginParams {

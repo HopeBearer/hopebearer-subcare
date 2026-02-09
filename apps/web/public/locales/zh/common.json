@@ -35,7 +35,11 @@
     "context_trimmed": "(已裁剪)",
     "context_max": "上限 {{maxTokens}}",
     "context_placeholder": "上下文：发送消息后显示",
-    "input_hint": "按 Enter 发送，Shift + Enter 换行"
+    "input_hint": "按 Enter 发送，Shift + Enter 换行",
+    "no_api_key_title": "需要配置 AI 服务",
+    "no_api_key_description": "使用 AI 对话功能前，请先在设置中配置您的 AI 服务 API Key。",
+    "no_api_key_toast": "请先配置 AI 服务 API Key",
+    "go_to_settings": "前往设置"
   },
   "metadata": {
     "dashboard": { "title": "仪表盘", "description": "概览您的订阅和支出情况。" },

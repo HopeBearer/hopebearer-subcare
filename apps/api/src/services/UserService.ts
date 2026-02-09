@@ -71,11 +71,17 @@ export class UserService {
    * 获取用户详情
    * @param id 用户 ID
    */
-  async getUserById(id: string): Promise<Omit<User, 'password' | 'refreshToken'> | null> {
+  async getUserById(id: string): Promise<(Omit<User, 'password' | 'refreshToken'> & { hasAIConfig?: boolean }) | null> {
     const user = await this.userRepository.findById(id);
     if (!user) return null;
     const { password: _p, refreshToken: _r, ...rest } = user;
-    return rest;
+    
+    // 检查是否有活跃的 AI 配置
+    const aiConfigCount = await prisma.userAIConfig.count({
+      where: { userId: id, isActive: true, deletedAt: null }
+    });
+
+    return { ...rest, hasAIConfig: aiConfigCount > 0 };
   }
 
 
