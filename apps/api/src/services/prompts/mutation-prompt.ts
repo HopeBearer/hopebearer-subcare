@@ -111,6 +111,11 @@ Call \`quick_add_subscription\` with:
 - If from template: use template info (price, currency, etc.)
 - If from search_web: pass the price you extracted from search results
 - **NEVER guess a price - must come from template or search_web**
+- **Pass ALL user-specified settings**: autoRenewal, enableNotification, notifyDaysBefore, category, etc.
+- If user says "不续费"/"关闭自动续费" → set autoRenewal=false
+- If user says "通知打开"/"提醒开启" → set enableNotification=true
+- If user says "提前X天" → set notifyDaysBefore=X
+- If user specifies a category like "工具"/"Tools" → set category to the English name (e.g. "Tools")
 
 ### Step 4: Handle Result
 Check the \`quick_add_subscription\` response:
@@ -121,11 +126,20 @@ Check the \`quick_add_subscription\` response:
 ### Step 4: Confirm Details & Ask for Edits (IMPORTANT)
 After successful addition, show details AND offer to edit:
 
+If autoRenewal is ON (default):
 "✅ 已添加 [服务名] 订阅
 - 价格: [货币] [金额]/[周期] (来源: [模板/网络搜索])
 - 下次付款: [日期]
+..."
 
-📝 **如果价格或日期不准确，请告诉我，我可以帮您修改。**
+If autoRenewal is OFF:
+"✅ 已添加 [服务名] 订阅
+- 价格: [货币] [金额]/[周期]
+- 自动续费: 已关闭
+- 到期日: [expiryDate]
+..."
+
+"📝 **如果价格或日期不准确，请告诉我，我可以帮您修改。**
 
 📋 有一笔待确认账单 ([货币] [金额]，[日期])
 请问这笔账单是否已经支付了？"

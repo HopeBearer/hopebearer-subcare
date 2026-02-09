@@ -18,7 +18,7 @@ import { useSearchParams } from 'next/navigation';
 import { PageMeta } from '@/components/common/page-meta';
 
 // Constants
-const STATUSES = ['Active', 'Paused', 'Cancelled'];
+const STATUSES = ['Active', 'Paused', 'Cancelled', 'Expired'];
 const CYCLES = ['Monthly', 'Yearly'];
 const ITEMS_PER_PAGE = 12;
 

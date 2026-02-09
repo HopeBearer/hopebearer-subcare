@@ -74,6 +74,10 @@ export class SubscriptionService {
    * 创建新订阅
    */
   async createSubscription(data: CreateSubscriptionDTO): Promise<Subscription> {
+    const autoRenewal = data.autoRenewal ?? true;
+    // Always calculate nextPayment regardless of autoRenewal.
+    // nextPayment represents the next billing date (or expiry date if autoRenewal=false).
+    // autoRenewal only controls what happens AFTER payment is confirmed.
     const nextPayment = calculateNextPayment(data.startDate, data.billingCycle);
 
     const subscription = await this.subscriptionRepository.create({
@@ -89,7 +93,7 @@ export class SubscriptionService {
       description: data.description,
       icon: data.icon,
       paymentMethod: data.paymentMethod,
-      autoRenewal: data.autoRenewal ?? true,
+      autoRenewal: autoRenewal,
       enableNotification: data.enableNotification ?? false,
       notifyDaysBefore: data.notifyDaysBefore,
       website: data.website,
@@ -173,17 +177,31 @@ export class SubscriptionService {
       throw new AppError('FORBIDDEN', StatusCodes.FORBIDDEN, { message: 'You do not have permission to update this subscription' });
     }
 
+    // Determine autoRenewal state (use incoming value or keep existing)
+    const autoRenewal = data.autoRenewal !== undefined ? data.autoRenewal : subscription.autoRenewal;
+
     let nextPayment = subscription.nextPayment;
-    if (data.startDate || data.billingCycle) {
+
+    if (data.autoRenewal === true && !subscription.autoRenewal) {
+      // Switched from off → on: recalculate nextPayment (may have been null from Expired state)
+      const startDate = data.startDate ? new Date(data.startDate) : subscription.startDate;
+      const cycle = data.billingCycle || subscription.billingCycle;
+      nextPayment = calculateNextPayment(startDate, cycle as any);
+    } else if (data.startDate || data.billingCycle) {
+      // Dates or cycle changed: recalculate nextPayment
       const startDate = data.startDate ? new Date(data.startDate) : subscription.startDate;
       const cycle = data.billingCycle || subscription.billingCycle;
       nextPayment = calculateNextPayment(startDate, cycle as any);
     }
+    // Note: When autoRenewal is toggled off, we keep nextPayment intact.
+    // The current cycle's bill still needs to be generated and confirmed.
+    // Only after confirmPayment will nextPayment be cleared and status set to Expired.
 
     const updateData: any = {
       ...data,
       startDate: data.startDate ? new Date(data.startDate) : undefined,
       nextPayment,
+      autoRenewal,
       updatedAt: new Date(),
     };
 

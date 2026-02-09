@@ -5,7 +5,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, ChevronLeft, Check, Upload, Calendar as CalendarIcon, Bell, CreditCard, Tag, Link as LinkIcon, StickyNote, Save, Info, History } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Check, Upload, Calendar as CalendarIcon, Bell, CreditCard, Tag, Link as LinkIcon, StickyNote, Save, Info, History, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,13 +30,13 @@ const step1Schema = z.object({
   currency: z.string().default('CNY'),
   cycle: z.enum(['Monthly', 'Yearly']).default('Monthly'),
   startDate: z.string().min(1, 'required'), // Date string YYYY-MM-DD
+  autoRenewal: z.boolean().default(true),
   logo: z.any().optional(), // File or string URL
 });
 
 const step2Schema = z.object({
   category: z.string().optional(),
   paymentMethod: z.string().optional(),
-  autoRenewal: z.boolean().default(true),
   usage: z.string().default('Normally'),
 });
 
@@ -57,7 +57,7 @@ type FormData = z.infer<typeof formSchema>;
 
 interface AddSubscriptionStepFormProps {
   onCancel: () => void;
-  onSubmit: (data: FormData) => void;
+  onSubmit: (data: FormData) => Promise<void> | void;
   initialValues?: SubscriptionDTO | null;
 }
 
@@ -77,6 +77,9 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
 
   // Fetch categories on mount (locked — only fetches once)
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingNext, setIsCheckingNext] = useState(false);
 
   const [conflictModal, setConflictModal] = useState<{ 
     isOpen: boolean; 
@@ -143,7 +146,7 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
     currency: formData.currency,
     billingCycle: formData.cycle,
     startDate: formData.startDate ? new Date(formData.startDate) : new Date(),
-    nextPayment: formData.startDate ? calculateNextPayment(formData.startDate, formData.cycle) : new Date(),
+    nextPayment: formData.autoRenewal && formData.startDate ? calculateNextPayment(formData.startDate, formData.cycle) : null,
     status: initialValues?.status || 'Active',
     category: formData.category || 'Uncategorized',
     usage: formData.usage,
@@ -158,12 +161,13 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
   const handleNext = async () => {
     let isStepValid = false;
     if (step === 1) {
-      isStepValid = await trigger(['name', 'price', 'currency', 'cycle', 'startDate']);
+      isStepValid = await trigger(['name', 'price', 'currency', 'cycle', 'startDate', 'autoRenewal']);
       
       if (isStepValid && !isEditMode) {
          const name = formData.name;
          if (!name) return; 
 
+         setIsCheckingNext(true);
          try {
              const result = await subscriptionService.checkConflict(name);
              
@@ -181,10 +185,12 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
              }
          } catch (e) {
              console.error("Check conflict failed", e);
+         } finally {
+             setIsCheckingNext(false);
          }
       }
     } else if (step === 2) {
-      isStepValid = await trigger(['category', 'paymentMethod', 'autoRenewal', 'usage']);
+      isStepValid = await trigger(['category', 'paymentMethod', 'usage']);
     }
 
     if (isStepValid) {
@@ -234,6 +240,8 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
   };
 
   const onFormSubmit = async (data: FormData) => {
+    if (isSubmitting) return; // Prevent double submit
+
     // Transform FormData to CreateSubscriptionDTO
     const payload: CreateSubscriptionDTO = {
       name: data.name,
@@ -256,16 +264,25 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
 
     // Check conflict if creating new and not already confirmed
     if (!isEditMode && data.name && data.name !== confirmedConflictName) {
+         setIsSubmitting(true);
          try {
              const result = await subscriptionService.checkConflict(data.name);
              if (result.conflict && result.existingSubscription) {
+                 setIsSubmitting(false);
                  setConflictModal({ 
                      isOpen: true, 
                      name: data.name, 
                      existing: result.existingSubscription,
-                     onContinue: () => {
+                     onContinue: async () => {
                          setConfirmedConflictName(data.name);
-                         onSubmit(payload as any);
+                         setIsSubmitting(true);
+                         try {
+                           await onSubmit(payload as any);
+                         } catch {
+                           // Error already handled by parent (toast shown)
+                         } finally {
+                           setIsSubmitting(false);
+                         }
                      }
                  });
                  return; 
@@ -275,7 +292,14 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
          }
     }
     
-    onSubmit(payload as any); // Type assertion needed because userId is required in DTO but injected by backend
+    setIsSubmitting(true);
+    try {
+      await onSubmit(payload as any);
+    } catch {
+      // Error already handled by parent (toast shown)
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -409,6 +433,42 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
                      </div>
                    </div>
                 </div>
+
+                {/* Auto Renewal Toggle */}
+                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <RefreshCw className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">{t('auto_renewal', { ns: 'subscription' })}</label>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {formData.autoRenewal 
+                          ? t('auto_renewal_hint_on', { defaultValue: 'Bills will be generated automatically each cycle' })
+                          : t('auto_renewal_hint_off', { defaultValue: 'This subscription will expire after the current cycle' })
+                        }
+                      </span>
+                    </div>
+                  </div>
+                  <Controller
+                    control={control}
+                    name="autoRenewal"
+                    render={({ field }) => (
+                      <Switch 
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    )}
+                  />
+                </div>
+
+                {/* Warning when auto renewal is off */}
+                {!formData.autoRenewal && (
+                  <div className="flex gap-2 p-3 text-xs sm:text-sm rounded-lg bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <Info className="w-5 h-5 shrink-0 mt-0.5" />
+                    <p>{t('auto_renewal_off_warning', { defaultValue: 'With auto-renewal off, no future bills will be generated and no renewal reminders will be sent. The subscription will be marked as expired after the current cycle ends.' })}</p>
+                  </div>
+                )}
 
                 {/* First Payment Date */}
                 <div>
@@ -553,7 +613,7 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
                    </div>
                  </div>
 
-                 <div className="grid grid-cols-2 gap-4">
+                 <div className="grid grid-cols-1 gap-4">
                    <Controller
                       control={control}
                       name="paymentMethod"
@@ -571,22 +631,6 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
                         />
                       )}
                    />
-                   <div className="space-y-2">
-                     <label className="block text-base font-medium text-secondary dark:text-gray-300">{t('auto_renewal', { ns: 'subscription' })}</label>
-                     <div className="flex items-center gap-3 h-10">
-                       <Controller
-                          control={control}
-                          name="autoRenewal"
-                          render={({ field }) => (
-                            <Switch 
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          )}
-                        />
-                        <span className="text-sm text-gray-500 dark:text-gray-400">{formData.autoRenewal ? t('yes', { ns: 'common' }) : t('no', { ns: 'common' })}</span>
-                     </div>
-                   </div>
                  </div>
               </div>
             )}
@@ -661,6 +705,7 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
            <Button 
              variant="ghost" 
              onClick={onCancel} 
+             disabled={isSubmitting}
              className={cn(
                "transition-all duration-200 ease group text-gray-500 dark:text-gray-400",
                "hover:bg-red-50 hover:text-red-500",
@@ -670,7 +715,7 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
              {t('button.cancel', { ns: 'common' })}
            </Button>
          ) : (
-           <Button variant="outline" onClick={handleBack} className="gap-2 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700">
+           <Button variant="outline" onClick={handleBack} disabled={isSubmitting} className="gap-2 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700">
              <ChevronLeft className="w-4 h-4" /> {t('button.back', { ns: 'common' })}
            </Button>
          )}
@@ -681,6 +726,8 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
              <Button 
                 variant="outline" 
                 onClick={handleSubmit(onFormSubmit)}
+                isLoading={isSubmitting}
+                disabled={isSubmitting || isCheckingNext}
                 className="border-primary text-primary hover:bg-primary-pale dark:hover:bg-primary-pale/10"
               >
                 <Save className="w-4 h-4 mr-2" />
@@ -689,11 +736,21 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
            )}
            
            {step < 3 ? (
-             <Button onClick={handleNext} className="gap-2 bg-primary hover:bg-primary-hover text-white">
+             <Button 
+               onClick={handleNext} 
+               isLoading={isCheckingNext}
+               disabled={isSubmitting || isCheckingNext}
+               className="gap-2 bg-primary hover:bg-primary-hover text-white"
+             >
                {t('button.next', { ns: 'common' })} <ChevronRight className="w-4 h-4" />
              </Button>
            ) : (
-             <Button onClick={handleSubmit(onFormSubmit)} className="gap-2 bg-primary hover:bg-primary-hover text-white">
+             <Button 
+               onClick={handleSubmit(onFormSubmit)} 
+               isLoading={isSubmitting}
+               disabled={isSubmitting}
+               className="gap-2 bg-primary hover:bg-primary-hover text-white"
+             >
                <Check className="w-4 h-4" /> {t('button.complete', { ns: 'common' })}
              </Button>
            )}

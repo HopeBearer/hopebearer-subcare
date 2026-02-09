@@ -15,7 +15,7 @@ const createSubscriptionSchema = z.object({
   startDate: z.coerce.date(),
   category: z.string().optional(),
   paymentMethod: z.string().optional(),
-  autoRenewal: z.boolean().optional(),
+  autoRenewal: z.boolean().default(true),
   enableNotification: z.boolean().optional(),
   notifyDaysBefore: z.number().optional(),
   website: z.string().optional(),

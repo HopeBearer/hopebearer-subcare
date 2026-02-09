@@ -91,7 +91,7 @@ export interface CreateSubscriptionDTO {
   description?: string;
   icon?: string;
   paymentMethod?: string;
-  autoRenewal?: boolean;
+  autoRenewal: boolean;
   enableNotification?: boolean;
   notifyDaysBefore?: number;
   website?: string;

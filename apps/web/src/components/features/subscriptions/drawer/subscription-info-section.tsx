@@ -1,7 +1,7 @@
 'use client';
 
 import { Subscription } from './types';
-import { Tag, CreditCard, Calendar, RefreshCw, ExternalLink, History } from 'lucide-react';
+import { Tag, CreditCard, Calendar, Clock, RefreshCw, ExternalLink, History } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface SubscriptionInfoSectionProps {
@@ -13,7 +13,19 @@ export function SubscriptionInfoSection({ subscription }: SubscriptionInfoSectio
 
   const startDate = new Date(subscription.startDate).toLocaleDateString(i18n.language, { year: 'numeric', month: 'short', day: 'numeric' });
 
-  const fields = [
+  const isBackendExpired = subscription.status === 'Expired' || subscription.status === 'EXPIRED';
+  const hasExpiryInFuture = isBackendExpired && subscription.nextPayment
+    && new Date(subscription.nextPayment).setHours(23,59,59,999) >= new Date().setHours(0,0,0,0);
+  const isTrulyExpired = isBackendExpired && !hasExpiryInFuture;
+
+  // Use nextPayment directly from DB as expiry date for non-autoRenewal subscriptions
+  const expiryDateValue = isTrulyExpired && !subscription.nextPayment
+    ? t('status.Expired', { defaultValue: 'Expired' })
+    : subscription.nextPayment
+      ? new Date(subscription.nextPayment).toLocaleDateString(i18n.language, { year: 'numeric', month: 'short', day: 'numeric' })
+      : null;
+
+  const fields: { label: string; value: string | null | undefined; icon: typeof Tag; highlight?: boolean }[] = [
     { 
       label: t('category', { defaultValue: 'Category' }), 
       value: t(`categories.${subscription.category.toLowerCase()}`, { defaultValue: subscription.category }), 
@@ -21,7 +33,7 @@ export function SubscriptionInfoSection({ subscription }: SubscriptionInfoSectio
     },
     { 
       label: t('payment_method', { defaultValue: 'Payment Method' }), 
-      value: subscription.paymentMethod, // Assuming this might be user input or untranslated for now, unless enum exists
+      value: subscription.paymentMethod,
       icon: CreditCard 
     },
     { 
@@ -31,9 +43,19 @@ export function SubscriptionInfoSection({ subscription }: SubscriptionInfoSectio
     },
     { 
       label: t('auto_renewal', { defaultValue: 'Auto Renewal' }), 
-      value: subscription.autoRenewal ? t('on', { defaultValue: 'On' }) : t('off', { defaultValue: 'Off' }), 
-      icon: RefreshCw 
+      value: subscription.autoRenewal 
+        ? t('on', { defaultValue: 'On' }) 
+        : t('auto_renewal_off_label', { defaultValue: 'Off - No future renewal' }), 
+      icon: RefreshCw,
+      highlight: !subscription.autoRenewal
     },
+    // Show expiry date when autoRenewal is off
+    ...(!subscription.autoRenewal ? [{
+      label: t('expiry_date', { defaultValue: 'Expiry Date' }),
+      value: expiryDateValue,
+      icon: Clock,
+      highlight: true
+    }] : []),
   ];
 
   return (
@@ -49,7 +71,7 @@ export function SubscriptionInfoSection({ subscription }: SubscriptionInfoSectio
               <field.icon className="w-3 h-3 opacity-70" />
               {field.label}
             </span>
-            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-200 truncate">
+            <span className={`text-sm font-medium truncate ${field.highlight ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-900 dark:text-zinc-200'}`}>
               {field.value || '-'}
             </span>
           </div>

@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { Calendar, Edit, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Edit, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/hooks';
 import { SubscriptionDTO } from '@subcare/types';
+// calculateNextPayment no longer needed — we use nextPayment from DB directly
 import { ActionDropdown, ActionItem } from '@/components/ui/action-dropdown';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { useModalStore } from '@/store';
@@ -29,15 +30,21 @@ export function SubscriptionCard({ subscription, onClick, readonly }: Subscripti
   const queryClient = useQueryClient();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
-  // Normalize status for display logic if backend uses different casing
-  const statusKey = subscription.status; // e.g., 'ACTIVE', 'Active'
+  // Compute display status: if backend says "Expired" but nextPayment is still in the future,
+  // the subscription is still in its coverage period — show "Active" instead of "Expired"
+  const isBackendExpired = subscription.status === 'Expired' || subscription.status === 'EXPIRED';
+  const hasExpiryInFuture = isBackendExpired && subscription.nextPayment 
+    && new Date(subscription.nextPayment).setHours(23,59,59,999) >= new Date().setHours(0,0,0,0);
+  const displayStatusKey = hasExpiryInFuture ? 'Active' : subscription.status;
   
   const statusColors: Record<string, string> = {
     'Active': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
     'ACTIVE': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
     'Paused': 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
     'PAUSED': 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
-    'Renewal Soon': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300', // Backend might not have this state directly
+    'Renewal Soon': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+    'Expired': 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
+    'EXPIRED': 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
   };
 
   // Use categoryColor from API, fallback to default gray
@@ -122,9 +129,9 @@ export function SubscriptionCard({ subscription, onClick, readonly }: Subscripti
           
           <span className={cn(
             "px-2 py-0.5 rounded-full text-xs font-medium",
-            statusColors[statusKey] || 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+            statusColors[displayStatusKey] || 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
           )}>
-            {t(`status.${statusKey}`, { defaultValue: statusKey })}
+            {t(`status.${displayStatusKey}`, { defaultValue: displayStatusKey })}
           </span>
           <span 
             className="px-2 py-0.5 rounded-full text-xs font-medium"
@@ -166,11 +173,32 @@ export function SubscriptionCard({ subscription, onClick, readonly }: Subscripti
 
         <div className="flex flex-col items-end">
            <span className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-1">
-             {t('next_bill')}
+             {subscription.autoRenewal ? t('next_bill') : t('expiry_date', { defaultValue: 'Expiry Date' })}
            </span>
-           <div className="flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300 font-medium bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded-md">
-             <Calendar className="w-3.5 h-3.5 text-gray-400" />
-             {subscription.nextPayment ? new Date(subscription.nextPayment).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '-'}
+           <div className={cn(
+             "flex items-center gap-1.5 text-sm font-medium px-2 py-1 rounded-md",
+             !subscription.autoRenewal
+               ? "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20"
+               : "text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50"
+           )}>
+             {(subscription.status === 'Expired' || subscription.status === 'EXPIRED') && !subscription.nextPayment ? (
+               <>
+                 <Clock className="w-3.5 h-3.5 text-amber-500" />
+                 {t('status.Expired', { defaultValue: 'Expired' })}
+               </>
+             ) : subscription.nextPayment ? (
+               <>
+                 {subscription.autoRenewal 
+                   ? <Calendar className="w-3.5 h-3.5 text-gray-400" /> 
+                   : <Clock className="w-3.5 h-3.5 text-amber-500" />}
+                 {new Date(subscription.nextPayment).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+               </>
+             ) : (
+               <>
+                 <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                 {'-'}
+               </>
+             )}
            </div>
         </div>
       </div>

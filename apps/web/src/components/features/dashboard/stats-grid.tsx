@@ -390,7 +390,12 @@ interface CategoryProps {
   }[];
 }
 
+const MAX_LEGEND_CATEGORIES = 5;
+const OTHERS_COLOR = '#9CA3AF';
+
 const CategoryDistribution = ({ categories = [] }: CategoryProps) => {
+  const { t } = useTranslation('subscription');
+
   // Default segments if no data provided (using default colors)
   const defaultSegments = [
     { color: '#A5A6F6', percentage: 40, name: 'Entertainment' },
@@ -398,7 +403,20 @@ const CategoryDistribution = ({ categories = [] }: CategoryProps) => {
     { color: '#60A5FA', percentage: 20, name: 'Cloud' },
     { color: '#9CA3AF', percentage: 10, name: 'Others' },
   ];
-  const segments = categories.length > 0 ? categories : defaultSegments;
+  const raw = categories.length > 0 ? categories : defaultSegments;
+
+  // Sort by percentage descending, take top N, aggregate rest into "Others"
+  const sorted = [...raw].sort((a, b) => b.percentage - a.percentage);
+  const segments = sorted.length <= MAX_LEGEND_CATEGORIES
+    ? sorted
+    : [
+        ...sorted.slice(0, MAX_LEGEND_CATEGORIES),
+        {
+          color: OTHERS_COLOR,
+          percentage: sorted.slice(MAX_LEGEND_CATEGORIES).reduce((sum, s) => sum + s.percentage, 0),
+          name: t('categories.other'),
+        },
+      ];
 
   // Pre-calculate offsets to avoid mutation during render
   const segmentsWithOffsets = segments.reduce((acc, seg) => {
@@ -415,7 +433,7 @@ const CategoryDistribution = ({ categories = [] }: CategoryProps) => {
           {segmentsWithOffsets.map((seg, i) => {
             const dashArray = `${seg.percentage} 100`;
             const dashOffset = -seg.offset;
-            const color = seg.color || '#9CA3AF'; // Use API color directly
+            const color = seg.color || OTHERS_COLOR;
             return (
               <circle
                 key={i}
@@ -436,7 +454,7 @@ const CategoryDistribution = ({ categories = [] }: CategoryProps) => {
           <div key={i} className="flex items-center gap-1.5 min-w-0">
             <div 
               className="w-1.5 h-1.5 rounded-full flex-shrink-0" 
-              style={{ backgroundColor: seg.color || '#9CA3AF' }}
+              style={{ backgroundColor: seg.color || OTHERS_COLOR }}
             />
             <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate-text">{seg.name}</span>
           </div>

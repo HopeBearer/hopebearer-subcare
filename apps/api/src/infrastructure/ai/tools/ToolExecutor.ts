@@ -545,10 +545,13 @@ export class ToolExecutor {
         price,
         currency,
         billingCycle = 'Monthly',
-        categoryId,
+        category: categoryParam,
         website,
         icon,
         startDate,
+        autoRenewal,
+        enableNotification,
+        notifyDaysBefore,
         allowDuplicate
       } = params;
 
@@ -605,8 +608,8 @@ export class ToolExecutor {
       let finalCurrency = currency || userCurrency;
       let finalIcon = icon;
       let finalWebsite = website;
-      let finalCategoryName = 'Other';
-      let finalCategoryId: string | undefined = categoryId;
+      let finalCategoryName = categoryParam || 'Other'; // AI-provided category takes priority
+      let finalCategoryId: string | undefined;
       let infoSource: 'template' | 'web_search' | 'user_provided' = price !== undefined ? 'user_provided' : 'template';
 
       // 查找模板
@@ -616,8 +619,8 @@ export class ToolExecutor {
         console.log(`[ToolExecutor] Found template for "${name}"`);
         infoSource = 'template';
         
-        // 获取分类
-        if (template.category) {
+        // 获取分类（仅当 AI 没有明确指定分类时使用模板分类）
+        if (!categoryParam && template.category) {
           finalCategoryName = template.category;
         }
         
@@ -649,9 +652,11 @@ export class ToolExecutor {
           infoSource = 'user_provided'; // 价格来自用户或 search_web 结果
         }
         
-        // 智能分类选择（根据服务名称关键词）
-        finalCategoryName = this.inferCategoryFromName(name);
-        console.log(`[ToolExecutor] Inferred category: ${finalCategoryName}`);
+        // 智能分类选择（仅当 AI 没有明确指定分类时用关键词推断）
+        if (!categoryParam) {
+          finalCategoryName = this.inferCategoryFromName(name);
+          console.log(`[ToolExecutor] Inferred category: ${finalCategoryName}`);
+        }
       }
 
       // ============ 如果没有价格，返回错误提示 AI 先调用 search_web ============
@@ -697,7 +702,10 @@ export class ToolExecutor {
           startDate: start,
           category: finalCategoryName,
           icon: finalIcon,
-          website: finalWebsite
+          website: finalWebsite,
+          autoRenewal: autoRenewal ?? true,
+          enableNotification: enableNotification ?? false,
+          notifyDaysBefore: notifyDaysBefore,
         });
 
         // 检查是否有待支付账单（当日到期的账单）
@@ -760,7 +768,13 @@ export class ToolExecutor {
             currency: subscription.currency,
             billingCycle: subscription.billingCycle,
             startDate: this.formatDate(subscription.startDate),
-            nextPayment: this.formatDate(subscription.nextPayment),
+            nextPayment: subscription.autoRenewal 
+              ? this.formatDate(subscription.nextPayment) 
+              : undefined,
+            expiryDate: !subscription.autoRenewal 
+              ? this.formatDate(subscription.nextPayment)
+              : undefined,
+            autoRenewal: subscription.autoRenewal,
             icon: subscription.icon || undefined,
             website: subscription.website || undefined,
             category: finalCategoryName
@@ -797,6 +811,9 @@ export class ToolExecutor {
         startDate: start,
         nextPayment,
         status: 'ACTIVE',
+        autoRenewal: autoRenewal ?? true,
+        enableNotification: enableNotification ?? false,
+        notifyDaysBefore: notifyDaysBefore,
         icon: finalIcon,
         website: finalWebsite,
         categoryName: finalCategoryName,
@@ -833,13 +850,21 @@ export class ToolExecutor {
           currency: subscription.currency,
           billingCycle: subscription.billingCycle,
           startDate: this.formatDate(subscription.startDate),
-          nextPayment: this.formatDate(subscription.nextPayment),
+          nextPayment: subscription.autoRenewal
+            ? this.formatDate(subscription.nextPayment)
+            : undefined,
+          expiryDate: !subscription.autoRenewal
+            ? this.formatDate(subscription.nextPayment)
+            : undefined,
+          autoRenewal: subscription.autoRenewal,
           icon: subscription.icon || undefined,
           website: subscription.website || undefined,
           category: finalCategoryName
         },
         hasPendingBill: false,
-        followUpQuestion: '订阅已成功添加！下次付款日期是 ' + this.formatDate(subscription.nextPayment) + '。',
+        followUpQuestion: subscription.autoRenewal
+          ? '订阅已成功添加！下次付款日期是 ' + this.formatDate(subscription.nextPayment) + '。'
+          : '订阅已成功添加！到期日是 ' + this.formatDate(subscription.nextPayment) + '（不自动续费）。',
         infoSource,
         existingSubscriptions: duplicateSubscriptions,
         duplicateCount: duplicates.length || undefined,
@@ -1272,6 +1297,7 @@ export class ToolExecutor {
         data.category = matchedCategory.name;
       }
       
+      if (updateData.autoRenewal !== undefined) data.autoRenewal = updateData.autoRenewal;
       if (updateData.enableNotification !== undefined) data.enableNotification = updateData.enableNotification;
       if (updateData.notifyDaysBefore !== undefined) data.notifyDaysBefore = updateData.notifyDaysBefore;
       if (updateData.notes !== undefined) data.notes = updateData.notes;

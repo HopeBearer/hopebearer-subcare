@@ -41,7 +41,7 @@ export const SpendingHeatmap = ({ data, isLoading, className }: SpendingHeatmapP
         bottom: 0,
         inRange: {
           color: isDark 
-            ? ['#1f2937', '#3730a3', '#4f46e5', '#818cf8'] 
+            ? ['#1f2937', '#3730a3', '#5b21b6', '#7c3aed'] 
             : ['#ebedf0', '#9be9a8', '#40c463', '#30a14e'],
         },
         textStyle: { color: isDark ? '#9CA3AF' : '#6B7280' }

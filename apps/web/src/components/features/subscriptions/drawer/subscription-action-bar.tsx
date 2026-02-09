@@ -29,6 +29,7 @@ export function SubscriptionActionBar({ subscription, onClose }: SubscriptionAct
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const isPaused = subscription.status === 'PAUSED' || subscription.status === 'Paused';
+  const isExpired = subscription.status === 'EXPIRED' || subscription.status === 'Expired';
 
   const handleStatusChange = async (newStatus: 'ACTIVE' | 'PAUSED' | 'CANCELLED') => {
     try {
@@ -78,7 +79,7 @@ export function SubscriptionActionBar({ subscription, onClose }: SubscriptionAct
       label: isPaused ? t('resume', { defaultValue: 'Resume' }) : t('pause', { defaultValue: 'Pause' }),
       onClick: () => handleStatusChange(isPaused ? 'ACTIVE' : 'PAUSED'),
       className: "hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20",
-      show: subscription.status !== 'CANCELLED' && subscription.status !== 'Cancelled'
+      show: subscription.status !== 'CANCELLED' && subscription.status !== 'Cancelled' && !isExpired
     },
     {
       icon: XCircle,

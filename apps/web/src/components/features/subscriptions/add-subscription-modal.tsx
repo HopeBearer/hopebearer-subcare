@@ -38,8 +38,16 @@ export function AddSubscriptionModal() {
       queryClient.invalidateQueries({ queryKey: ['financial-history'] });
       
       closeAddSubscription();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save subscription:', error);
+      const message = error?.response?.data?.message || error?.message || 'Unknown error';
+      toast.error(t('save_failed', { 
+        ns: 'subscription', 
+        defaultValue: 'Failed to save: {{message}}',
+        message
+      }));
+      // Re-throw so the form knows submission failed (keeps loading state in sync)
+      throw error;
     }
   };
   

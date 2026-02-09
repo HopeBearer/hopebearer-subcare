@@ -119,7 +119,9 @@ Note: search quota is limited; use wisely.`,
       description: `快速添加订阅。用户说"添加"就直接添加，不要反复确认。
 ⚠️ 价格规则：如果 lookup_subscription_service 没找到模板，请不要传 price 参数！只有用户明确说了具体价格时才传 price。
 📝 如果检测到已有类似订阅，工具会照常创建并返回 duplicateWarning 提醒。
-📅 日期规则：如果用户指定了过去的日期，系统不会回填历史记录，而是从下一个计费周期开始追踪。创建后请询问用户以前大概花了多少钱，并用 update_subscription 工具记录 historicalSpending。`,
+📅 日期规则：如果用户指定了过去的日期，系统不会回填历史记录，而是从下一个计费周期开始追踪。创建后请询问用户以前大概花了多少钱，并用 update_subscription 工具记录 historicalSpending。
+🔧 设置规则：必须传递用户明确指定的所有设置（autoRenewal、enableNotification、notifyDaysBefore、category 等），不要丢弃用户提供的信息。
+📂 分类映射：工具(Tools)、流媒体(Streaming)、娱乐(Entertainment)、生产力(Productivity)、云服务(Cloud)、开发(Development)、音乐(Music)、游戏(Gaming)、教育(Education)、其他(Other)`,
       parameters: {
         type: 'object',
         properties: {
@@ -140,9 +142,9 @@ Note: search quota is limited; use wisely.`,
             enum: ['Monthly', 'Yearly', 'Weekly', 'Daily'],
             description: '计费周期（可选，默认 Monthly）'
           },
-          categoryId: {
+          category: {
             type: 'string',
-            description: '分类ID（可选）'
+            description: '分类名称（可选），如：Streaming（流媒体）、Entertainment（娱乐）、Tools（工具）、Productivity（生产力）、Cloud（云服务）、Development（开发）、Music（音乐）、Gaming（游戏）、Education（教育）、Other（其他）'
           },
           website: {
             type: 'string',
@@ -155,6 +157,18 @@ Note: search quota is limited; use wisely.`,
           startDate: {
             type: 'string',
             description: '开始日期，ISO格式（可选，默认今天）'
+          },
+          autoRenewal: {
+            type: 'boolean',
+            description: '是否自动续费（可选，默认 true）。用户说"不续费"/"不自动续费"/"关闭自动续费"时设为 false'
+          },
+          enableNotification: {
+            type: 'boolean',
+            description: '是否启用续费提醒通知（可选，默认 false）'
+          },
+          notifyDaysBefore: {
+            type: 'number',
+            description: '提前几天发送续费提醒（可选，仅在 enableNotification=true 时有效）'
           },
           allowDuplicate: {
             type: 'boolean',
@@ -291,6 +305,10 @@ Note: search quota is limited; use wisely.`,
           category: {
             type: 'string',
             description: '订阅分类，如：Streaming（流媒体）、Entertainment（娱乐）、Tools（工具）、Productivity（生产力）、Cloud（云服务）、Utility（实用工具）、Education（教育）、Other（其他）'
+          },
+          autoRenewal: {
+            type: 'boolean',
+            description: '是否自动续费。true=自动续费（到期自动进入下一周期），false=不自动续费（到期后订阅过期）'
           },
           enableNotification: {
             type: 'boolean',
@@ -573,10 +591,13 @@ export interface QuickAddSubscriptionParams {
   price?: number;
   currency?: string;
   billingCycle?: 'Monthly' | 'Yearly' | 'Weekly' | 'Daily';
-  categoryId?: string;
+  category?: string;
   website?: string;
   icon?: string;
   startDate?: string;
+  autoRenewal?: boolean;
+  enableNotification?: boolean;
+  notifyDaysBefore?: number;
   allowDuplicate?: boolean;
 }
 
@@ -609,6 +630,7 @@ export interface UpdateSubscriptionParams {
   billingCycle?: 'Monthly' | 'Yearly' | 'Weekly' | 'Daily';
   status?: 'ACTIVE' | 'PAUSED';
   category?: string; // 分类名称，如 Streaming, Entertainment, Tools 等
+  autoRenewal?: boolean;
   enableNotification?: boolean;
   notifyDaysBefore?: number;
   notes?: string;
@@ -803,6 +825,8 @@ export interface QuickAddSubscriptionResult {
     billingCycle: string;
     startDate: string;
     nextPayment?: string;
+    expiryDate?: string;
+    autoRenewal?: boolean;
     icon?: string;
     website?: string;
     category?: string;

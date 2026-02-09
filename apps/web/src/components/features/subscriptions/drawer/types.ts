@@ -8,4 +8,4 @@ export interface DrawerProps {
   subscription?: Subscription | null;
 }
 
-export type SubscriptionStatus = 'ACTIVE' | 'CANCELLED' | 'PAUSED' | 'Active' | 'Cancelled' | 'Paused';
+export type SubscriptionStatus = 'ACTIVE' | 'CANCELLED' | 'PAUSED' | 'EXPIRED' | 'Active' | 'Cancelled' | 'Paused' | 'Expired';

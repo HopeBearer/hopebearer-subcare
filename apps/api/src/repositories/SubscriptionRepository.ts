@@ -251,6 +251,7 @@ export class SubscriptionRepository {
         where: {
           userId,
           status: 'ACTIVE',
+          autoRenewal: true, // Only show actual renewals, not expiring subscriptions
           nextPayment: {
             gte: today,
             lte: futureDate
@@ -285,6 +286,9 @@ export class SubscriptionRepository {
    */
   async findDueSubscriptions(): Promise<any[]> {
     const now = new Date();
+    // Don't filter by autoRenewal here — non-auto-renewing subs still need their
+    // current cycle's bill generated. The autoRenewal flag is checked in confirmPayment
+    // to decide whether to advance to the next cycle or mark as Expired.
     const items = await prisma.subscription.findMany({
       where: {
         status: 'ACTIVE',
@@ -323,6 +327,7 @@ export class SubscriptionRepository {
      const candidates = await prisma.subscription.findMany({
         where: {
             status: 'ACTIVE',
+            autoRenewal: true,
             enableNotification: true,
             notifyDaysBefore: { gt: 0 },
             nextPayment: {
