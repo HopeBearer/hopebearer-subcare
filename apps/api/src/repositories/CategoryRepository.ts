@@ -50,7 +50,7 @@ export class CategoryRepository {
   async findByName(name: string, userId?: string | null): Promise<Category | null> {
     return prisma.category.findFirst({
       where: {
-        name: { equals: name, mode: 'insensitive' },
+        name: { equals: name },
         OR: [
           { userId: userId || null },
           { userId: null }

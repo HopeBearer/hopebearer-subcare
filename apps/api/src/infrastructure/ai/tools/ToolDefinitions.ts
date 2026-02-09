@@ -704,7 +704,7 @@ export interface SearchWebResult {
   evidences: Array<{
     source: string;
     sourceUrl: string;
-    tier: 'S' | 'A' | 'B' | 'C';
+    tier: 'S' | 'A' | 'B' | 'C' | 'D';
     facts: string[];
     prices: Array<{
       plan: string;

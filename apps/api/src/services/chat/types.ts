@@ -60,10 +60,10 @@ export function estimateTokenCount(text: string): number {
  * 从最新消息开始保留，直到 token 预算用尽
  * @returns 裁剪后的历史（按时间升序）和总 token 数
  */
-export function trimHistoryByTokenBudget(
-  history: { content: string }[],
+export function trimHistoryByTokenBudget<T extends { content: string }>(
+  history: T[],
   maxTokens: number
-): { trimmed: typeof history; totalTokens: number } {
+): { trimmed: T[]; totalTokens: number } {
   let totalTokens = 0;
   let cutIndex = 0;
 
