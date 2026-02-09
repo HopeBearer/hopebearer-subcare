@@ -48,7 +48,8 @@ export interface VectorServiceOptions {
  * @param options 配置选项
  */
 export async function initializeVectorServices(options?: VectorServiceOptions): Promise<void> {
-  const mode = options?.mode || 'local'; // 默认使用本地模式（免费）
+  const envMode = process.env.EMBEDDING_MODE as EmbeddingMode | undefined;
+  const mode = options?.mode || envMode || 'local'; // 支持环境变量 EMBEDDING_MODE 覆盖
   
   console.log('[Vector] Initializing vector services...');
   console.log(`[Vector] Embedding mode: ${mode}`);

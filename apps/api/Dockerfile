@@ -1,8 +1,8 @@
-FROM node:20-alpine AS base
+FROM node:20-slim AS base
 
 # 1. Prune dependencies
 FROM base AS builder
-RUN apk add --no-cache libc6-compat
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@8.15.4 --activate
 COPY . .
@@ -10,7 +10,7 @@ RUN npx turbo prune --scope=@subcare/api --docker
 
 # 2. Install dependencies and build
 FROM base AS installer
-RUN apk add --no-cache libc6-compat openssl
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@8.15.4 --activate
 
@@ -37,10 +37,11 @@ WORKDIR /app
 
 # Install required packages:
 # - netcat-openbsd: for database readiness check
-# - mysql-client: for schema check
+# - default-mysql-client: for schema check
 # - openssl: required by Prisma
-# - libc6-compat: required for Node.js native modules
-RUN apk add --no-cache netcat-openbsd mysql-client openssl libc6-compat
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    netcat-openbsd default-mysql-client openssl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy necessary files
 COPY --from=installer /app .

@@ -17,7 +17,7 @@ interface VectorEntry {
   metadata: TemplateMetadata;
 }
 
-export type EmbeddingMode = 'openai' | 'local';
+export type EmbeddingMode = 'openai' | 'local' | 'keyword';
 
 export class MemoryVectorService implements IVectorService {
   private vectors: Map<string, VectorEntry> = new Map();
@@ -105,6 +105,23 @@ export class MemoryVectorService implements IVectorService {
           }
         }
         console.log(`[MemoryVectorService] Loaded ${this.vectors.size} vectors from cache`);
+      } else if (this.mode === 'keyword') {
+        // 关键词模式：跳过 ONNX 本地模型，仅加载元数据用于关键词搜索
+        console.log('[MemoryVectorService] Keyword-only mode, skipping embedding generation');
+        for (const template of templates) {
+          this.vectors.set(template.id, {
+            embedding: [],
+            metadata: {
+              id: template.id,
+              name: template.name,
+              displayName: template.displayName || undefined,
+              category: template.category || undefined,
+              icon: template.icon || undefined,
+              website: template.website || undefined,
+            },
+          });
+        }
+        console.log(`[MemoryVectorService] Loaded ${this.vectors.size} templates (keyword search mode)`);
       } else if (this.mode === 'local') {
         // 本地模式：尝试实时生成向量
         console.log('[MemoryVectorService] No cache found, attempting local embedding generation...');
