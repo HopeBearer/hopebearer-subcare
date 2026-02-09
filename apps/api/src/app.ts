@@ -23,6 +23,11 @@ app.use(express.json());      // 解析 JSON 请求体
 // Custom Request Logger
 app.use(requestLogger);
 
+// Health check endpoint (used by CI/CD deployment verification)
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // 注册 API 路由 (使用版本化路由)
 const versionedRouter = new VersionedRouter();
 app.use('/api', versionedRouter.getRouter());

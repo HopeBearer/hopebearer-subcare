@@ -92,12 +92,14 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          FIXER_API_KEY: ${{ secrets.FIXER_API_KEY }}
+          CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: GITHUB_IMAGE_NAME,MYSQL_ROOT_PASSWORD,JWT_ACCESS_SECRET,JWT_REFRESH_SECRET,SMTP_HOST,SMTP_PORT,SMTP_SECURE,SMTP_USER,SMTP_PASS,EMAIL_FROM,GHCR_TOKEN
+          envs: GITHUB_IMAGE_NAME,MYSQL_ROOT_PASSWORD,JWT_ACCESS_SECRET,JWT_REFRESH_SECRET,SMTP_HOST,SMTP_PORT,SMTP_SECURE,SMTP_USER,SMTP_PASS,EMAIL_FROM,FIXER_API_KEY,CORS_ORIGIN,GHCR_TOKEN
           script: |
             cd /home/${{ secrets.VPS_USER }}/subcare
             
@@ -114,6 +116,7 @@ jobs:
             SMTP_PASS=${SMTP_PASS}
             EMAIL_FROM="${EMAIL_FROM}"
             FIXER_API_KEY=${FIXER_API_KEY}
+            CORS_ORIGIN=${CORS_ORIGIN}
             ENVEOF
             # Remove leading whitespace from .env
             sed -i 's/^[[:space:]]*//' .env
@@ -121,9 +124,25 @@ jobs:
             # Login to GHCR
             echo ${GHCR_TOKEN} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            # Rolling update: only restart containers with new images
+            # Rolling update: pull new images and restart containers
             docker compose pull
             docker compose up -d --remove-orphans
             
-            # Prune old images
+            # Prune old images to save disk space
             docker image prune -f
+            
+            # Health check: wait for API to be ready (max 120s)
+            # The entrypoint script runs schema sync + all seed scripts before starting
+            echo "⏳ Waiting for API to be healthy..."
+            for i in $(seq 1 24); do
+              if curl -sf http://localhost:80/api/health > /dev/null 2>&1; then
+                echo "✅ API is healthy!"
+                break
+              fi
+              echo "  Waiting... ($((i*5))s/120s)"
+              sleep 5
+            done
+            
+            # Final status check
+            docker compose ps
+            echo "🎉 Deployment complete!"

@@ -35,7 +35,7 @@ interface TemplateData {
   defaultCycle?: string;
 }
 
-// 50+ 常见订阅服务模板
+// 100+ 常见订阅服务模板 (全球 + 中国本土)
 const templates: TemplateData[] = [
   // ==================== 流媒体 Streaming ====================
   {
@@ -48,18 +48,6 @@ const templates: TemplateData[] = [
     pricingPlans: {
       CN: { standard: 70, premium: 98 },
       US: { standard: 15.49, premium: 22.99 }
-    }
-  },
-  {
-    name: 'Spotify',
-    displayName: 'Spotify 声破天',
-    searchText: 'Spotify 声破天 音乐 Music streaming 流媒体',
-    category: 'music',
-    icon: '🎵',
-    website: 'https://spotify.com',
-    pricingPlans: {
-      CN: { individual: 10, family: 15 },
-      US: { individual: 10.99, family: 16.99 }
     }
   },
   {
@@ -120,15 +108,47 @@ const templates: TemplateData[] = [
     }
   },
   {
-    name: 'Apple Music',
-    displayName: 'Apple Music 苹果音乐',
-    searchText: 'Apple Music 苹果音乐 音乐 Music streaming',
-    category: 'music',
-    icon: '🎧',
-    website: 'https://music.apple.com',
+    name: 'Hulu',
+    displayName: 'Hulu',
+    searchText: 'Hulu 流媒体 视频 电影 电视剧 streaming',
+    category: 'streaming',
+    icon: '📺',
+    website: 'https://hulu.com',
     pricingPlans: {
-      CN: { individual: 11, family: 17 },
-      US: { individual: 10.99, family: 16.99 }
+      US: { basic: 7.99, premium: 17.99 }
+    }
+  },
+  {
+    name: 'Paramount+',
+    displayName: 'Paramount+',
+    searchText: 'Paramount+ 派拉蒙 流媒体 视频 电影 streaming',
+    category: 'streaming',
+    icon: '⛰️',
+    website: 'https://paramountplus.com',
+    pricingPlans: {
+      US: { essential: 5.99, premium: 11.99 }
+    }
+  },
+  {
+    name: 'Peacock',
+    displayName: 'Peacock Premium',
+    searchText: 'Peacock NBC 流媒体 视频 streaming',
+    category: 'streaming',
+    icon: '🦚',
+    website: 'https://peacocktv.com',
+    pricingPlans: {
+      US: { premium: 5.99, plus: 11.99 }
+    }
+  },
+  {
+    name: 'Crunchyroll',
+    displayName: 'Crunchyroll Premium',
+    searchText: 'Crunchyroll 动漫 Anime 日本动画 streaming',
+    category: 'streaming',
+    icon: '🍥',
+    website: 'https://crunchyroll.com',
+    pricingPlans: {
+      US: { fan: 7.99, mega: 9.99, ultimate: 14.99 }
     }
   },
   {
@@ -192,6 +212,55 @@ const templates: TemplateData[] = [
     defaultCurrency: 'CNY'
   },
   {
+    name: 'Douyin',
+    displayName: '抖音会员',
+    searchText: '抖音 Douyin TikTok 短视频 直播 会员',
+    category: 'streaming',
+    icon: '🎵',
+    website: 'https://douyin.com',
+    pricingPlans: {
+      CN: { monthly: 12 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  {
+    name: 'Migu Video',
+    displayName: '咪咕视频会员',
+    searchText: '咪咕视频 Migu 中国移动 体育 足球 NBA',
+    category: 'streaming',
+    icon: '📺',
+    website: 'https://miguvideo.com',
+    pricingPlans: {
+      CN: { monthly: 15, yearly: 158 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  // ==================== 音乐 Music ====================
+  {
+    name: 'Spotify',
+    displayName: 'Spotify 声破天',
+    searchText: 'Spotify 声破天 音乐 Music streaming 流媒体',
+    category: 'music',
+    icon: '🎵',
+    website: 'https://spotify.com',
+    pricingPlans: {
+      CN: { individual: 10, family: 15 },
+      US: { individual: 10.99, family: 16.99 }
+    }
+  },
+  {
+    name: 'Apple Music',
+    displayName: 'Apple Music 苹果音乐',
+    searchText: 'Apple Music 苹果音乐 音乐 Music streaming',
+    category: 'music',
+    icon: '🎧',
+    website: 'https://music.apple.com',
+    pricingPlans: {
+      CN: { individual: 11, family: 17 },
+      US: { individual: 10.99, family: 16.99 }
+    }
+  },
+  {
     name: 'QQ Music',
     displayName: 'QQ音乐 VIP',
     searchText: 'QQ音乐 腾讯音乐 Music 音乐 VIP会员 绿钻',
@@ -214,6 +283,52 @@ const templates: TemplateData[] = [
       CN: { monthly: 15, yearly: 138 }
     },
     defaultCurrency: 'CNY'
+  },
+  {
+    name: 'Kugou Music',
+    displayName: '酷狗音乐 VIP',
+    searchText: '酷狗音乐 Kugou Music 音乐 VIP会员',
+    category: 'music',
+    icon: '🎶',
+    website: 'https://kugou.com',
+    pricingPlans: {
+      CN: { monthly: 15, yearly: 138 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  {
+    name: 'Kuwo Music',
+    displayName: '酷我音乐 VIP',
+    searchText: '酷我音乐 Kuwo Music 音乐 VIP会员',
+    category: 'music',
+    icon: '🎤',
+    website: 'https://kuwo.cn',
+    pricingPlans: {
+      CN: { monthly: 15, yearly: 138 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  {
+    name: 'Tidal',
+    displayName: 'Tidal HiFi',
+    searchText: 'Tidal HiFi 无损音乐 Lossless Music streaming 高保真',
+    category: 'music',
+    icon: '🌊',
+    website: 'https://tidal.com',
+    pricingPlans: {
+      US: { hifi: 10.99, hifiPlus: 19.99 }
+    }
+  },
+  {
+    name: 'Amazon Music',
+    displayName: 'Amazon Music Unlimited',
+    searchText: 'Amazon Music Unlimited 亚马逊音乐 streaming',
+    category: 'music',
+    icon: '🎵',
+    website: 'https://music.amazon.com',
+    pricingPlans: {
+      US: { individual: 9.99, family: 16.99 }
+    }
   },
   // ==================== 云存储 Cloud Storage ====================
   {
@@ -283,6 +398,30 @@ const templates: TemplateData[] = [
     website: 'https://aliyundrive.com',
     pricingPlans: {
       CN: { monthly: 8, yearly: 96 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  {
+    name: '115 Cloud',
+    displayName: '115网盘 VIP',
+    searchText: '115网盘 115 Cloud 云存储 会员 大容量',
+    category: 'cloud',
+    icon: '💿',
+    website: 'https://115.com',
+    pricingPlans: {
+      CN: { monthly: 30, yearly: 298 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  {
+    name: 'Quark Cloud',
+    displayName: '夸克网盘 VIP',
+    searchText: '夸克网盘 Quark Cloud 云存储 UC 阿里 会员',
+    category: 'cloud',
+    icon: '☁️',
+    website: 'https://pan.quark.cn',
+    pricingPlans: {
+      CN: { monthly: 18, yearly: 168 }
     },
     defaultCurrency: 'CNY'
   },
@@ -392,10 +531,84 @@ const templates: TemplateData[] = [
     }
   },
   {
+    name: 'WPS Office',
+    displayName: 'WPS 超级会员',
+    searchText: 'WPS Office 金山 办公 文档 会员 稻壳',
+    category: 'productivity',
+    icon: '📄',
+    website: 'https://wps.cn',
+    pricingPlans: {
+      CN: { monthly: 19, yearly: 179 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  {
+    name: 'Lark',
+    displayName: '飞书会员',
+    searchText: '飞书 Lark 字节跳动 办公 协作 文档 会议',
+    category: 'productivity',
+    icon: '🐦',
+    website: 'https://feishu.cn',
+    pricingPlans: {
+      CN: { standard: 30, business: 60 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  {
+    name: 'DingTalk',
+    displayName: '钉钉专业版',
+    searchText: '钉钉 DingTalk 阿里 办公 协作 OA',
+    category: 'productivity',
+    icon: '📌',
+    website: 'https://dingtalk.com',
+    pricingPlans: {
+      CN: { professional: 9800 }
+    },
+    defaultCurrency: 'CNY',
+    defaultCycle: 'yearly'
+  },
+  {
+    name: 'Yuque',
+    displayName: '语雀会员',
+    searchText: '语雀 Yuque 文档 知识库 笔记 阿里',
+    category: 'productivity',
+    icon: '📚',
+    website: 'https://yuque.com',
+    pricingPlans: {
+      CN: { monthly: 11, yearly: 99 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  {
+    name: 'Xmind',
+    displayName: 'Xmind Pro',
+    searchText: 'Xmind 思维导图 Mind Map 脑图 头脑风暴',
+    category: 'productivity',
+    icon: '🧩',
+    website: 'https://xmind.app',
+    pricingPlans: {
+      CN: { yearly: 308 },
+      US: { yearly: 59.99 }
+    },
+    defaultCycle: 'yearly'
+  },
+  {
+    name: 'Linear',
+    displayName: 'Linear',
+    searchText: 'Linear 项目管理 Issue Tracker 开发 团队协作',
+    category: 'productivity',
+    icon: '📋',
+    website: 'https://linear.app',
+    pricingPlans: {
+      US: { standard: 8, plus: 14 }
+    }
+  },
+  // ==================== 密码管理 Password Managers ====================
+  {
     name: '1Password',
     displayName: '1Password',
     searchText: '1Password 密码管理 Password Manager 安全',
-    category: 'productivity',
+    category: 'security',
     icon: '🔐',
     website: 'https://1password.com',
     pricingPlans: {
@@ -406,7 +619,7 @@ const templates: TemplateData[] = [
     name: 'LastPass',
     displayName: 'LastPass Premium',
     searchText: 'LastPass 密码管理 Password Manager 安全',
-    category: 'productivity',
+    category: 'security',
     icon: '🔒',
     website: 'https://lastpass.com',
     pricingPlans: {
@@ -417,7 +630,7 @@ const templates: TemplateData[] = [
     name: 'Bitwarden',
     displayName: 'Bitwarden Premium',
     searchText: 'Bitwarden 密码管理 Password Manager 安全 开源',
-    category: 'productivity',
+    category: 'security',
     icon: '🔑',
     website: 'https://bitwarden.com',
     pricingPlans: {
@@ -437,6 +650,17 @@ const templates: TemplateData[] = [
     }
   },
   {
+    name: 'GitHub Copilot',
+    displayName: 'GitHub Copilot',
+    searchText: 'GitHub Copilot AI 代码补全 编程 开发 自动补全',
+    category: 'developer',
+    icon: '🤖',
+    website: 'https://github.com/features/copilot',
+    pricingPlans: {
+      US: { individual: 10, business: 19 }
+    }
+  },
+  {
     name: 'JetBrains',
     displayName: 'JetBrains All Products',
     searchText: 'JetBrains IntelliJ IDEA PyCharm WebStorm IDE 开发',
@@ -445,28 +669,6 @@ const templates: TemplateData[] = [
     website: 'https://jetbrains.com',
     pricingPlans: {
       US: { all: 24.9, individual: 16.9 }
-    }
-  },
-  {
-    name: 'ChatGPT Plus',
-    displayName: 'ChatGPT Plus',
-    searchText: 'ChatGPT Plus OpenAI GPT AI 人工智能 聊天',
-    category: 'ai',
-    icon: '🤖',
-    website: 'https://chat.openai.com',
-    pricingPlans: {
-      US: { plus: 20 }
-    }
-  },
-  {
-    name: 'Claude Pro',
-    displayName: 'Claude Pro',
-    searchText: 'Claude Pro Anthropic AI 人工智能 聊天',
-    category: 'ai',
-    icon: '🧠',
-    website: 'https://claude.ai',
-    pricingPlans: {
-      US: { pro: 20 }
     }
   },
   {
@@ -502,6 +704,208 @@ const templates: TemplateData[] = [
       US: { pro: 19 }
     }
   },
+  {
+    name: 'GitLab',
+    displayName: 'GitLab Premium',
+    searchText: 'GitLab Premium 代码托管 CI/CD DevOps 开发',
+    category: 'developer',
+    icon: '🦊',
+    website: 'https://gitlab.com',
+    pricingPlans: {
+      US: { premium: 29, ultimate: 99 }
+    }
+  },
+  {
+    name: 'Docker Hub',
+    displayName: 'Docker Pro',
+    searchText: 'Docker Hub Pro 容器 Container 镜像',
+    category: 'developer',
+    icon: '🐳',
+    website: 'https://hub.docker.com',
+    pricingPlans: {
+      US: { pro: 5, team: 9, business: 24 }
+    }
+  },
+  {
+    name: 'Postman',
+    displayName: 'Postman Pro',
+    searchText: 'Postman Pro API 测试 调试 开发',
+    category: 'developer',
+    icon: '📮',
+    website: 'https://postman.com',
+    pricingPlans: {
+      US: { basic: 12, professional: 29 }
+    }
+  },
+  {
+    name: 'Supabase',
+    displayName: 'Supabase Pro',
+    searchText: 'Supabase Pro Firebase 替代 PostgreSQL BaaS',
+    category: 'developer',
+    icon: '⚡',
+    website: 'https://supabase.com',
+    pricingPlans: {
+      US: { pro: 25, team: 599 }
+    }
+  },
+  {
+    name: 'Railway',
+    displayName: 'Railway',
+    searchText: 'Railway 部署 Hosting PaaS 云平台 开发',
+    category: 'developer',
+    icon: '🚂',
+    website: 'https://railway.app',
+    pricingPlans: {
+      US: { pro: 5, team: 20 }
+    }
+  },
+  {
+    name: 'Sentry',
+    displayName: 'Sentry Team',
+    searchText: 'Sentry 错误监控 Error Tracking 日志 开发',
+    category: 'developer',
+    icon: '🛡️',
+    website: 'https://sentry.io',
+    pricingPlans: {
+      US: { team: 26, business: 80 }
+    }
+  },
+  // ==================== AI 工具 AI Tools ====================
+  {
+    name: 'ChatGPT Plus',
+    displayName: 'ChatGPT Plus',
+    searchText: 'ChatGPT Plus OpenAI GPT AI 人工智能 聊天',
+    category: 'ai',
+    icon: '🤖',
+    website: 'https://chat.openai.com',
+    pricingPlans: {
+      US: { plus: 20, pro: 200 }
+    }
+  },
+  {
+    name: 'Claude Pro',
+    displayName: 'Claude Pro',
+    searchText: 'Claude Pro Anthropic AI 人工智能 聊天',
+    category: 'ai',
+    icon: '🧠',
+    website: 'https://claude.ai',
+    pricingPlans: {
+      US: { pro: 20, team: 30 }
+    }
+  },
+  {
+    name: 'Midjourney',
+    displayName: 'Midjourney',
+    searchText: 'Midjourney MJ AI 绘画 图片生成 Art',
+    category: 'ai',
+    icon: '🎨',
+    website: 'https://midjourney.com',
+    pricingPlans: {
+      US: { basic: 10, standard: 30, pro: 60 }
+    }
+  },
+  {
+    name: 'Perplexity',
+    displayName: 'Perplexity Pro',
+    searchText: 'Perplexity Pro AI 搜索 Search 问答',
+    category: 'ai',
+    icon: '🔍',
+    website: 'https://perplexity.ai',
+    pricingPlans: {
+      US: { pro: 20 }
+    }
+  },
+  {
+    name: 'Gemini Advanced',
+    displayName: 'Gemini Advanced',
+    searchText: 'Gemini Advanced Google AI 谷歌 聊天',
+    category: 'ai',
+    icon: '✨',
+    website: 'https://gemini.google.com',
+    pricingPlans: {
+      US: { advanced: 19.99 }
+    }
+  },
+  {
+    name: 'Copilot Pro',
+    displayName: 'Microsoft Copilot Pro',
+    searchText: 'Copilot Pro Microsoft 微软 AI 助手 Office',
+    category: 'ai',
+    icon: '🤖',
+    website: 'https://copilot.microsoft.com',
+    pricingPlans: {
+      US: { pro: 20 }
+    }
+  },
+  {
+    name: 'Poe',
+    displayName: 'Poe Subscription',
+    searchText: 'Poe Quora AI 多模型 聊天 ChatGPT Claude',
+    category: 'ai',
+    icon: '💬',
+    website: 'https://poe.com',
+    pricingPlans: {
+      US: { monthly: 19.99, yearly: 199.99 }
+    }
+  },
+  {
+    name: 'Runway',
+    displayName: 'Runway Standard',
+    searchText: 'Runway AI 视频生成 视频编辑 Gen-2',
+    category: 'ai',
+    icon: '🎥',
+    website: 'https://runwayml.com',
+    pricingPlans: {
+      US: { standard: 12, pro: 28, unlimited: 76 }
+    }
+  },
+  {
+    name: 'ElevenLabs',
+    displayName: 'ElevenLabs',
+    searchText: 'ElevenLabs AI 语音 TTS 文字转语音 配音',
+    category: 'ai',
+    icon: '🗣️',
+    website: 'https://elevenlabs.io',
+    pricingPlans: {
+      US: { starter: 5, creator: 22, pro: 99 }
+    }
+  },
+  {
+    name: 'Kimi Chat',
+    displayName: 'Kimi 会员',
+    searchText: 'Kimi 月之暗面 Moonshot AI 长文本 聊天',
+    category: 'ai',
+    icon: '🌙',
+    website: 'https://kimi.moonshot.cn',
+    pricingPlans: {
+      CN: { monthly: 59 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  {
+    name: 'Doubao',
+    displayName: '豆包会员',
+    searchText: '豆包 Doubao 字节跳动 AI 聊天',
+    category: 'ai',
+    icon: '🫘',
+    website: 'https://doubao.com',
+    pricingPlans: {
+      CN: { monthly: 19.9 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  {
+    name: 'Tongyi Qianwen',
+    displayName: '通义千问会员',
+    searchText: '通义千问 Qwen 阿里 AI 聊天',
+    category: 'ai',
+    icon: '🧠',
+    website: 'https://tongyi.aliyun.com',
+    pricingPlans: {
+      CN: { monthly: 19.9 }
+    },
+    defaultCurrency: 'CNY'
+  },
   // ==================== VPN & 安全 Security ====================
   {
     name: 'ExpressVPN',
@@ -534,6 +938,28 @@ const templates: TemplateData[] = [
     website: 'https://surfshark.com',
     pricingPlans: {
       US: { monthly: 12.95, yearly: 2.49 }
+    }
+  },
+  {
+    name: 'Mullvad VPN',
+    displayName: 'Mullvad VPN',
+    searchText: 'Mullvad VPN 隐私 Privacy 匿名 安全',
+    category: 'security',
+    icon: '🔐',
+    website: 'https://mullvad.net',
+    pricingPlans: {
+      US: { monthly: 5 }
+    }
+  },
+  {
+    name: 'Proton VPN',
+    displayName: 'Proton VPN Plus',
+    searchText: 'Proton VPN ProtonVPN 隐私 加密 安全',
+    category: 'security',
+    icon: '🛡️',
+    website: 'https://protonvpn.com',
+    pricingPlans: {
+      US: { plus: 9.99, unlimited: 12.99 }
     }
   },
   // ==================== 游戏 Gaming ====================
@@ -584,6 +1010,28 @@ const templates: TemplateData[] = [
       US: { standard: 4.99, pro: 14.99 }
     }
   },
+  {
+    name: 'Steam',
+    displayName: 'Steam (估算)',
+    searchText: 'Steam Valve 游戏 PC Gaming 游戏平台',
+    category: 'gaming',
+    icon: '🎮',
+    website: 'https://store.steampowered.com',
+    pricingPlans: {
+      US: { estimated_monthly: 15 }
+    }
+  },
+  {
+    name: 'Ubisoft+',
+    displayName: 'Ubisoft+',
+    searchText: 'Ubisoft+ 育碧 游戏 Gaming 刺客信条',
+    category: 'gaming',
+    icon: '🎯',
+    website: 'https://store.ubisoft.com',
+    pricingPlans: {
+      US: { premium: 17.99 }
+    }
+  },
   // ==================== 健身 Fitness ====================
   {
     name: 'Apple Fitness+',
@@ -617,6 +1065,144 @@ const templates: TemplateData[] = [
     website: 'https://keep.com',
     pricingPlans: {
       CN: { monthly: 19, yearly: 178 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  {
+    name: 'Strava',
+    displayName: 'Strava Premium',
+    searchText: 'Strava 跑步 骑行 运动 社交 GPS',
+    category: 'fitness',
+    icon: '🏃',
+    website: 'https://strava.com',
+    pricingPlans: {
+      US: { monthly: 11.99, yearly: 79.99 }
+    }
+  },
+  {
+    name: 'Headspace',
+    displayName: 'Headspace',
+    searchText: 'Headspace 冥想 Meditation 正念 睡眠 减压',
+    category: 'fitness',
+    icon: '🧘',
+    website: 'https://headspace.com',
+    pricingPlans: {
+      US: { monthly: 12.99, yearly: 69.99 }
+    }
+  },
+  {
+    name: 'Calm',
+    displayName: 'Calm Premium',
+    searchText: 'Calm 冥想 Meditation 睡眠 放松 减压',
+    category: 'fitness',
+    icon: '🌿',
+    website: 'https://calm.com',
+    pricingPlans: {
+      US: { monthly: 14.99, yearly: 69.99 }
+    }
+  },
+  // ==================== 教育 Education ====================
+  {
+    name: 'Coursera Plus',
+    displayName: 'Coursera Plus',
+    searchText: 'Coursera Plus 在线课程 MOOC 大学 学习 证书',
+    category: 'education',
+    icon: '🎓',
+    website: 'https://coursera.org',
+    pricingPlans: {
+      US: { monthly: 59, yearly: 399 }
+    }
+  },
+  {
+    name: 'Udemy',
+    displayName: 'Udemy Personal Plan',
+    searchText: 'Udemy 在线课程 学习 编程 技能',
+    category: 'education',
+    icon: '📚',
+    website: 'https://udemy.com',
+    pricingPlans: {
+      US: { personal: 16.58 }
+    }
+  },
+  {
+    name: 'Skillshare',
+    displayName: 'Skillshare Premium',
+    searchText: 'Skillshare 创意课程 设计 摄影 插画 学习',
+    category: 'education',
+    icon: '🎨',
+    website: 'https://skillshare.com',
+    pricingPlans: {
+      US: { premium: 13.99 }
+    }
+  },
+  {
+    name: 'Duolingo',
+    displayName: 'Duolingo Plus / Super',
+    searchText: 'Duolingo Plus Super 多邻国 语言学习 外语 英语',
+    category: 'education',
+    icon: '🦉',
+    website: 'https://duolingo.com',
+    pricingPlans: {
+      CN: { super: 68 },
+      US: { super: 6.99, family: 9.99 }
+    }
+  },
+  {
+    name: 'MasterClass',
+    displayName: 'MasterClass',
+    searchText: 'MasterClass 大师课 名人 课程 学习',
+    category: 'education',
+    icon: '🏆',
+    website: 'https://masterclass.com',
+    pricingPlans: {
+      US: { individual: 10, duo: 15, family: 20 }
+    }
+  },
+  {
+    name: 'LeetCode',
+    displayName: 'LeetCode Premium',
+    searchText: 'LeetCode Premium 力扣 算法 刷题 面试 编程',
+    category: 'education',
+    icon: '💻',
+    website: 'https://leetcode.com',
+    pricingPlans: {
+      CN: { monthly: 99, yearly: 888 },
+      US: { monthly: 35, yearly: 159 }
+    }
+  },
+  {
+    name: 'CSDN',
+    displayName: 'CSDN 会员',
+    searchText: 'CSDN 会员 VIP 博客 技术社区 编程',
+    category: 'education',
+    icon: '💻',
+    website: 'https://csdn.net',
+    pricingPlans: {
+      CN: { monthly: 29.9, yearly: 179 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  {
+    name: 'Zhihu Salt',
+    displayName: '知乎盐选会员',
+    searchText: '知乎 盐选 会员 VIP 问答 社区 知识',
+    category: 'education',
+    icon: '💡',
+    website: 'https://zhihu.com',
+    pricingPlans: {
+      CN: { monthly: 25, yearly: 198 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  {
+    name: 'Dedao',
+    displayName: '得到 VIP',
+    searchText: '得到 Dedao 罗辑思维 知识付费 听书 课程',
+    category: 'education',
+    icon: '📖',
+    website: 'https://dedao.cn',
+    pricingPlans: {
+      CN: { monthly: 36, yearly: 365 }
     },
     defaultCurrency: 'CNY'
   },
@@ -655,6 +1241,28 @@ const templates: TemplateData[] = [
     }
   },
   {
+    name: 'The Wall Street Journal',
+    displayName: 'The Wall Street Journal',
+    searchText: 'Wall Street Journal WSJ 华尔街日报 新闻 财经 金融',
+    category: 'news',
+    icon: '📰',
+    website: 'https://wsj.com',
+    pricingPlans: {
+      US: { digital: 12.99, print: 22.99 }
+    }
+  },
+  {
+    name: 'Bloomberg',
+    displayName: 'Bloomberg Digital',
+    searchText: 'Bloomberg 彭博 财经 新闻 金融 News',
+    category: 'news',
+    icon: '📊',
+    website: 'https://bloomberg.com',
+    pricingPlans: {
+      US: { digital: 34.99 }
+    }
+  },
+  {
     name: 'Kindle Unlimited',
     displayName: 'Kindle Unlimited',
     searchText: 'Kindle Unlimited Amazon 电子书 阅读 Ebook',
@@ -687,6 +1295,30 @@ const templates: TemplateData[] = [
     website: 'https://weread.qq.com',
     pricingPlans: {
       CN: { monthly: 19, yearly: 168 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  {
+    name: 'Qidian',
+    displayName: '起点读书 VIP',
+    searchText: '起点读书 Qidian 网络小说 阅读 VIP 阅文',
+    category: 'reading',
+    icon: '📕',
+    website: 'https://qidian.com',
+    pricingPlans: {
+      CN: { monthly: 15, yearly: 148 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  {
+    name: 'Ximalaya',
+    displayName: '喜马拉雅 VIP',
+    searchText: '喜马拉雅 Ximalaya 有声书 播客 Podcast 音频',
+    category: 'reading',
+    icon: '🎧',
+    website: 'https://ximalaya.com',
+    pricingPlans: {
+      CN: { monthly: 25, yearly: 218 }
     },
     defaultCurrency: 'CNY'
   },
@@ -735,6 +1367,40 @@ const templates: TemplateData[] = [
       US: { career: 29.99, business: 59.99 }
     }
   },
+  {
+    name: 'Telegram Premium',
+    displayName: 'Telegram Premium',
+    searchText: 'Telegram Premium 电报 聊天 通讯 加密',
+    category: 'communication',
+    icon: '✈️',
+    website: 'https://telegram.org',
+    pricingPlans: {
+      US: { premium: 4.99 }
+    }
+  },
+  {
+    name: 'X Premium',
+    displayName: 'X Premium (Twitter Blue)',
+    searchText: 'X Premium Twitter Blue 推特 社交 蓝标',
+    category: 'communication',
+    icon: '𝕏',
+    website: 'https://x.com',
+    pricingPlans: {
+      US: { basic: 3, premium: 8, premiumPlus: 16 }
+    }
+  },
+  {
+    name: 'Weibo VIP',
+    displayName: '微博会员',
+    searchText: '微博 Weibo VIP 会员 社交 新浪',
+    category: 'communication',
+    icon: '📱',
+    website: 'https://weibo.com',
+    pricingPlans: {
+      CN: { monthly: 10.8, yearly: 108 }
+    },
+    defaultCurrency: 'CNY'
+  },
   // ==================== 域名 & 托管 Domain & Hosting ====================
   {
     name: 'Cloudflare',
@@ -769,6 +1435,154 @@ const templates: TemplateData[] = [
     pricingPlans: {
       US: { basic: 4, regular: 12 }
     }
+  },
+  {
+    name: 'AWS',
+    displayName: 'Amazon Web Services',
+    searchText: 'AWS Amazon Web Services 云计算 Cloud EC2 S3',
+    category: 'hosting',
+    icon: '☁️',
+    website: 'https://aws.amazon.com',
+    pricingPlans: {
+      US: { estimated_monthly: 50 }
+    }
+  },
+  {
+    name: 'Aliyun',
+    displayName: '阿里云',
+    searchText: '阿里云 Aliyun 云计算 ECS 服务器 云服务',
+    category: 'hosting',
+    icon: '☁️',
+    website: 'https://aliyun.com',
+    pricingPlans: {
+      CN: { ecs_basic: 46, ecs_standard: 148 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  {
+    name: 'Tencent Cloud',
+    displayName: '腾讯云',
+    searchText: '腾讯云 Tencent Cloud 云计算 CVM 服务器',
+    category: 'hosting',
+    icon: '☁️',
+    website: 'https://cloud.tencent.com',
+    pricingPlans: {
+      CN: { lightweight: 38, cvm_basic: 98 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  {
+    name: 'Huawei Cloud',
+    displayName: '华为云',
+    searchText: '华为云 Huawei Cloud 云计算 服务器 云服务',
+    category: 'hosting',
+    icon: '☁️',
+    website: 'https://huaweicloud.com',
+    pricingPlans: {
+      CN: { ecs_basic: 49, ecs_standard: 149 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  // ==================== 电商 & 购物 Shopping ====================
+  {
+    name: 'Amazon Prime',
+    displayName: 'Amazon Prime',
+    searchText: 'Amazon Prime 亚马逊 会员 购物 快递 视频',
+    category: 'shopping',
+    icon: '📦',
+    website: 'https://amazon.com/prime',
+    pricingPlans: {
+      CN: { yearly: 288 },
+      US: { monthly: 14.99, yearly: 139 }
+    }
+  },
+  {
+    name: 'JD Plus',
+    displayName: '京东 PLUS 会员',
+    searchText: '京东 JD PLUS 购物 会员 电商',
+    category: 'shopping',
+    icon: '🛒',
+    website: 'https://plus.jd.com',
+    pricingPlans: {
+      CN: { yearly: 148 }
+    },
+    defaultCurrency: 'CNY',
+    defaultCycle: 'yearly'
+  },
+  {
+    name: 'Taobao 88VIP',
+    displayName: '淘宝 88VIP',
+    searchText: '淘宝 88VIP 天猫 阿里 购物 会员 电商',
+    category: 'shopping',
+    icon: '🛍️',
+    website: 'https://www.taobao.com',
+    pricingPlans: {
+      CN: { yearly: 88 }
+    },
+    defaultCurrency: 'CNY',
+    defaultCycle: 'yearly'
+  },
+  {
+    name: 'Costco',
+    displayName: 'Costco Membership',
+    searchText: 'Costco 开市客 会员制 超市 批发 购物',
+    category: 'shopping',
+    icon: '🏪',
+    website: 'https://costco.com',
+    pricingPlans: {
+      CN: { gold_star: 299 },
+      US: { gold_star: 65, executive: 130 }
+    },
+    defaultCycle: 'yearly'
+  },
+  {
+    name: 'Sam Club',
+    displayName: '山姆会员商店',
+    searchText: '山姆 Sam Club 沃尔玛 会员制 超市 购物',
+    category: 'shopping',
+    icon: '🏬',
+    website: 'https://samsclub.com',
+    pricingPlans: {
+      CN: { basic: 260, excellence: 680 },
+      US: { club: 50, plus: 110 }
+    },
+    defaultCycle: 'yearly'
+  },
+  {
+    name: 'Meituan',
+    displayName: '美团会员/神会员',
+    searchText: '美团 Meituan 外卖 会员 神会员 团购',
+    category: 'shopping',
+    icon: '🍔',
+    website: 'https://meituan.com',
+    pricingPlans: {
+      CN: { monthly: 15 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  {
+    name: 'Ele.me',
+    displayName: '饿了么超级吃货卡',
+    searchText: '饿了么 Ele.me 外卖 超级吃货卡 会员',
+    category: 'shopping',
+    icon: '🍜',
+    website: 'https://ele.me',
+    pricingPlans: {
+      CN: { monthly: 15 }
+    },
+    defaultCurrency: 'CNY'
+  },
+  {
+    name: 'PDD',
+    displayName: '拼多多省钱月卡',
+    searchText: '拼多多 PDD 省钱月卡 购物 电商',
+    category: 'shopping',
+    icon: '🛒',
+    website: 'https://pinduoduo.com',
+    pricingPlans: {
+      CN: { monthly: 5.9 }
+    },
+    defaultCurrency: 'CNY'
   },
 ];
 
