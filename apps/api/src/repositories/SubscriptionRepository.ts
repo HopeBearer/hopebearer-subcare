@@ -122,7 +122,7 @@ export class SubscriptionRepository {
       };
       
       if (!status || status === 'All') {
-          where.status = 'Active';
+          where.status = 'ACTIVE';
       }
     }
 
@@ -286,9 +286,9 @@ export class SubscriptionRepository {
    */
   async findDueSubscriptions(): Promise<any[]> {
     const now = new Date();
-    // Don't filter by autoRenewal here — non-auto-renewing subs still need their
-    // current cycle's bill generated. The autoRenewal flag is checked in confirmPayment
-    // to decide whether to advance to the next cycle or mark as Expired.
+    // Don't filter by autoRenewal here — non-auto-renewing subs also need to be
+    // picked up so BillGeneratorService can expire them when their coverage ends.
+    // BillGeneratorService checks autoRenewal: true → generate bill, false → set Expired.
     const items = await prisma.subscription.findMany({
       where: {
         status: 'ACTIVE',

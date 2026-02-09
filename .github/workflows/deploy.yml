@@ -94,12 +94,13 @@ jobs:
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           FIXER_API_KEY: ${{ secrets.FIXER_API_KEY }}
           CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: GITHUB_IMAGE_NAME,MYSQL_ROOT_PASSWORD,JWT_ACCESS_SECRET,JWT_REFRESH_SECRET,SMTP_HOST,SMTP_PORT,SMTP_SECURE,SMTP_USER,SMTP_PASS,EMAIL_FROM,FIXER_API_KEY,CORS_ORIGIN,GHCR_TOKEN
+          envs: GITHUB_IMAGE_NAME,MYSQL_ROOT_PASSWORD,JWT_ACCESS_SECRET,JWT_REFRESH_SECRET,SMTP_HOST,SMTP_PORT,SMTP_SECURE,SMTP_USER,SMTP_PASS,EMAIL_FROM,FIXER_API_KEY,CORS_ORIGIN,TAVILY_API_KEY,GHCR_TOKEN
           script: |
             cd /home/${{ secrets.VPS_USER }}/subcare
             
@@ -117,6 +118,7 @@ jobs:
             EMAIL_FROM="${EMAIL_FROM}"
             FIXER_API_KEY=${FIXER_API_KEY}
             CORS_ORIGIN=${CORS_ORIGIN}
+            TAVILY_API_KEY=${TAVILY_API_KEY}
             ENVEOF
             # Remove leading whitespace from .env
             sed -i 's/^[[:space:]]*//' .env

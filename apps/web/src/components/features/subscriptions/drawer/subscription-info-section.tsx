@@ -13,13 +13,10 @@ export function SubscriptionInfoSection({ subscription }: SubscriptionInfoSectio
 
   const startDate = new Date(subscription.startDate).toLocaleDateString(i18n.language, { year: 'numeric', month: 'short', day: 'numeric' });
 
-  const isBackendExpired = subscription.status === 'Expired' || subscription.status === 'EXPIRED';
-  const hasExpiryInFuture = isBackendExpired && subscription.nextPayment
-    && new Date(subscription.nextPayment).setHours(23,59,59,999) >= new Date().setHours(0,0,0,0);
-  const isTrulyExpired = isBackendExpired && !hasExpiryInFuture;
+  const isExpired = subscription.status === 'Expired' || subscription.status === 'EXPIRED';
 
   // Use nextPayment directly from DB as expiry date for non-autoRenewal subscriptions
-  const expiryDateValue = isTrulyExpired && !subscription.nextPayment
+  const expiryDateValue = isExpired && !subscription.nextPayment
     ? t('status.Expired', { defaultValue: 'Expired' })
     : subscription.nextPayment
       ? new Date(subscription.nextPayment).toLocaleDateString(i18n.language, { year: 'numeric', month: 'short', day: 'numeric' })

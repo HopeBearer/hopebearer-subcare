@@ -28,6 +28,31 @@ export class BillGeneratorService {
    * Returns true if a bill was generated.
    */
   async generateBillForSubscription(sub: any): Promise<boolean> {
+      // 0. Non-auto-renewal check: if the subscription has autoRenewal=false
+      // and nextPayment has arrived, it means the coverage period has ended.
+      // Instead of generating a new bill, expire the subscription.
+      if (sub.autoRenewal === false) {
+        const now = new Date();
+        if (sub.nextPayment && new Date(sub.nextPayment) <= now) {
+          await this.subscriptionRepository.update(sub.id, {
+            status: 'Expired'
+          });
+          // Notify user that subscription has expired
+          if (sub.enableNotification) {
+            await this.notificationService.notify({
+              userId: sub.userId,
+              key: 'notification.sub.expired',
+              data: { name: sub.name },
+              title: 'Subscription Expired',
+              content: `Your subscription to ${sub.name} has expired (auto-renewal was off).`,
+              type: 'billing',
+              eventKey: 'billing.subscription_expired',
+            }).catch(console.error);
+          }
+          return false;
+        }
+      }
+
       // 1. Check if bill already exists for this date
       const existingBill = await this.paymentRecordRepository.findBySubscriptionAndDate(
         sub.id,

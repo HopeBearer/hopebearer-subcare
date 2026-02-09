@@ -88,7 +88,7 @@ export class SubscriptionService {
       billingCycle: data.billingCycle,
       startDate: data.startDate,
       nextPayment: nextPayment,
-      status: 'Active',
+      status: 'ACTIVE',
       categoryName: data.category || 'Other',
       description: data.description,
       icon: data.icon,

@@ -30,12 +30,7 @@ export function SubscriptionCard({ subscription, onClick, readonly }: Subscripti
   const queryClient = useQueryClient();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
-  // Compute display status: if backend says "Expired" but nextPayment is still in the future,
-  // the subscription is still in its coverage period — show "Active" instead of "Expired"
-  const isBackendExpired = subscription.status === 'Expired' || subscription.status === 'EXPIRED';
-  const hasExpiryInFuture = isBackendExpired && subscription.nextPayment 
-    && new Date(subscription.nextPayment).setHours(23,59,59,999) >= new Date().setHours(0,0,0,0);
-  const displayStatusKey = hasExpiryInFuture ? 'Active' : subscription.status;
+  const displayStatusKey = subscription.status;
   
   const statusColors: Record<string, string> = {
     'Active': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',

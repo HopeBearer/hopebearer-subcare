@@ -12,11 +12,7 @@ interface SubscriptionHeaderProps {
 export function SubscriptionHeader({ subscription }: SubscriptionHeaderProps) {
   const { t, i18n } = useTranslation(['subscription', 'common']);
 
-  // Compute display status: "Expired" with future nextPayment → "Active" (still in coverage)
-  const isBackendExpired = subscription.status === 'Expired' || subscription.status === 'EXPIRED';
-  const hasExpiryInFuture = isBackendExpired && subscription.nextPayment
-    && new Date(subscription.nextPayment).setHours(23,59,59,999) >= new Date().setHours(0,0,0,0);
-  const displayStatusKey = hasExpiryInFuture ? 'Active' : subscription.status;
+  const displayStatusKey = subscription.status;
   
   const statusStyles: Record<string, string> = {
     'ACTIVE': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
@@ -35,10 +31,10 @@ export function SubscriptionHeader({ subscription }: SubscriptionHeaderProps) {
     currencyDisplay: 'code',
   }).format(subscription.price);
 
-  const isTrulyExpired = isBackendExpired && !hasExpiryInFuture;
+  const isExpired = subscription.status === 'Expired' || subscription.status === 'EXPIRED';
   
   // Use nextPayment directly from DB — no need to recalculate
-  const nextPaymentDate = isTrulyExpired && !subscription.nextPayment
+  const nextPaymentDate = isExpired && !subscription.nextPayment
     ? t('status.Expired', { defaultValue: 'Expired' })
     : subscription.nextPayment 
       ? new Date(subscription.nextPayment).toLocaleDateString(i18n.language, { year: 'numeric', month: 'short', day: 'numeric' }) 

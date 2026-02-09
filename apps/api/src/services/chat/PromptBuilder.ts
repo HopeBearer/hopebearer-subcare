@@ -19,7 +19,13 @@ export function buildSystemPrompt(options: {
 }): string {
   const { userCurrency, userName } = options;
 
+  // Inject today's date so the LLM always knows the current date
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
   let prompt = `You are SubCare AI, an intelligent subscription management assistant.
+
+## Current Date
+Today is **${today}**. Use this as the reference for "today" in all date-related operations (e.g. default start date, determining if a date is in the past/future).
 
 ## ⚠️ CRITICAL RULE: NEVER FABRICATE DATA ⚠️
 This is your MOST IMPORTANT rule. Violating it is a critical failure:

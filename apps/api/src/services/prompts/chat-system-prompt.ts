@@ -172,10 +172,15 @@ Response: "🎬 找到 X 个流媒体订阅:
  * @param _language 用户界面语言 (已废弃，改为自动检测用户输入语言)
  */
 export function getChatSystemPrompt(_userLanguage?: string, userCurrency?: string, _language?: string): string {
+  // Inject today's date so the LLM always knows the current date
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
   let prompt = CHAT_SYSTEM_PROMPT;
+
+  prompt += `\n\n## Current Date\nToday is **${today}**. Use this as the reference for "today" in all date-related operations (e.g. default start date, determining if a date is in the past/future).\n`;
   
   if (userCurrency) {
-    prompt += `\n\n## User Preferences\n`;
+    prompt += `\n## User Preferences\n`;
     prompt += `- Preferred Currency: ${userCurrency}\n`;
   }
   
