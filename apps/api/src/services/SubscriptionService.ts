@@ -3,7 +3,6 @@ import { CreateSubscriptionDTO, SubscriptionFilterDTO } from "@subcare/types";
 import { Subscription } from "@subcare/database";
 import { NotificationService } from "../modules/notification/notification.service";
 import { calculateNextPayment } from "@subcare/utils";
-import { addMonths, addYears, addWeeks, addDays, isBefore } from "date-fns";
 import { AppError } from "../utils/AppError";
 import { StatusCodes } from "http-status-codes";
 import { PaymentRecordRepository } from "../repositories/PaymentRecordRepository";
@@ -84,7 +83,7 @@ export class SubscriptionService {
       currency: data.currency,
       billingCycle: data.billingCycle,
       startDate: data.startDate,
-      nextPayment: nextPayment, // Still save the calculated next payment
+      nextPayment: nextPayment,
       status: 'Active',
       categoryName: data.category || 'Other',
       description: data.description,
@@ -96,56 +95,18 @@ export class SubscriptionService {
       website: data.website,
       notes: data.notes,
       usage: data.usage || 'Normally',
+      historicalSpending: data.historicalSpending,
+      historicalNote: data.historicalNote,
       user: {
         connect: { id: data.userId }
       }
     });
 
     const now = new Date();
-    
-    // Logic Improvement:
-    // If user adds a subscription from the past, we check past cycles from the startDate.
-    // We generate backfilled PAID records to reflect accurate history.
-    
-    // We iterate from startDate up until (but not including) today.
-    let historyIterator = new Date(data.startDate);
-    
-    // Helper to advance date based on cycle
-    const advanceDate = (date: Date, cycle: string) => {
-        switch (cycle.toLowerCase()) {
-            case 'monthly': return addMonths(date, 1);
-            case 'yearly': return addYears(date, 1);
-            case 'weekly': return addWeeks(date, 1);
-            case 'daily': return addDays(date, 1);
-            default: return addMonths(date, 1);
-        }
-    };
 
-    // Check if we need to backfill
-    if (isBefore(historyIterator, now)) {
-        // Loop while the iterator is strictly in the past (before today)
-        // If it lands ON today, we stop, because that will be handled by the "Immediate Check" below for a PENDING bill.
-        while (isBefore(historyIterator, now) && historyIterator.toDateString() !== now.toDateString()) {
-             
-             // 1. Generate PAID record for this past date
-             await this.paymentRecordRepository.create({
-                amount: subscription.price,
-                currency: subscription.currency,
-                billingDate: new Date(historyIterator), // Copy date
-                status: 'PAID', // Backfilled as PAID
-                subscription: { connect: { id: subscription.id } },
-                user: { connect: { id: subscription.userId } },
-                note: 'Backfilled history'
-             }).catch(err => console.error(`[WARN] Failed to backfill history for ${subscription.id} at ${historyIterator}`, err));
-
-             // 2. Advance iterator
-             historyIterator = advanceDate(historyIterator, subscription.billingCycle);
-        }
-    }
-    
-    // Note: subscription.nextPayment is already calculated correctly by calculateNextPayment (it returns future date)
-    // So we don't need to update subscription.nextPayment here unless we want to be super precise about hours, 
-    // but calculateNextPayment handles that.
+    // Note: No backfill of historical payment records.
+    // If startDate is in the past, nextPayment is already advanced to the next cycle date >= today.
+    // Users can optionally record historical spending via historicalSpending field.
 
     await this.notificationService.notify({
       userId: data.userId,

@@ -7,7 +7,14 @@
   "cycle": "Cycle",
   "billing_date": "Billing Date",
   "first_payment": "First Payment Date",
-  "past_date_info": "Past date selected. The system assumes the subscription has been active without interruption. Historical payment records will be automatically generated as 'Paid'.",
+  "past_date_info": "Past date selected. The system will start tracking from {{nextDate}}. Payments before this date (including the current cycle) will not be recorded automatically. Please use the \"Historical Spending\" field below to record past expenses.",
+  "historical_spending_title": "Historical Spending (Optional)",
+  "historical_spending_desc": "Record how much you have spent on this subscription before today. This is for your reference only and will not affect financial reports.",
+  "historical_spending_label": "Total amount spent",
+  "historical_spending_placeholder": "e.g. 500.00",
+  "historical_note_label": "Note (optional)",
+  "historical_note_placeholder": "e.g. Subscribed from 2023 to 2025",
+  "historical_spending_display": "Historical Spending (Self-reported)",
   "date_info": {
     "today": "Since it starts today, a bill will be generated immediately for you to confirm.",
     "future": "Future start date. Your first bill will appear on {{date}}."

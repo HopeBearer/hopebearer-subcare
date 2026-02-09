@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, ChevronLeft, Check, Upload, Calendar as CalendarIcon, Bell, CreditCard, Tag, Link as LinkIcon, StickyNote, Save, Info } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Check, Upload, Calendar as CalendarIcon, Bell, CreditCard, Tag, Link as LinkIcon, StickyNote, Save, Info, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +18,7 @@ import { subscriptionService } from '@/services';
 import { useQuery } from '@tanstack/react-query';
 import { Modal } from '@/components/ui/modal';
 import { useRouter } from 'next/navigation';
-import { useModalStore } from '@/store';
+import { useModalStore, useCategoryStore } from '@/store';
 import { calculateNextPayment } from '@subcare/utils';
 import { isBefore, isFuture, isToday, format } from 'date-fns';
 
@@ -45,6 +45,8 @@ const step3Schema = z.object({
   notifyDaysBefore: z.coerce.number().optional(),
   notes: z.string().optional(),
   url: z.string().url('invalid_url').optional().or(z.literal('')),
+  historicalSpending: z.coerce.number().min(0).optional(),
+  historicalNote: z.string().optional(),
 });
 
 const formSchema = step1Schema.merge(step2Schema).merge(step3Schema);
@@ -71,6 +73,10 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
   const [logoPreview, setLogoPreview] = useState<string | undefined>(initialValues?.icon || undefined);
   const router = useRouter();
   const { closeAddSubscription, openAddSubscription } = useModalStore();
+  const { categories, fetchCategories, getCategoryOptions } = useCategoryStore();
+
+  // Fetch categories on mount (locked — only fetches once)
+  useEffect(() => { fetchCategories(); }, [fetchCategories]);
 
   const [conflictModal, setConflictModal] = useState<{ 
     isOpen: boolean; 
@@ -119,6 +125,8 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
       notifyDaysBefore: initialValues?.notifyDaysBefore || 1,
       notes: initialValues?.notes || '',
       url: initialValues?.website || '',
+      historicalSpending: initialValues?.historicalSpending ?? undefined,
+      historicalNote: initialValues?.historicalNote || '',
     },
     mode: 'onChange',
   });
@@ -242,8 +250,8 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
       notes: data.notes,
       website: data.url ? data.url : undefined, // Map url to website
       userId: '', // This will be handled by the backend from the token
-      // TODO: Handle Logo Upload separately if needed, or pass as base64/url if API supports it
-      // For now, we are skipping the file object as it can't be JSON serialized directly in the DTO
+      historicalSpending: data.historicalSpending,
+      historicalNote: data.historicalNote || undefined,
     };
 
     // Check conflict if creating new and not already confirmed
@@ -431,21 +439,61 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
                         {isDateToday && (
                           <p>{t('date_info.today', { defaultValue: 'Since it starts today, a bill will be generated immediately for you to confirm.' })}</p>
                         )}
-                        {isDatePast && (
-                          <p>
-                            {t('past_date_info', { 
-                              defaultValue: 'Past date selected. The system assumes the subscription has been active without interruption. Historical payment records will be automatically generated as \'Paid\'.' 
-                            })}
-                          </p>
-                        )}
+                        {isDatePast && (() => {
+                          const nextBillDate = calculateNextPayment(date, formData.cycle);
+                          return (
+                            <p>
+                              {t('past_date_info', { 
+                                defaultValue: 'Past date selected. The system will start tracking from {{nextDate}}. Payments before this date (including the current cycle) will not be recorded automatically. Please use the "Historical Spending" field below to record past expenses.',
+                                nextDate: format(nextBillDate, 'yyyy-MM-dd')
+                              })}
+                            </p>
+                          );
+                        })()}
                         {isDateFuture && (
                           <p>
                             {t('date_info.future', { 
                               defaultValue: 'Future start date. Your first bill will appear on {{date}}.',
-                              date: format(date, 'MMM d, yyyy')
+                              date: format(date, 'yyyy-MM-dd')
                             })}
                           </p>
                         )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Historical Spending - shown when past date is selected */}
+                {formData.startDate && (() => {
+                  const date = new Date(formData.startDate);
+                  const isPast = isBefore(date, new Date()) && !isToday(date);
+                  if (!isPast) return null;
+                  
+                  return (
+                    <div className="space-y-3 p-4 bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-800/30 rounded-lg animate-in fade-in slide-in-from-top-2 duration-300">
+                      <div className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+                        <History className="w-4 h-4" />
+                        {t('historical_spending_title', { defaultValue: 'Historical Spending (Optional)' })}
+                      </div>
+                      <p className="text-xs text-amber-700/80 dark:text-amber-400/70">
+                        {t('historical_spending_desc', { 
+                          defaultValue: 'Record how much you have spent on this subscription before today. This is for your reference only and will not affect financial reports.' 
+                        })}
+                      </p>
+                      <div className="grid grid-cols-1 gap-3">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder={t('historical_spending_placeholder', { defaultValue: 'e.g. 500.00' })}
+                          label={t('historical_spending_label', { defaultValue: 'Total amount spent' })}
+                          {...register('historicalSpending')}
+                        />
+                        <Input
+                          placeholder={t('historical_note_placeholder', { defaultValue: 'e.g. Subscribed from 2023 to 2025' })}
+                          label={t('historical_note_label', { defaultValue: 'Note (optional)' })}
+                          {...register('historicalNote')}
+                        />
                       </div>
                     </div>
                   );
@@ -474,14 +522,10 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
                        <Select
                          label={t('category', { ns: 'subscription' })}
                          {...field}
-                         options={[
-                           { label: t('categories.entertainment', { ns: 'subscription' }), value: 'Entertainment' },
-                           { label: t('categories.productivity', { ns: 'subscription' }), value: 'Productivity' },
-                           { label: t('categories.tools', { ns: 'subscription' }), value: 'Tools' },
-                           { label: t('categories.social', { ns: 'subscription' }), value: 'Social' },
-                           { label: t('categories.utilities', { ns: 'subscription' }), value: 'Utilities' },
-                           { label: t('categories.other', { ns: 'subscription' }), value: 'Other' },
-                         ]}
+                         options={getCategoryOptions().map(opt => ({
+                           label: t(`categories.${opt.value.toLowerCase()}`, { ns: 'subscription', defaultValue: opt.label }),
+                           value: opt.value,
+                         }))}
                        />
                      )}
                    />

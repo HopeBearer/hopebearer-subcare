@@ -97,6 +97,8 @@ export interface CreateSubscriptionDTO {
   website?: string;
   notes?: string;
   usage?: SubscriptionUsage;
+  historicalSpending?: number;
+  historicalNote?: string;
 }
 
 export interface UpdateSubscriptionDTO {
@@ -116,6 +118,8 @@ export interface UpdateSubscriptionDTO {
   website?: string;
   notes?: string;
   usage?: SubscriptionUsage;
+  historicalSpending?: number;
+  historicalNote?: string;
 }
 
 export interface SubscriptionDTO {
@@ -141,6 +145,8 @@ export interface SubscriptionDTO {
   website?: string | null;
   notes?: string | null;
   usage?: SubscriptionUsage | string | null;
+  historicalSpending?: number | null;
+  historicalNote?: string | null;
 }
 
 export interface SubscriptionFilterDTO {

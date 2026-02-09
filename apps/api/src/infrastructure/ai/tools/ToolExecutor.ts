@@ -685,9 +685,9 @@ export class ToolExecutor {
       // 计算开始日期
       const start = startDate ? new Date(startDate) : new Date();
 
-      // ============ 使用 SubscriptionService 创建订阅（包含历史账单回填逻辑）============
+      // ============ 使用 SubscriptionService 创建订阅 ============
       if (this.deps.subscriptionService) {
-        // 优先使用 SubscriptionService，它会处理历史账单回填和当日账单生成
+        // 优先使用 SubscriptionService，它会处理 nextPayment 计算和当日账单生成
         const subscription = await this.deps.subscriptionService.createSubscription({
           userId,
           name,
@@ -700,7 +700,7 @@ export class ToolExecutor {
           website: finalWebsite
         });
 
-        // 检查是否有待支付账单（当日账单或历史回填后的当期账单）
+        // 检查是否有待支付账单（当日到期的账单）
         let pendingBillInfo: { id: string; amount: number; currency: string; billingDate: string } | undefined;
         let hasPendingBill = false;
         
@@ -727,9 +727,24 @@ export class ToolExecutor {
         }
 
         // 构建后续提示
-        // 重要：告诉 AI 需要先问用户是否需要修改，然后问是否已支付
         let followUpQuestion: string | undefined;
-        if (hasPendingBill && pendingBillInfo) {
+
+        // 检测是否选择了过去的日期
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const startDateNorm = new Date(start);
+        startDateNorm.setHours(0, 0, 0, 0);
+        const isPastDate = startDateNorm < today;
+
+        if (isPastDate) {
+          // 过去日期：提示系统从 nextPayment 开始追踪，询问是否需要记录历史花费
+          const nextPaymentStr = this.formatDate(subscription.nextPayment);
+          followUpQuestion = `订阅创建成功。
+⚠️ 由于首次付款日期在过去，系统将从 ${nextPaymentStr} 起开始追踪付款记录。在此之前的付款（包括当前周期）不会被自动记录。
+1. 先询问用户价格和日期是否准确，如果需要修改可以使用 update_subscription 工具。
+2. 询问用户以前大概花了多少钱在这个订阅上，如果用户提供了金额，使用 update_subscription 工具将 historicalSpending 和 historicalNote 更新到订阅中。`;
+        } else if (hasPendingBill && pendingBillInfo) {
+          // 今天到期：正常的待支付账单流程
           followUpQuestion = `订阅创建成功。
 1. 先询问用户价格和日期是否准确，如果需要修改可以使用 update_subscription 工具。
 2. 然后询问账单 (${pendingBillInfo.currency} ${pendingBillInfo.amount}，${pendingBillInfo.billingDate}) 是否已支付。
@@ -1260,6 +1275,8 @@ export class ToolExecutor {
       if (updateData.enableNotification !== undefined) data.enableNotification = updateData.enableNotification;
       if (updateData.notifyDaysBefore !== undefined) data.notifyDaysBefore = updateData.notifyDaysBefore;
       if (updateData.notes !== undefined) data.notes = updateData.notes;
+      if (updateData.historicalSpending !== undefined) data.historicalSpending = updateData.historicalSpending;
+      if (updateData.historicalNote !== undefined) data.historicalNote = updateData.historicalNote;
 
       // 复用 SubscriptionService.updateSubscription
       const updated = await this.deps.subscriptionService.updateSubscription(subscriptionId, userId, data);

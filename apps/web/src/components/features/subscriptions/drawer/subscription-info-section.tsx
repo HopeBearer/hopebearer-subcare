@@ -1,7 +1,7 @@
 'use client';
 
 import { Subscription } from './types';
-import { Tag, CreditCard, Calendar, RefreshCw, ExternalLink } from 'lucide-react';
+import { Tag, CreditCard, Calendar, RefreshCw, ExternalLink, History } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface SubscriptionInfoSectionProps {
@@ -67,6 +67,23 @@ export function SubscriptionInfoSection({ subscription }: SubscriptionInfoSectio
               {subscription.website.replace(/^https?:\/\//, '')}
               <ExternalLink className="w-3 h-3" />
             </a>
+          </div>
+        )}
+
+        {subscription.historicalSpending != null && Number(subscription.historicalSpending) > 0 && (
+          <div className="col-span-2 flex flex-col gap-1.5 mt-2 p-3 bg-amber-50/50 dark:bg-amber-900/10 rounded-lg border border-amber-200/40 dark:border-amber-800/30">
+            <span className="text-xs text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+              <History className="w-3 h-3 opacity-70" />
+              {t('historical_spending_display', { defaultValue: 'Historical Spending (Self-reported)' })}
+            </span>
+            <span className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+              {subscription.currency} {Number(subscription.historicalSpending).toFixed(2)}
+            </span>
+            {subscription.historicalNote && (
+              <span className="text-xs text-amber-600/80 dark:text-amber-400/60">
+                {subscription.historicalNote}
+              </span>
+            )}
           </div>
         )}
       </div>

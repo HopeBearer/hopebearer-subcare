@@ -120,6 +120,39 @@ If \`quick_add_subscription\` returns \`requiresDuplicateConfirmation=true\`:
 - Show existing duplicates
 - Ask user to choose: update existing / delete existing / confirm duplicate creation
 
+## ⚠️ MANDATORY: Pre-Creation Confirmation (for quick_add_subscription)
+**Before calling \`quick_add_subscription\`, you MUST present ALL subscription details to the user and get explicit confirmation.**
+
+### Steps:
+1. First gather information using \`lookup_subscription_service\` (and/or \`search_web\` if needed)
+2. Present a **complete summary** to the user, listing ALL fields with defaults clearly shown:
+
+| 字段 | 值 |
+|------|------|
+| 名称 | (service name) |
+| 价格 | (currency + amount, e.g. CNY 70) |
+| 周期 | (Monthly/Yearly/Weekly/Daily, default: Monthly) |
+| 开始日期 | (date, default: today YYYY-MM-DD) |
+| 分类 | (category name, default: inferred or Other) |
+| 支付方式 | (default: Credit Card) |
+| 自动续费 | (default: 是) |
+| 通知提醒 | (default: 关闭) |
+| 提前提醒天数 | (default: —) |
+| 网站 | (if available) |
+| 备注 | (if user mentioned anything) |
+
+3. **If start date is in the past**, add a warning line:
+   - "⚠️ 开始日期在过去，系统将从 [nextPayment date] 起开始追踪。当前周期及之前的付款不会被自动记录。"
+   - Ask: "如需记录以往花费，请提供：累计金额（如 CNY 500）和备注（可选）。也可留空跳过。"
+
+4. **Wait for user to confirm or request changes**
+5. Only call \`quick_add_subscription\` AFTER the user explicitly confirms (e.g. "确认", "好的", "可以", "没问题")
+6. If user requests changes, update the summary and ask for confirmation again
+
+### After creation with past date:
+- If user provided historicalSpending in the confirmation step, call \`update_subscription\` to set \`historicalSpending\` and \`historicalNote\`
+- If user skipped, proceed normally
+
 ## Bill Follow-up
 After adding a subscription, if \`hasPendingBill=true\`:
 1. Show subscription details

@@ -7,7 +7,14 @@
   "cycle": "周期",
   "billing_date": "账单日期",
   "first_payment": "首次付款日期",
-  "past_date_info": "您选择了过去的日期。系统会默认认为中间并未断过订阅，并自动补全所有历史周期的已支付记录。",
+  "past_date_info": "您选择了过去的日期。系统将从 {{nextDate}} 起开始追踪付款记录，在此之前的付款（包括当前周期）不会被自动记录。如需记录以往花费，请在下方「历史花费」中填写。",
+  "historical_spending_title": "历史花费（选填）",
+  "historical_spending_desc": "记录您在今天之前为该订阅花费的总金额。此数据仅供个人参考，不会影响财务报表统计。",
+  "historical_spending_label": "累计花费金额",
+  "historical_spending_placeholder": "例如 500.00",
+  "historical_note_label": "备注（选填）",
+  "historical_note_placeholder": "例如 2023-2025年期间订阅",
+  "historical_spending_display": "历史花费（用户记录）",
   "date_info": {
     "today": "由于开始日期是今天，系统将立即生成一笔待确认账单。",
     "future": "未来开始日期。您的第一笔账单将在 {{date}} 生成。"

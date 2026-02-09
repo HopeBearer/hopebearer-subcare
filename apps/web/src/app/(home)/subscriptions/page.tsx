@@ -9,8 +9,9 @@ import { Search, Loader2, RotateCcw } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/hooks';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { subscriptionService, categoryService } from '@/services';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { subscriptionService } from '@/services';
+import { useCategoryStore } from '@/store';
 import { SubscriptionDTO } from '@subcare/types';
 import { useInView } from 'react-intersection-observer';
 import { useSearchParams } from 'next/navigation';
@@ -38,17 +39,11 @@ export default function SubscriptionsPage() {
   const [selectedSubscription, setSelectedSubscription] = useState<SubscriptionDTO | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  // Fetch categories from API - 使用长缓存时间，减少请求
-  const { data: categoriesData } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => categoryService.getCategories(),
-    staleTime: 1000 * 60 * 30, // 30 minutes - 分类数据不常变化
-    gcTime: 1000 * 60 * 60, // 1 hour cache
-    refetchOnWindowFocus: false, // 不在窗口聚焦时重新请求
-    refetchOnMount: false, // 已有缓存时不重新请求
-  });
+  // Fetch categories from store (locked — only fetches once per session)
+  const { categories: categoriesData, fetchCategories } = useCategoryStore();
+  useEffect(() => { fetchCategories(); }, [fetchCategories]);
   
-  // 构建分类颜色映射 - 从 API 数据中获取
+  // 构建分类颜色映射 - 从 store 数据中获取
   const categoryColorMap = useMemo(() => {
     const map: Record<string, string> = {};
     categoriesData?.forEach(c => {
@@ -229,7 +224,7 @@ export default function SubscriptionsPage() {
               onChange={handleCategoryChange}
               options={[
                 { label: t('filter_all_categories'), value: 'All' },
-                ...(categoriesData || []).map(c => ({ 
+                ...(categoriesData || []).map((c: any) => ({ 
                   label: t(`categories.${c.name.toLowerCase()}`, { defaultValue: c.name }), 
                   value: c.name 
                 }))

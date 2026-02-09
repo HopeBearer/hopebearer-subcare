@@ -275,7 +275,18 @@ export class ChatService {
       if (!firstMessage || typeof firstMessage !== 'string') return;
 
       const response = await provider.chat([
-        { role: 'system', content: 'Generate a short title (max 30 chars) for this conversation. Reply with ONLY the title, no quotes or extra text.' },
+        { role: 'system', content: `Generate a concise conversation title based on the user's message.
+
+Rules:
+- Maximum 20 characters (Chinese) or 30 characters (English)
+- Use the SAME language as the user's message
+- Must be a short noun phrase or topic summary, NOT a full sentence
+- NO quotes, periods, or extra punctuation
+- NO instructional or descriptive language (e.g. never start with "好的", "关于", "如何")
+- Focus on the KEY SUBJECT of the message
+
+Good examples: "添加Netflix订阅", "本月支出分析", "Spotify Price Check", "取消订阅咨询"
+Bad examples: "好的，添加Netflix订阅通常有以下方式", "关于本月支出的详细分析", "用户想要查看支出"` },
         { role: 'user', content: firstMessage.substring(0, 200) }
       ]);
 

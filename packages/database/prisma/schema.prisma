@@ -97,6 +97,10 @@ model Subscription {
   notes              String?  @db.Text
   usage              String   @default("Normally")
 
+  // Historical spending (user-provided, not system-tracked)
+  historicalSpending  Decimal? @db.Decimal(10, 2) // User's self-reported total spending before system tracking
+  historicalNote      String?  @db.Text            // Optional note about historical spending context
+
   userId      String
   user        User     @relation(fields: [userId], references: [id])
 

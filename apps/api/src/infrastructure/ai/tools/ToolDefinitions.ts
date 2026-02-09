@@ -118,7 +118,8 @@ Note: search quota is limited; use wisely.`,
       name: 'quick_add_subscription',
       description: `快速添加订阅。用户说"添加"就直接添加，不要反复确认。
 ⚠️ 价格规则：如果 lookup_subscription_service 没找到模板，请不要传 price 参数！只有用户明确说了具体价格时才传 price。
-📝 如果检测到已有类似订阅，工具会照常创建并返回 duplicateWarning 提醒。`,
+📝 如果检测到已有类似订阅，工具会照常创建并返回 duplicateWarning 提醒。
+📅 日期规则：如果用户指定了过去的日期，系统不会回填历史记录，而是从下一个计费周期开始追踪。创建后请询问用户以前大概花了多少钱，并用 update_subscription 工具记录 historicalSpending。`,
       parameters: {
         type: 'object',
         properties: {
@@ -302,6 +303,14 @@ Note: search quota is limited; use wisely.`,
           notes: {
             type: 'string',
             description: '备注'
+          },
+          historicalSpending: {
+            type: 'number',
+            description: '用户自填的历史累计花费金额（用于记录系统追踪之前的花费）'
+          },
+          historicalNote: {
+            type: 'string',
+            description: '历史花费备注，如"2023-2025年期间订阅"'
           }
         },
         required: ['subscriptionId']
@@ -603,6 +612,8 @@ export interface UpdateSubscriptionParams {
   enableNotification?: boolean;
   notifyDaysBefore?: number;
   notes?: string;
+  historicalSpending?: number;
+  historicalNote?: string;
 }
 
 export interface GetUpcomingRenewalsParams {
