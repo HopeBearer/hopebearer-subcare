@@ -15,6 +15,9 @@ import { categoryRegistry } from './registries/category.registry';
 import { adminDashboardRegistry } from './registries/admin-dashboard.registry';
 import { adminManagementRegistry } from './registries/admin-management.registry';
 import { templateRegistry } from './registries/template.registry';
+import { systemSettingRegistry } from './registries/system-setting.registry';
+import { scheduledJobRegistry } from './registries/scheduled-job.registry';
+import { feedbackRegistry } from './registries/feedback.registry';
 
 export interface RouteImplementation {
   handler: RequestHandler;
@@ -46,4 +49,7 @@ export const routeRegistry: Record<string, RouteVersions> = {
   ...adminDashboardRegistry,
   ...adminManagementRegistry,
   ...templateRegistry,
+  ...systemSettingRegistry,
+  ...scheduledJobRegistry,
+  ...feedbackRegistry,
 };

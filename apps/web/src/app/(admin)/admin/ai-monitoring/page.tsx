@@ -103,12 +103,6 @@ export default function AdminAIMonitoringPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-        <MessageSquare className="w-5 h-5 text-primary" />
-        AI 对话监控
-      </h1>
-
       {/* Chat Stats */}
       {chatStats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -172,8 +166,8 @@ export default function AdminAIMonitoringPage() {
                     </div>
                     <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-primary/70 rounded-full transition-all"
-                        style={{ width: `${pct}%` }}
+                        className="h-full rounded-full transition-all"
+                        style={{ width: `${pct}%`, backgroundColor: 'rgba(165, 166, 246, 0.7)' }}
                       />
                     </div>
                   </div>

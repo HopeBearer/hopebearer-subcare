@@ -117,12 +117,8 @@ export default function AdminNotificationsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <Bell className="w-5 h-5 text-primary" />
-          通知管理
-        </h1>
+      {/* Header Actions */}
+      <div className="flex items-center justify-end">
         <button
           onClick={() => setBroadcastOpen(true)}
           className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors"

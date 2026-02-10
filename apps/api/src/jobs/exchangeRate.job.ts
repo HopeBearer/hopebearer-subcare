@@ -1,42 +1,79 @@
-
 import cron from 'node-cron';
-import { services } from '../core/container';
-
-const { currency } = { currency: services.currency }; // Access via exported services if possible, or we need to access the instance directly from container.ts if it's not in the 'services' export.
-// It seems 'services' in container.ts might NOT have currency service exported.
-// I should verify container.ts again. 
-// If it's not exported, I should export it or access the variable from container.sh (if it was exported).
 
 /**
  * Exchange Rate Sync Job
  * Runs daily at 01:00 UTC
  */
 export const exchangeRateJob = {
-    start: () => {
-        // 0 1 * * * means 01:00 AM (server time). User asked for UTC 01:00.
-        // Docker timezone might be UTC or something else. 
-        // Best is to assume server is UTC or handle timezone. 
-        // node-cron allows timezone.
+  name: 'exchange-rate-sync',
+  displayName: '汇率同步',
+  description: '每天 UTC 01:00 自动从外部 API 同步最新汇率数据',
+  cronExpression: '0 1 * * *',
+  timezone: 'UTC',
 
-        cron.schedule('0 1 * * *', async () => {
-            console.log('Running Exchange Rate Sync Job...');
-            try {
-                // We need to import the currencyService instance. 
-                // Access via exported services
-                const { services } = await import('../core/container');
-                if (services.currency) {
-                    await services.currency.syncRates();
-                } else {
-                    console.warn('Currency service not available for sync job');
-                }
-                console.log('Exchange Rate Sync Job Completed.');
-            } catch (error) {
-                console.error('Exchange Rate Sync Job Failed:', error);
-            }
-        }, {
-            timezone: "UTC"
-        });
+  start: () => {
+    cron.schedule('0 1 * * *', async () => {
+      const startTime = Date.now();
+      let status = 'SUCCESS';
+      let error: string | undefined;
+      let result: object | undefined;
 
-        console.log('Exchange Rate Sync Job scheduled for 01:00 UTC daily.');
+      try {
+        const { services } = await import('../core/container');
+
+        // Check dynamic setting (DB)
+        const dbEnabled = await services.systemSetting.getValue<boolean>('exchangeRate.syncEnabled', true);
+        if (!dbEnabled) {
+          console.log('[ExchangeRateJob] Skipped: disabled via system setting exchangeRate.syncEnabled');
+          return;
+        }
+
+        console.log('[ExchangeRateJob] Running scheduled sync...');
+        if (services.currency) {
+          await services.currency.syncRates();
+          result = { message: 'Exchange rates synced successfully' };
+        } else {
+          throw new Error('Currency service not available');
+        }
+        console.log('[ExchangeRateJob] Completed.');
+      } catch (err) {
+        status = 'FAILED';
+        error = err instanceof Error ? err.message : String(err);
+        console.error('[ExchangeRateJob] Failed:', error);
+      }
+
+      // Record execution to ScheduledJobService
+      const duration = Date.now() - startTime;
+      try {
+        const { services } = await import('../core/container');
+        await services.scheduledJob.recordCronExecution(
+          'exchange-rate-sync',
+          status,
+          duration,
+          result,
+          error
+        );
+      } catch (recordErr) {
+        console.error('[ExchangeRateJob] Failed to record execution:', recordErr);
+      }
+    }, {
+      timezone: 'UTC',
+    });
+
+    console.log('[ExchangeRateJob] Scheduled for 01:00 UTC daily.');
+  },
+
+  /**
+   * Run sync immediately (for manual triggers)
+   */
+  runNow: async () => {
+    console.log('[ExchangeRateJob] Running immediate sync...');
+    const { services } = await import('../core/container');
+    if (services.currency) {
+      await services.currency.syncRates();
+      console.log('[ExchangeRateJob] Immediate sync completed.');
+      return { message: 'Exchange rates synced successfully' };
     }
+    throw new Error('Currency service not available');
+  },
 };

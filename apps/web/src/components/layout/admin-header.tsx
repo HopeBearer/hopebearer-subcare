@@ -14,6 +14,15 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/admin/templates': { title: '订阅模板', subtitle: '管理订阅服务模板与定价方案' },
   '/admin/message-templates': { title: '消息模板', subtitle: '管理邮件与通知模板' },
   '/admin/ai-providers': { title: 'AI 供应商', subtitle: '管理 AI 模型供应商与配置' },
+  '/admin/payments': { title: '支付记录', subtitle: '查看平台全部支付流水与统计' },
+  '/admin/exchange-rates': { title: '汇率管理', subtitle: '管理多币种汇率与同步策略' },
+  '/admin/notifications': { title: '通知管理', subtitle: '管理系统通知与广播消息' },
+  '/admin/ai-monitoring': { title: 'AI 监控', subtitle: '监控 AI 对话使用与配置情况' },
+  '/admin/search-usage': { title: '搜索用量', subtitle: '监控搜索 API 配额与缓存状态' },
+  '/admin/api-analytics': { title: 'API 分析', subtitle: '基于 SystemLog 的 API 请求统计' },
+  '/admin/feedbacks': { title: '反馈工单', subtitle: '管理用户提交的反馈和问题' },
+  '/admin/jobs': { title: '定时任务', subtitle: '管理系统定时任务与执行记录' },
+  '/admin/settings': { title: '系统设置', subtitle: '管理平台运行时配置参数' },
 };
 
 export function AdminHeader() {
@@ -34,7 +43,7 @@ export function AdminHeader() {
           {pageInfo.title}
         </h1>
         {pageInfo.subtitle && (
-          <p className="text-xs text-secondary mt-0.5 leading-snug">{pageInfo.subtitle}</p>
+          <div className="text-xs text-secondary mt-0.5 leading-snug">{pageInfo.subtitle}</div>
         )}
       </div>
 

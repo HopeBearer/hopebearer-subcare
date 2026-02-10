@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { adminService, ExchangeRateData, ExchangeRateItem } from '@/services';
 import {
-  DollarSign,
   RefreshCw,
   Loader2,
   Pencil,
@@ -85,20 +84,14 @@ export default function AdminExchangeRatesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header Actions */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-primary" />
-            汇率管理
-          </h1>
-          {data?.lastUpdated && (
-            <p className="text-sm text-secondary mt-1 flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" />
-              最后更新: {new Date(data.lastUpdated).toLocaleString('zh-CN')}
-            </p>
-          )}
-        </div>
+        {data?.lastUpdated && (
+          <p className="text-sm text-secondary flex items-center gap-1">
+            <Clock className="w-3.5 h-3.5" />
+            最后更新: {new Date(data.lastUpdated).toLocaleString('zh-CN')}
+          </p>
+        )}
         <button
           onClick={handleSync}
           disabled={syncing}

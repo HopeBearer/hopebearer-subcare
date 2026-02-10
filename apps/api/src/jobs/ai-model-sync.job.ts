@@ -6,15 +6,21 @@ const DEFAULT_CRON = '0 3 * * 1';
 /**
  * AI Model Sync Job
  * Syncs AI models from all providers periodically
- * 
+ *
  * Environment variables:
  * - AI_MODEL_SYNC_CRON: Cron expression (default: '0 3 * * 1' = Monday 03:00 UTC)
  * - AI_MODEL_SYNC_ENABLED: 'true' to enable (default: true)
  */
 export const aiModelSyncJob = {
+  name: 'ai-model-sync',
+  displayName: 'AI 模型同步',
+  description: '定期从所有 AI 供应商同步最新模型列表',
+  cronExpression: process.env.AI_MODEL_SYNC_CRON || DEFAULT_CRON,
+  timezone: 'UTC',
+
   start: () => {
     const isEnabled = process.env.AI_MODEL_SYNC_ENABLED !== 'false';
-    
+
     if (!isEnabled) {
       console.log('[AIModelSyncJob] Disabled via AI_MODEL_SYNC_ENABLED=false');
       return;
@@ -23,30 +29,57 @@ export const aiModelSyncJob = {
     const cronExpression = process.env.AI_MODEL_SYNC_CRON || DEFAULT_CRON;
 
     cron.schedule(cronExpression, async () => {
-      console.log('[AIModelSyncJob] Starting AI model sync...');
       const startTime = Date.now();
+      let status = 'SUCCESS';
+      let error: string | undefined;
+      let result: object | undefined;
 
       try {
-        // Dynamic import to avoid circular dependency
         const { services } = await import('../core/container');
-        
+
+        // Check dynamic setting (DB overrides env var)
+        const dbEnabled = await services.systemSetting.getValue<boolean>('ai.modelSyncEnabled', true);
+        if (!dbEnabled) {
+          console.log('[AIModelSyncJob] Skipped: disabled via system setting ai.modelSyncEnabled');
+          return;
+        }
+
+        console.log('[AIModelSyncJob] Starting AI model sync...');
+
         if (services.aiProvider) {
           const results = await services.aiProvider.syncAllProviders();
-          
-          const totalAdded = results.reduce((sum, r) => sum + r.added, 0);
-          const totalUpdated = results.reduce((sum, r) => sum + r.updated, 0);
-          const totalRemoved = results.reduce((sum, r) => sum + r.removed, 0);
-          
-          const duration = Date.now() - startTime;
-          console.log(`[AIModelSyncJob] Completed in ${duration}ms: ${totalAdded} added, ${totalUpdated} updated, ${totalRemoved} removed`);
+
+          const totalAdded = results.reduce((sum: number, r: any) => sum + r.added, 0);
+          const totalUpdated = results.reduce((sum: number, r: any) => sum + r.updated, 0);
+          const totalRemoved = results.reduce((sum: number, r: any) => sum + r.removed, 0);
+
+          result = { totalAdded, totalUpdated, totalRemoved, providers: results.length };
+          console.log(`[AIModelSyncJob] Completed: ${totalAdded} added, ${totalUpdated} updated, ${totalRemoved} removed`);
         } else {
-          console.warn('[AIModelSyncJob] AIProvider service not available');
+          throw new Error('AIProvider service not available');
         }
-      } catch (error) {
+      } catch (err) {
+        status = 'FAILED';
+        error = err instanceof Error ? err.message : String(err);
         console.error('[AIModelSyncJob] Failed:', error);
       }
+
+      // Record execution to ScheduledJobService
+      const duration = Date.now() - startTime;
+      try {
+        const { services } = await import('../core/container');
+        await services.scheduledJob.recordCronExecution(
+          'ai-model-sync',
+          status,
+          duration,
+          result,
+          error
+        );
+      } catch (recordErr) {
+        console.error('[AIModelSyncJob] Failed to record execution:', recordErr);
+      }
     }, {
-      timezone: 'UTC'
+      timezone: 'UTC',
     });
 
     console.log(`[AIModelSyncJob] Scheduled with cron: ${cronExpression} (UTC)`);
@@ -57,17 +90,13 @@ export const aiModelSyncJob = {
    */
   runNow: async () => {
     console.log('[AIModelSyncJob] Running immediate sync...');
-    try {
-      const { services } = await import('../core/container');
-      
-      if (services.aiProvider) {
-        const results = await services.aiProvider.syncAllProviders();
-        console.log('[AIModelSyncJob] Immediate sync completed:', results);
-        return results;
-      }
-    } catch (error) {
-      console.error('[AIModelSyncJob] Immediate sync failed:', error);
-      throw error;
+    const { services } = await import('../core/container');
+
+    if (services.aiProvider) {
+      const results = await services.aiProvider.syncAllProviders();
+      console.log('[AIModelSyncJob] Immediate sync completed:', results);
+      return results;
     }
-  }
+    throw new Error('AIProvider service not available');
+  },
 };

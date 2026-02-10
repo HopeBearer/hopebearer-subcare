@@ -98,12 +98,6 @@ export default function AdminPaymentsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-        <CreditCard className="w-5 h-5 text-primary" />
-        支付记录总览
-      </h1>
-
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

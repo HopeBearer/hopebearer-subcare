@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AdminManagementService } from '../../services/AdminManagementService';
 import { CurrencyService } from '../../services/CurrencyService';
+import { SystemLogRepository } from '../../repositories/SystemLogRepository';
 import { BusinessCode } from '../../constants/BusinessCode';
 import { ApiResponse } from '@subcare/types';
 
@@ -12,6 +13,7 @@ export class AdminManagementController {
   constructor(
     private adminManagementService: AdminManagementService,
     private currencyService: CurrencyService,
+    private systemLogRepository?: SystemLogRepository,
   ) {}
 
   // ===================== 汇率管理 =====================
@@ -319,6 +321,120 @@ export class AdminManagementController {
         status: 'success',
         code: BusinessCode.SUCCESS,
         data,
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // ===================== API 使用分析 =====================
+
+  /**
+   * GET /admin/api-analytics/overview
+   */
+  getApiAnalyticsOverview = async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!this.systemLogRepository) throw new Error('SystemLogRepository not available');
+      const data = await this.systemLogRepository.getApiOverviewStats();
+      const response: ApiResponse = {
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data,
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /admin/api-analytics/trend
+   */
+  getApiAnalyticsTrend = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!this.systemLogRepository) throw new Error('SystemLogRepository not available');
+      const days = Number(req.query.days) || 30;
+      const data = await this.systemLogRepository.getApiRequestTrend(days);
+      const response: ApiResponse = {
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data,
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /admin/api-analytics/hourly
+   */
+  getApiAnalyticsHourly = async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!this.systemLogRepository) throw new Error('SystemLogRepository not available');
+      const data = await this.systemLogRepository.getApiHourlyDistribution();
+      const response: ApiResponse = {
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data,
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /admin/api-analytics/top-endpoints
+   */
+  getApiTopEndpoints = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!this.systemLogRepository) throw new Error('SystemLogRepository not available');
+      const limit = Number(req.query.limit) || 10;
+      const data = await this.systemLogRepository.getTopEndpoints(limit);
+      const response: ApiResponse = {
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data: { endpoints: data },
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /admin/api-analytics/errors
+   */
+  getApiErrorTrend = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!this.systemLogRepository) throw new Error('SystemLogRepository not available');
+      const days = Number(req.query.days) || 30;
+      const data = await this.systemLogRepository.getErrorRateTrend(days);
+      const response: ApiResponse = {
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data,
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /admin/api-analytics/top-users
+   */
+  getApiTopUsers = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!this.systemLogRepository) throw new Error('SystemLogRepository not available');
+      const limit = Number(req.query.limit) || 10;
+      const data = await this.systemLogRepository.getTopApiUsers(limit);
+      const response: ApiResponse = {
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data: { users: data },
       };
       res.status(200).json(response);
     } catch (error) {

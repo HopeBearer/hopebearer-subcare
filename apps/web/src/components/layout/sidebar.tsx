@@ -14,6 +14,7 @@ import {
   ChevronRight,
   MessageSquarePlus,
   MessageCircle,
+  MessageSquareText,
   Trash2,
   MoreHorizontal,
   Loader2
@@ -127,6 +128,11 @@ export function Sidebar() {
       href: '/notifications',
       icon: Bell,
       label: t('nav.notifications'),
+    },
+    {
+      href: '/feedbacks',
+      icon: MessageSquareText,
+      label: t('nav.feedbacks', { defaultValue: '反馈' }),
     },
   ];
 

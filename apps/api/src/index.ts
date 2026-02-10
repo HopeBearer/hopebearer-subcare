@@ -2,6 +2,7 @@ import './setup-env'; // 必须最先导入，以确保环境变量加载
 import app from './app';
 import http from 'http';
 import { seedTemplates } from './utils/seed-templates';
+import { seedSystemSettings } from './utils/seed-settings';
 import cron from 'node-cron';
 import { services } from './core/container';
 import { exchangeRateJob } from './jobs/exchangeRate.job';
@@ -56,51 +57,140 @@ server.listen(PORT, async () => {
     console.log(`Server running on port ${PORT}`);
     console.log('Environment:', process.env.NODE_ENV);
 
-    // Initialize Cron Jobs
-    // Run every day at 00:01
-    cron.schedule('1 0 * * *', async () => {
-        try {
-            await services.billGenerator.generateDailyBills();
-        } catch (error) {
-            console.error('Daily bill generation job failed:', error);
-        }
+    // ===================== Register All Jobs with ScheduledJobService =====================
+
+    // 1. Daily Bill Generation
+    services.scheduledJob.registerJob({
+        name: 'daily-bill-generation',
+        displayName: '每日账单生成',
+        description: '每天 00:01 自动生成订阅账单',
+        cronExpression: '1 0 * * *',
+        timezone: 'UTC',
+        runNow: async () => {
+            return services.billGenerator.generateDailyBills();
+        },
     });
 
-    // Run every day at 09:00 AM (Good time for reminders)
-    cron.schedule('0 9 * * *', async () => {
-        try {
+    // 2. Renewal & Pending Bill Reminders
+    services.scheduledJob.registerJob({
+        name: 'renewal-reminders',
+        displayName: '续费提醒',
+        description: '每天 09:00 发送续费提醒和待付账单提醒',
+        cronExpression: '0 9 * * *',
+        timezone: 'UTC',
+        runNow: async () => {
+            const results: string[] = [];
             if (services.subscription) {
                 await services.subscription.checkAndSendRenewalReminders();
+                results.push('renewal reminders sent');
             }
             if (services.financial) {
                 await services.financial.checkAndSendPendingBillReminders();
+                results.push('pending bill reminders sent');
             }
-        } catch (error) {
-            console.error('Reminder job failed:', error);
-        }
+            return { results };
+        },
     });
 
-    // Run every day at 02:00
-    cron.schedule('0 2 * * *', async () => {
-        try {
+    // 3. Notification Cleanup
+    services.scheduledJob.registerJob({
+        name: 'notification-cleanup',
+        displayName: '通知清理',
+        description: '每天 02:00 清理过期通知',
+        cronExpression: '0 2 * * *',
+        timezone: 'UTC',
+        runNow: async () => {
             if (services.notification) {
                 await services.notification.cleanupOldNotifications();
+                return { message: 'Old notifications cleaned up' };
             }
-        } catch (error) {
-            console.error('Notification cleanup job failed:', error);
-        }
+            return { message: 'Notification service not available' };
+        },
     });
 
-    // Init Exchange Rate Job
-    exchangeRateJob.start();
+    // 4. Exchange Rate Sync
+    services.scheduledJob.registerJob({
+        name: exchangeRateJob.name,
+        displayName: exchangeRateJob.displayName,
+        description: exchangeRateJob.description,
+        cronExpression: exchangeRateJob.cronExpression,
+        timezone: exchangeRateJob.timezone,
+        runNow: exchangeRateJob.runNow,
+    });
 
-    // Init AI Model Sync Job (default: Monday 03:00 UTC)
+    // 5. AI Model Sync
+    services.scheduledJob.registerJob({
+        name: aiModelSyncJob.name,
+        displayName: aiModelSyncJob.displayName,
+        description: aiModelSyncJob.description,
+        cronExpression: aiModelSyncJob.cronExpression,
+        timezone: aiModelSyncJob.timezone,
+        runNow: aiModelSyncJob.runNow,
+    });
+
+    // Initialize all jobs (sync to database)
+    await services.scheduledJob.initializeJobs().catch(err => {
+        console.warn('[Startup] Failed to initialize scheduled jobs in DB:', err.message);
+    });
+
+    // Start the actual cron schedules
+    // Inline jobs with execution recording
+    cron.schedule('1 0 * * *', async () => {
+        const start = Date.now();
+        let status = 'SUCCESS';
+        let error: string | undefined;
+        let result: object | undefined;
+        try {
+            await services.billGenerator.generateDailyBills();
+            result = { message: 'Daily bills generated' };
+        } catch (err) {
+            status = 'FAILED';
+            error = err instanceof Error ? err.message : String(err);
+            console.error('Daily bill generation job failed:', err);
+        }
+        await services.scheduledJob.recordCronExecution('daily-bill-generation', status, Date.now() - start, result, error).catch(console.error);
+    });
+
+    cron.schedule('0 9 * * *', async () => {
+        const start = Date.now();
+        let status = 'SUCCESS';
+        let error: string | undefined;
+        try {
+            if (services.subscription) await services.subscription.checkAndSendRenewalReminders();
+            if (services.financial) await services.financial.checkAndSendPendingBillReminders();
+        } catch (err) {
+            status = 'FAILED';
+            error = err instanceof Error ? err.message : String(err);
+            console.error('Reminder job failed:', err);
+        }
+        await services.scheduledJob.recordCronExecution('renewal-reminders', status, Date.now() - start, undefined, error).catch(console.error);
+    });
+
+    cron.schedule('0 2 * * *', async () => {
+        const start = Date.now();
+        let status = 'SUCCESS';
+        let error: string | undefined;
+        try {
+            if (services.notification) await services.notification.cleanupOldNotifications();
+        } catch (err) {
+            status = 'FAILED';
+            error = err instanceof Error ? err.message : String(err);
+            console.error('Notification cleanup job failed:', err);
+        }
+        await services.scheduledJob.recordCronExecution('notification-cleanup', status, Date.now() - start, undefined, error).catch(console.error);
+    });
+
+    // Start external job cron schedules
+    exchangeRateJob.start();
     aiModelSyncJob.start();
 
-    console.log('Cron jobs scheduled: Daily Bill Generation (00:01), Notification Cleanup (02:00), AI Model Sync (Monday 03:00 UTC)');
+    console.log('✅ All 5 cron jobs registered & scheduled.');
 
     // Optional: Run seeding on startup or via separate script
     await seedTemplates().catch(console.error);
+
+    // Seed default system settings (won't overwrite existing values)
+    await seedSystemSettings().catch(console.error);
 
     // Initialize Vector Services (for AI Agent semantic search)
     await initializeVectorServices().catch(err => {

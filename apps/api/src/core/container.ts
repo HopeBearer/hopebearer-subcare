@@ -15,6 +15,15 @@ import { TemplateController } from '../controllers/v1/TemplateController';
 import { TemplateService } from '../services/TemplateService';
 import { AdminManagementController } from '../controllers/v1/AdminManagementController';
 import { AdminManagementService } from '../services/AdminManagementService';
+import { SystemSettingController } from '../controllers/v1/SystemSettingController';
+import { SystemSettingService } from '../services/SystemSettingService';
+import { SystemSettingRepository } from '../repositories/SystemSettingRepository';
+import { ScheduledJobController } from '../controllers/v1/ScheduledJobController';
+import { ScheduledJobService } from '../services/ScheduledJobService';
+import { ScheduledJobRepository } from '../repositories/ScheduledJobRepository';
+import { FeedbackController } from '../controllers/v1/FeedbackController';
+import { FeedbackService } from '../services/FeedbackService';
+import { FeedbackRepository } from '../repositories/FeedbackRepository';
 import { UserController as UserControllerV2 } from '../controllers/v2/UserController';
 import { AuthService } from '../services/AuthService';
 import { SubscriptionService } from '../services/SubscriptionService';
@@ -147,6 +156,18 @@ const adminDashboardService = new AdminDashboardService();
 const adminManagementService = new AdminManagementService();
 const templateService = new TemplateService(templateRepository);
 
+// New: SystemSetting
+const systemSettingRepository = new SystemSettingRepository();
+const systemSettingService = new SystemSettingService(systemSettingRepository, systemLogRepository);
+
+// New: ScheduledJob
+const scheduledJobRepository = new ScheduledJobRepository();
+const scheduledJobService = new ScheduledJobService(scheduledJobRepository, systemLogRepository);
+
+// New: Feedback
+const feedbackRepository = new FeedbackRepository();
+const feedbackService = new FeedbackService(feedbackRepository, systemLogRepository);
+
 // Middleware
 export const authMiddleware = new AuthMiddleware(tokenService);
 
@@ -166,8 +187,11 @@ export const controllersV1 = {
   Chat: new ChatController(chatService),
   Category: new CategoryController(categoryService),
   AdminDashboard: new AdminDashboardController(adminDashboardService),
-  AdminManagement: new AdminManagementController(adminManagementService, currencyService),
-  Template: new TemplateController(templateService)
+  AdminManagement: new AdminManagementController(adminManagementService, currencyService, systemLogRepository),
+  Template: new TemplateController(templateService),
+  SystemSetting: new SystemSettingController(systemSettingService),
+  ScheduledJob: new ScheduledJobController(scheduledJobService),
+  Feedback: new FeedbackController(feedbackService)
 };
 
 // V2 Controllers
@@ -188,5 +212,8 @@ export const services = {
   webSearch: webSearchService,
   searchCache: searchCacheRepository,
   chat: chatService,
-  category: categoryService
+  category: categoryService,
+  scheduledJob: scheduledJobService,
+  systemSetting: systemSettingService,
+  feedback: feedbackService
 };

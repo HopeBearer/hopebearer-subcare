@@ -97,4 +97,42 @@ export const adminManagementRegistry: Record<string, RouteVersions> = {
       middlewares: [authMiddleware.authenticate, authMiddleware.requireAdmin],
     },
   },
+
+  // ===== API 使用分析 =====
+  'GET /admin/api-analytics/overview': {
+    v1: {
+      handler: controllersV1.AdminManagement.getApiAnalyticsOverview,
+      middlewares: [authMiddleware.authenticate, authMiddleware.requireAdmin],
+    },
+  },
+  'GET /admin/api-analytics/trend': {
+    v1: {
+      handler: controllersV1.AdminManagement.getApiAnalyticsTrend,
+      middlewares: [authMiddleware.authenticate, authMiddleware.requireAdmin],
+    },
+  },
+  'GET /admin/api-analytics/hourly': {
+    v1: {
+      handler: controllersV1.AdminManagement.getApiAnalyticsHourly,
+      middlewares: [authMiddleware.authenticate, authMiddleware.requireAdmin],
+    },
+  },
+  'GET /admin/api-analytics/top-endpoints': {
+    v1: {
+      handler: controllersV1.AdminManagement.getApiTopEndpoints,
+      middlewares: [authMiddleware.authenticate, authMiddleware.requireAdmin],
+    },
+  },
+  'GET /admin/api-analytics/errors': {
+    v1: {
+      handler: controllersV1.AdminManagement.getApiErrorTrend,
+      middlewares: [authMiddleware.authenticate, authMiddleware.requireAdmin],
+    },
+  },
+  'GET /admin/api-analytics/top-users': {
+    v1: {
+      handler: controllersV1.AdminManagement.getApiTopUsers,
+      middlewares: [authMiddleware.authenticate, authMiddleware.requireAdmin],
+    },
+  },
 };

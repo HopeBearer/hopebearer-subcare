@@ -311,6 +311,160 @@ export interface AdminUserAIConfigStats {
   providerDistribution: Array<{ provider: string; count: number }>;
 }
 
+// ============= System Settings Types =============
+
+export interface SystemSettingItem {
+  id: string;
+  key: string;
+  value: string;
+  type: string;
+  group: string;
+  label: string | null;
+  parsedValue: unknown;
+  updatedAt: string;
+}
+
+export interface SystemSettingsData {
+  settings: SystemSettingItem[];
+  grouped: Record<string, SystemSettingItem[]>;
+  groups: string[];
+  total: number;
+}
+
+export interface SystemSettingFormData {
+  key: string;
+  value: string;
+  type?: string;
+  group?: string;
+  label?: string;
+}
+
+// ============= Scheduled Job Types =============
+
+export interface ScheduledJobItem {
+  id: string;
+  name: string;
+  displayName: string;
+  description: string | null;
+  cronExpression: string;
+  timezone: string;
+  isEnabled: boolean;
+  lastRunAt: string | null;
+  lastRunStatus: string | null;
+  lastRunDuration: number | null;
+  lastRunError: string | null;
+  nextRunAt: string | null;
+  canTrigger: boolean;
+  executionCount: number;
+}
+
+export interface JobExecutionItem {
+  id: string;
+  status: string;
+  startedAt: string;
+  completedAt: string | null;
+  duration: number | null;
+  result: Record<string, unknown> | null;
+  error: string | null;
+  triggeredBy: string;
+}
+
+export interface ScheduledJobDetail extends ScheduledJobItem {
+  executions: JobExecutionItem[];
+  executionTotal: number;
+}
+
+export interface JobTriggerResult {
+  status: string;
+  duration: number;
+  result?: unknown;
+  error?: string;
+}
+
+// ============= Feedback Types =============
+
+export interface FeedbackItem {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  content: string;
+  status: string;
+  priority: string;
+  adminNote: string | null;
+  user: { id: string; email: string; name: string | null } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FeedbackListResult {
+  items: FeedbackItem[];
+  total: number;
+}
+
+export interface FeedbackStats {
+  total: number;
+  statusDistribution: Array<{ status: string; count: number }>;
+  typeDistribution: Array<{ type: string; count: number }>;
+  priorityDistribution: Array<{ priority: string; count: number }>;
+}
+
+export interface FeedbackFilters {
+  type?: string;
+  status?: string;
+  priority?: string;
+  userId?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface FeedbackCreateData {
+  type: string;
+  title: string;
+  content: string;
+  priority?: string;
+}
+
+// ============= API Analytics Types =============
+
+export interface ApiAnalyticsOverview {
+  totalRequests: number;
+  last24hRequests: number;
+  last7dRequests: number;
+  errorCount24h: number;
+  errorRate24h: number;
+  levelDistribution: Array<{ level: string; count: number }>;
+}
+
+export interface ApiAnalyticsTrend {
+  labels: string[];
+  values: number[];
+  total: number;
+}
+
+export interface ApiAnalyticsHourly {
+  labels: string[];
+  values: number[];
+}
+
+export interface ApiEndpointItem {
+  endpoint: string;
+  count: number;
+}
+
+export interface ApiErrorTrend {
+  labels: string[];
+  errorRates: number[];
+  errorCounts: number[];
+  totalCounts: number[];
+}
+
+export interface ApiTopUserItem {
+  userId: string | null;
+  user: { id: string; email: string; name: string | null } | null;
+  count: number;
+}
+
 // ============= API Service =============
 
 export const adminService = {
@@ -519,6 +673,132 @@ export const adminService = {
   // ===== User AI Configs =====
   getUserAIConfigStats: async (): Promise<AdminUserAIConfigStats> => {
     const response = await api.get<unknown, ApiResponse<AdminUserAIConfigStats>>('/admin/user-ai-configs/stats');
+    return response.data;
+  },
+
+  // ===== System Settings =====
+  getSystemSettings: async (group?: string): Promise<SystemSettingsData> => {
+    const response = await api.get<unknown, ApiResponse<SystemSettingsData>>('/admin/settings', {
+      params: group ? { group } : undefined,
+    });
+    return response.data;
+  },
+
+  getSettingGroups: async (): Promise<string[]> => {
+    const response = await api.get<unknown, ApiResponse<{ groups: string[] }>>('/admin/settings/groups');
+    return response.data.groups;
+  },
+
+  upsertSetting: async (data: SystemSettingFormData): Promise<SystemSettingItem> => {
+    const response = await api.put<unknown, ApiResponse<SystemSettingItem>>('/admin/settings', data);
+    return response.data;
+  },
+
+  batchUpdateSettings: async (items: Array<{ key: string; value: string }>): Promise<{ updated: number }> => {
+    const response = await api.patch<unknown, ApiResponse<{ updated: number }>>('/admin/settings/batch', { items });
+    return response.data;
+  },
+
+  deleteSetting: async (id: string): Promise<void> => {
+    await api.delete(`/admin/settings/${id}`);
+  },
+
+  // ===== Scheduled Jobs =====
+  getScheduledJobs: async (): Promise<{ jobs: ScheduledJobItem[] }> => {
+    const response = await api.get<unknown, ApiResponse<{ jobs: ScheduledJobItem[] }>>('/admin/jobs');
+    return response.data;
+  },
+
+  getJobDetail: async (id: string, page?: number, limit?: number): Promise<ScheduledJobDetail> => {
+    const response = await api.get<unknown, ApiResponse<ScheduledJobDetail>>(`/admin/jobs/${id}`, {
+      params: { page, limit },
+    });
+    return response.data;
+  },
+
+  triggerJob: async (name: string): Promise<JobTriggerResult> => {
+    const response = await api.post<unknown, ApiResponse<JobTriggerResult>>(`/admin/jobs/${name}/trigger`);
+    return response.data;
+  },
+
+  toggleJob: async (id: string, isEnabled: boolean): Promise<void> => {
+    await api.patch(`/admin/jobs/${id}/toggle`, { isEnabled });
+  },
+
+  // ===== Feedbacks (Admin) =====
+  getFeedbacks: async (params?: FeedbackFilters): Promise<FeedbackListResult> => {
+    const response = await api.get<unknown, ApiResponse<FeedbackListResult>>('/admin/feedbacks', { params });
+    return response.data;
+  },
+
+  getFeedbackStats: async (): Promise<FeedbackStats> => {
+    const response = await api.get<unknown, ApiResponse<FeedbackStats>>('/admin/feedbacks/stats');
+    return response.data;
+  },
+
+  getFeedbackById: async (id: string): Promise<FeedbackItem> => {
+    const response = await api.get<unknown, ApiResponse<FeedbackItem>>(`/admin/feedbacks/${id}`);
+    return response.data;
+  },
+
+  updateFeedback: async (id: string, data: { status?: string; priority?: string; adminNote?: string }): Promise<FeedbackItem> => {
+    const response = await api.patch<unknown, ApiResponse<FeedbackItem>>(`/admin/feedbacks/${id}`, data);
+    return response.data;
+  },
+
+  deleteFeedback: async (id: string): Promise<void> => {
+    await api.delete(`/admin/feedbacks/${id}`);
+  },
+
+  // ===== Feedbacks (User) =====
+  createFeedback: async (data: FeedbackCreateData): Promise<FeedbackItem> => {
+    const response = await api.post<unknown, ApiResponse<FeedbackItem>>('/feedbacks', data);
+    return response.data;
+  },
+
+  getMyFeedbacks: async (page?: number, limit?: number): Promise<FeedbackListResult> => {
+    const response = await api.get<unknown, ApiResponse<FeedbackListResult>>('/feedbacks', {
+      params: { page, limit },
+    });
+    return response.data;
+  },
+
+  // ===== API Analytics =====
+  getApiAnalyticsOverview: async (): Promise<ApiAnalyticsOverview> => {
+    const response = await api.get<unknown, ApiResponse<ApiAnalyticsOverview>>('/admin/api-analytics/overview');
+    return response.data;
+  },
+
+  getApiAnalyticsTrend: async (days?: number): Promise<ApiAnalyticsTrend> => {
+    const response = await api.get<unknown, ApiResponse<ApiAnalyticsTrend>>('/admin/api-analytics/trend', {
+      params: { days },
+    });
+    return response.data;
+  },
+
+  getApiAnalyticsHourly: async (): Promise<ApiAnalyticsHourly> => {
+    const response = await api.get<unknown, ApiResponse<ApiAnalyticsHourly>>('/admin/api-analytics/hourly');
+    return response.data;
+  },
+
+  getApiTopEndpoints: async (limit?: number): Promise<{ endpoints: ApiEndpointItem[] }> => {
+    const response = await api.get<unknown, ApiResponse<{ endpoints: ApiEndpointItem[] }>>('/admin/api-analytics/top-endpoints', {
+      params: { limit },
+    });
+    return response.data;
+  },
+
+  getApiErrorTrend: async (days?: number): Promise<ApiErrorTrend> => {
+    const response = await api.get<unknown, ApiResponse<ApiErrorTrend>>('/admin/api-analytics/errors', {
+      params: { days },
+    });
+    return response.data;
+  },
+
+  getApiTopUsers: async (limit?: number): Promise<{ users: ApiTopUserItem[] }> => {
+    const response = await api.get<unknown, ApiResponse<{ users: ApiTopUserItem[] }>>('/admin/api-analytics/top-users', {
+      params: { limit },
+    });
     return response.data;
   },
 };

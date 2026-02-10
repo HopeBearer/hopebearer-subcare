@@ -18,6 +18,9 @@ import {
   MessageSquare,
   Search,
   Settings,
+  Clock,
+  MessageCircle,
+  BarChart3,
 } from 'lucide-react';
 
 interface NavItem {
@@ -60,6 +63,14 @@ const navGroups: NavGroup[] = [
       { href: '/admin/notifications', icon: Bell, label: '通知管理' },
       { href: '/admin/ai-monitoring', icon: MessageSquare, label: 'AI 监控' },
       { href: '/admin/search-usage', icon: Search, label: '搜索用量' },
+      { href: '/admin/api-analytics', icon: BarChart3, label: 'API 分析' },
+    ],
+  },
+  {
+    title: '运维与支持',
+    items: [
+      { href: '/admin/feedbacks', icon: MessageCircle, label: '反馈工单' },
+      { href: '/admin/jobs', icon: Clock, label: '定时任务' },
     ],
   },
   {
@@ -67,6 +78,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: '/admin/logs', icon: ScrollText, label: '系统日志' },
       { href: '/admin/ai-providers', icon: Bot, label: 'AI 供应商' },
+      { href: '/admin/settings', icon: Settings, label: '系统设置' },
     ],
   },
 ];

@@ -98,12 +98,8 @@ export default function AdminSearchUsagePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <Search className="w-5 h-5 text-primary" />
-          搜索用量管理
-        </h1>
+      {/* Header Actions */}
+      <div className="flex items-center justify-end">
         <button
           onClick={handleCleanCache}
           disabled={cleaning || data.cache.expired === 0}

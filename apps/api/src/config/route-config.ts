@@ -151,5 +151,38 @@ export const routeConfig: Record<string, string> = {
   'GET /templates/:id': 'v1',
   'POST /templates': 'v1',
   'PATCH /templates/:id': 'v1',
-  'DELETE /templates/:id': 'v1'
+  'DELETE /templates/:id': 'v1',
+
+  // Admin - System Settings
+  'GET /admin/settings': 'v1',
+  'GET /admin/settings/groups': 'v1',
+  'GET /admin/settings/:key': 'v1',
+  'PUT /admin/settings': 'v1',
+  'PATCH /admin/settings/batch': 'v1',
+  'DELETE /admin/settings/:id': 'v1',
+
+  // Admin - Scheduled Jobs
+  'GET /admin/jobs': 'v1',
+  'GET /admin/jobs/:id': 'v1',
+  'POST /admin/jobs/:name/trigger': 'v1',
+  'PATCH /admin/jobs/:id/toggle': 'v1',
+
+  // Admin - Feedbacks
+  'GET /admin/feedbacks': 'v1',
+  'GET /admin/feedbacks/stats': 'v1',
+  'GET /admin/feedbacks/:id': 'v1',
+  'PATCH /admin/feedbacks/:id': 'v1',
+  'DELETE /admin/feedbacks/:id': 'v1',
+
+  // User - Feedbacks
+  'POST /feedbacks': 'v1',
+  'GET /feedbacks': 'v1',
+
+  // Admin - API Analytics
+  'GET /admin/api-analytics/overview': 'v1',
+  'GET /admin/api-analytics/trend': 'v1',
+  'GET /admin/api-analytics/hourly': 'v1',
+  'GET /admin/api-analytics/top-endpoints': 'v1',
+  'GET /admin/api-analytics/errors': 'v1',
+  'GET /admin/api-analytics/top-users': 'v1'
 };

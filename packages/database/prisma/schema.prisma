@@ -58,6 +58,7 @@ model User {
   aiRecommendation AIRecommendation?
   conversations Conversation[]
   systemLogs    SystemLog[]
+  feedbacks     Feedback[]
 
   @@map("users")
 }
@@ -477,6 +478,85 @@ model Message {
   
   @@index([conversationId, createdAt])
   @@map("messages")
+}
+
+// ============================================
+// 系统设置 (System Settings)
+// ============================================
+model SystemSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique // "site.name", "registration.enabled", "ai.defaultModel"
+  value     String   @db.Text
+  type      String   @default("string") // string, number, boolean, json
+  group     String   @default("general") // general, security, ai, notification
+  label     String?  // 中文描述
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+// ============================================
+// 定时任务 (Scheduled Jobs)
+// ============================================
+model ScheduledJob {
+  id             String    @id @default(uuid())
+  name           String    @unique // "exchange-rate-sync", "ai-model-sync"
+  displayName    String    // "汇率同步", "AI 模型同步"
+  description    String?   @db.Text
+  cronExpression String    // "0 1 * * *"
+  timezone       String    @default("UTC")
+  isEnabled      Boolean   @default(true)
+  lastRunAt      DateTime?
+  lastRunStatus  String?   // SUCCESS, FAILED, RUNNING
+  lastRunDuration Int?     // ms
+  lastRunError   String?   @db.Text
+  nextRunAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  executions     JobExecution[]
+
+  @@map("scheduled_jobs")
+}
+
+model JobExecution {
+  id          String   @id @default(uuid())
+  jobId       String
+  job         ScheduledJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  status      String   // SUCCESS, FAILED, RUNNING
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  duration    Int?     // ms
+  result      Json?    // execution result details
+  error       String?  @db.Text
+  triggeredBy String   @default("cron") // cron, manual
+
+  @@index([jobId, startedAt])
+  @@map("job_executions")
+}
+
+// ============================================
+// 用户反馈/工单 (Feedback / Tickets)
+// ============================================
+model Feedback {
+  id        String    @id @default(uuid())
+  userId    String
+  type      String    // bug, feature, question, other
+  title     String
+  content   String    @db.Text
+  status    String    @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  priority  String    @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  adminNote String?   @db.Text
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@map("feedbacks")
 }
 
 // ============================================
