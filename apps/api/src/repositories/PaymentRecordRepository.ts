@@ -42,6 +42,29 @@ export class PaymentRecordRepository {
     });
   }
 
+  /**
+   * Fetch records for anomaly detection: all statuses, full subscription + category included.
+   * Broader than findByUserIdAndDateRange (which only fetches PAID).
+   */
+  async findByUserIdForAnomalyDetection(
+    userId: string,
+    startDate: Date,
+    endDate: Date
+  ): Promise<PaymentRecord[]> {
+    return prisma.paymentRecord.findMany({
+      where: {
+        userId,
+        billingDate: { gte: startDate, lte: endDate }
+      },
+      include: {
+        subscription: {
+          include: { category: true }
+        }
+      },
+      orderBy: { billingDate: 'desc' }
+    });
+  }
+
   async findBySubscriptionId(
     subscriptionId: string, 
     filter: PaymentRecordFilter = {}

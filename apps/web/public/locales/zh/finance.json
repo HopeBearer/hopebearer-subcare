@@ -30,7 +30,31 @@
   "anomalies": {
     "title": "异动与变更",
     "detected": "项检测",
-    "empty": "近期未检测到异动。"
+    "empty": "近期未检测到异动。",
+    "types": {
+      "price_increase": "价格上涨",
+      "price_decrease": "价格下降",
+      "duplicate_billing": "重复扣款",
+      "failed_payment": "支付失败",
+      "long_pending": "长期待确认",
+      "spending_spike": "支出激增",
+      "new_spending_high": "历史新高",
+      "currency_change": "币种变更",
+      "subscription_overlap": "订阅重叠",
+      "budget_exceeded": "预算超支"
+    },
+    "descriptions": {
+      "price_increase": "价格从 {{currency}} {{oldPrice}} 上涨至 {{currency}} {{newPrice}} (+{{changePercent}}%)",
+      "price_decrease": "价格从 {{currency}} {{oldPrice}} 下降至 {{currency}} {{newPrice}} ({{changePercent}}%)",
+      "duplicate_billing": "同一周期内出现 {{count}} 笔扣款 ({{period}})，合计 {{currency}} {{totalAmount}}",
+      "failed_payment": "{{currency}} {{amount}} 支付失败",
+      "long_pending": "账单已待确认 {{daysPending}} 天 ({{currency}} {{amount}})",
+      "spending_spike": "{{month}} 支出较均值高出 {{overPercent}}% ({{amount}} vs 均值 {{average}})",
+      "new_spending_high": "历史新高: {{currency}} {{amount}} (较前峰值 {{previousMax}} 上涨 {{increasePercent}}%)",
+      "currency_change": "扣款币种从 {{oldCurrency}} 变更为 {{newCurrency}}",
+      "subscription_overlap": "{{count}} 个活跃订阅疑似同一服务: {{names}}",
+      "budget_exceeded": "{{categoryName}} 本月支出 {{spent}}，超出预算 {{limit}} 达 {{overPercent}}%"
+    }
   },
   "sankey": {
     "title": "资金流向",

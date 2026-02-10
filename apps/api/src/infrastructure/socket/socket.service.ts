@@ -3,6 +3,8 @@ import { Server, Socket } from 'socket.io';
 import { logger } from '../logger/logger';
 import { NotificationDTO } from '@subcare/types';
 import { TokenService } from '../../services/TokenService';
+import { AITaskManager, AIProgressEvent, AITaskStatusResponse } from '../../services/AITaskManager';
+import { prisma } from '@subcare/database';
 
 // Types for AI Recommendation events
 export interface AIRecommendationRequest {
@@ -11,13 +13,7 @@ export interface AIRecommendationRequest {
   forceRefresh?: boolean;
 }
 
-export interface AIProgressEvent {
-  stage: 'started' | 'tool_call' | 'tool_result' | 'generating' | 'completed' | 'error';
-  messageKey: string;  // i18n key for frontend translation
-  toolName?: string;
-  loop?: number;
-  data?: any;
-}
+export { AIProgressEvent };
 
 // Types for Chat events
 export interface ChatMessageSendRequest {
@@ -51,6 +47,7 @@ export class SocketService {
   private tokenService: TokenService;
   private aiRecommendationHandler: AIRecommendationHandler | null = null;
   private chatMessageHandler: ChatMessageHandler | null = null;
+  private aiTaskManager: AITaskManager;
   
   /**
    * Per-conversation mutex: 防止同一会话的消息被并发处理
@@ -59,8 +56,9 @@ export class SocketService {
    */
   private conversationLocks: Map<string, Promise<void>> = new Map();
 
-  constructor(httpServer: HttpServer, tokenService: TokenService) {
+  constructor(httpServer: HttpServer, tokenService: TokenService, aiTaskManager?: AITaskManager) {
     this.tokenService = tokenService;
+    this.aiTaskManager = aiTaskManager || new AITaskManager();
     // 支持多个 origin：本地开发和远程服务器
     const allowedOrigins = [
       'http://localhost:3000',
@@ -174,6 +172,50 @@ export class SocketService {
    * Setup AI Recommendation event handlers for a socket
    */
   private setupAIRecommendationHandler(socket: Socket) {
+    const userRoom = (userId: string) => `user:${userId}`;
+
+    // --- Status query: frontend can check current task state on mount/reconnect ---
+    socket.on('ai:recommendations:status', async () => {
+      const userId = socket.data.user?.userId;
+      if (!userId) {
+        socket.emit('ai:recommendations:status:result', { status: 'idle' });
+        return;
+      }
+
+      const statusResponse: AITaskStatusResponse = this.aiTaskManager.getStatusResponse(userId);
+
+      // When task is running, also attach the last cached recommendation (if any)
+      // so the frontend can display old data with a progress overlay (consistent with manual refresh UX)
+      if (statusResponse.status === 'running' || statusResponse.status === 'idle') {
+        try {
+          const cached = await prisma.aIRecommendation.findUnique({
+            where: { userId }
+          });
+          if (cached) {
+            statusResponse.cachedData = cached.content;
+          }
+        } catch (e) {
+          // Non-critical: if DB query fails, just skip cached data
+          logger.debug({
+            domain: 'SOCKET',
+            action: 'ai_recommendation_status_cache_fail',
+            userId,
+            metadata: { error: String(e) }
+          });
+        }
+      }
+
+      socket.emit('ai:recommendations:status:result', statusResponse);
+
+      logger.debug({
+        domain: 'SOCKET',
+        action: 'ai_recommendation_status_query',
+        userId,
+        metadata: { status: statusResponse.status, socketId: socket.id }
+      });
+    });
+
+    // --- Main request handler with dedup ---
     socket.on('ai:recommendations:request', async (request: AIRecommendationRequest) => {
       const userId = socket.data.user?.userId;
       
@@ -200,9 +242,28 @@ export class SocketService {
         return;
       }
 
-      // Progress callback - sends real-time updates to client
+      // Dedup: if a task is already running for this user, just replay current progress
+      if (this.aiTaskManager.isRunning(userId) && !request.forceRefresh) {
+        const task = this.aiTaskManager.getTask(userId);
+        if (task?.progress) {
+          socket.emit('ai:recommendations:progress', task.progress);
+        }
+        logger.info({
+          domain: 'SOCKET',
+          action: 'ai_recommendation_dedup',
+          userId,
+          metadata: { socketId: socket.id, message: 'Task already running, replayed progress' }
+        });
+        return;
+      }
+
+      // Mark task as running in TaskManager
+      this.aiTaskManager.startTask(userId);
+
+      // Progress callback - sends to user room (all sockets of this user) & updates TaskManager
       const onProgress = (event: AIProgressEvent) => {
-        socket.emit('ai:recommendations:progress', event);
+        this.aiTaskManager.updateProgress(userId, event);
+        this.io.to(userRoom(userId)).emit('ai:recommendations:progress', event);
         
         logger.debug({
           domain: 'SOCKET',
@@ -215,7 +276,11 @@ export class SocketService {
       try {
         const result = await this.aiRecommendationHandler(userId, request, onProgress);
         
-        socket.emit('ai:recommendations:complete', { 
+        // Mark completed in TaskManager
+        this.aiTaskManager.completeTask(userId, result);
+
+        // Emit to user room so all connected clients (including reconnected ones) receive
+        this.io.to(userRoom(userId)).emit('ai:recommendations:complete', { 
           status: 'success',
           data: result 
         });
@@ -230,7 +295,10 @@ export class SocketService {
         const errorMessage = error?.message || 'Unknown error occurred';
         const errorCode = error?.reason || 'AI_ERROR';
         
-        socket.emit('ai:recommendations:error', { 
+        // Mark failed in TaskManager
+        this.aiTaskManager.failTask(userId, { code: errorCode, message: errorMessage });
+
+        this.io.to(userRoom(userId)).emit('ai:recommendations:error', { 
           code: errorCode,
           message: errorMessage 
         });
@@ -251,6 +319,13 @@ export class SocketService {
    */
   public setAIRecommendationHandler(handler: AIRecommendationHandler) {
     this.aiRecommendationHandler = handler;
+  }
+
+  /**
+   * Get the AITaskManager instance (for external use, e.g. AgentService)
+   */
+  public getAITaskManager(): AITaskManager {
+    return this.aiTaskManager;
   }
 
   /**

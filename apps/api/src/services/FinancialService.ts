@@ -6,9 +6,10 @@ import { CurrencyService } from "./CurrencyService";
 import { BillGeneratorService } from "./BillGeneratorService";
 import { AppError } from "../utils/AppError";
 import { StatusCodes } from "http-status-codes";
-import { addMonths, addWeeks, addYears, addDays, format, isBefore, startOfYear, startOfMonth, endOfMonth } from 'date-fns';
+import { addMonths, addWeeks, addYears, addDays, format, isBefore, startOfYear, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { calculateMonthlyEquivalent } from '../utils/billing-utils';
 import { NotificationService } from "../modules/notification/notification.service";
+import { runAllDetectors, DetectorRecord, DetectorSubscription, DetectorCategory } from './anomaly-detectors';
 
 export class FinancialService {
   private categoryRepository = new CategoryRepository();
@@ -42,12 +43,18 @@ export class FinancialService {
   async getAnalysisOverview(userId: string, excludedIds: string[] = []) {
     const now = new Date();
     const startOfCurrentYear = startOfYear(now);
+    const twelveMonthsAgo = subMonths(now, 12);
     
     // 1. Fetch data & User Preferences
-    const [yearRecords, activeSubscriptions, user] = await Promise.all([
+    //    yearRecords      → heatmap + totalExpense (PAID only, current year)
+    //    anomalyRecords   → anomaly detection (all statuses, past 12 months)
+    //    categories       → budget-exceeded detection
+    const [yearRecords, activeSubscriptions, user, anomalyRecords, categories] = await Promise.all([
       this.paymentRecordRepository.findByUserIdAndDateRange(userId, startOfCurrentYear, now),
       this.subscriptionRepository.findActiveByUserId(userId),
-      this.userRepository.findById(userId)
+      this.userRepository.findById(userId),
+      this.paymentRecordRepository.findByUserIdForAnomalyDetection(userId, twelveMonthsAgo, now),
+      this.categoryRepository.findAllByUserId(userId),
     ]);
 
     const baseCurrency = user?.currency || 'CNY';
@@ -94,8 +101,8 @@ export class FinancialService {
     // Sankey typically shows "Current Spending Flow", so it should reflect the simulation too.
     const sankey = await this.generateSankeyData(simulatedSubscriptions, baseCurrency);
 
-    // 5. Detect Anomalies (Price changes, etc.)
-    const anomalies = await this.detectAnomalies(userId, yearRecords);
+    // 5. Detect Anomalies (all types, atomic per-detector)
+    const anomalies = this.runAnomalyDetection(anomalyRecords, activeSubscriptions, categories, baseCurrency, now);
 
     return {
         heatmap,
@@ -481,49 +488,69 @@ export class FinancialService {
     };
   }
 
-  private async detectAnomalies(userId: string, records: any[]) {
-    const anomalies: any[] = [];
-    
-    // Group records by subscription
-    const subRecords = new Map<string, any[]>();
-    for (const r of records) {
-        if (!subRecords.has(r.subscriptionId)) {
-            subRecords.set(r.subscriptionId, []);
-        }
-        subRecords.get(r.subscriptionId)?.push(r);
-    }
+  /**
+   * Normalize Prisma records and run all anomaly detectors atomically.
+   */
+  private runAnomalyDetection(
+    rawRecords: any[],
+    rawSubscriptions: any[],
+    rawCategories: any[],
+    baseCurrency: string,
+    now: Date
+  ) {
+    const toNum = (v: any): number => (v?.toNumber ? v.toNumber() : Number(v));
 
-    // Analyze each subscription's history
-    for (const history of subRecords.values()) {
-        // Sort by date asc
-        history.sort((a, b) => new Date(a.billingDate).getTime() - new Date(b.billingDate).getTime());
+    const records: DetectorRecord[] = rawRecords.map(r => ({
+      id: r.id,
+      subscriptionId: r.subscriptionId,
+      amount: toNum(r.amount),
+      currency: r.currency,
+      billingDate: new Date(r.billingDate),
+      status: r.status,
+      createdAt: new Date(r.createdAt),
+      subscription: r.subscription
+        ? {
+            id: r.subscription.id,
+            name: r.subscription.name,
+            billingCycle: r.subscription.billingCycle,
+            normalizedName: r.subscription.normalizedName || '',
+            status: r.subscription.status,
+            categoryId: r.subscription.categoryId || null,
+            category: r.subscription.category
+              ? {
+                  id: r.subscription.category.id,
+                  name: r.subscription.category.name,
+                  budgetLimit: r.subscription.category.budgetLimit
+                    ? toNum(r.subscription.category.budgetLimit)
+                    : null,
+                }
+              : null,
+          }
+        : null,
+    }));
 
-        // Check for Price Increase
-        for (let i = 1; i < history.length; i++) {
-            const prev = history[i-1];
-            const curr = history[i];
-            
-            const prevAmount = prev.amount?.toNumber ? prev.amount.toNumber() : Number(prev.amount);
-            const currAmount = curr.amount?.toNumber ? curr.amount.toNumber() : Number(curr.amount);
-            
-            if (currAmount > prevAmount) {
-                anomalies.push({
-                    id: `anomaly-${curr.id}`,
-                    type: 'PRICE_INCREASE',
-                    severity: 'medium',
-                    subscriptionName: curr.subscription?.name || 'Unknown Subscription',
-                    date: curr.billingDate,
-                    description: `Price increased from ${prev.currency} ${prevAmount} to ${curr.currency} ${currAmount}`,
-                    metadata: {
-                        oldPrice: prevAmount,
-                        newPrice: currAmount,
-                        currency: curr.currency
-                    }
-                });
-            }
-        }
-    }
+    const activeSubscriptions: DetectorSubscription[] = rawSubscriptions.map(s => ({
+      id: s.id,
+      name: s.name,
+      normalizedName: s.normalizedName || '',
+      status: s.status,
+      price: toNum(s.price),
+      currency: s.currency,
+      billingCycle: s.billingCycle,
+      categoryId: s.categoryId || null,
+    }));
 
-    return anomalies;
+    const categories: DetectorCategory[] = rawCategories.map(c => ({
+      id: c.id,
+      name: c.name,
+      budgetLimit: c.budgetLimit ? toNum(c.budgetLimit) : null,
+    }));
+
+    return runAllDetectors({
+      records,
+      activeSubscriptions,
+      categories,
+      context: { baseCurrency, now },
+    });
   }
 }

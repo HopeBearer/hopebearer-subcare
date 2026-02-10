@@ -33,7 +33,7 @@ if (services.agent) {
             userId,
             model: request.model,
             focus: request.focus,
-            forceRefresh: request.forceRefresh ?? true
+            forceRefresh: request.forceRefresh ?? false
         }, onProgress);
     });
 }

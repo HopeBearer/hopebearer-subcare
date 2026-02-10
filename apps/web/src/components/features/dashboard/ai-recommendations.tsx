@@ -40,13 +40,15 @@ export function AIRecommendations() {
     progress, 
     data: wsData, 
     error: wsError,
+    statusChecked: wsStatusChecked,
+    queryStatus: wsQueryStatus,
     fetchRecommendations: wsFetch 
   } = useAIRecommendations();
   
   // Local state for persisting data across wsData resets
   const [localData, setLocalData] = useState<RecommendationResponse | null>(null);
-  // Queue state: when WS not yet connected on mount, queue fetch for when it connects
-  const [pendingFetch, setPendingFetch] = useState<{ model: string; forceRefresh: boolean } | null>(null);
+  // Queue state: when WS not yet connected on mount, queue actions
+  const [pendingAction, setPendingAction] = useState<'status' | { model: string; forceRefresh: boolean } | null>(null);
   
   // All loading and data go through WebSocket
   const isLoading = wsLoading;
@@ -70,12 +72,16 @@ export function AIRecommendations() {
     }
   }, [wsError]);
 
-  // When WS connects and there's a pending fetch, execute it
+  // When WS connects and there's a pending action, execute it
   useEffect(() => {
-    if (!pendingFetch || !wsConnected || wsLoading) return;
-    wsFetch(pendingFetch);
-    setPendingFetch(null);
-  }, [pendingFetch, wsConnected, wsLoading, wsFetch]);
+    if (!pendingAction || !wsConnected || wsLoading) return;
+    if (pendingAction === 'status') {
+      wsQueryStatus();
+    } else {
+      wsFetch(pendingAction);
+    }
+    setPendingAction(null);
+  }, [pendingAction, wsConnected, wsLoading, wsFetch, wsQueryStatus]);
   
   // Config Modal State
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -120,13 +126,26 @@ export function AIRecommendations() {
       if (active) {
         const model = active.model || '';
         if (active.model) setSelectedModel(model);
-        // Always use WebSocket (handles cache check + fresh generation)
-        fetchRecommendations(false, model);
+        // Query backend task status first (may have running/completed task)
+        // The status response will tell us if we need to fetch or not
+        if (wsConnected) {
+          wsQueryStatus();
+        } else {
+          setPendingAction('status');
+        }
       }
     } catch (e) {
       console.error('Failed to check AI config', e);
     }
   };
+
+  // After status query resolves to 'idle' and we have no data yet, auto-fetch (forceRefresh=false → uses cache)
+  useEffect(() => {
+    // Only auto-fetch after status check completes, to avoid racing with a running task
+    if (config && wsStatusChecked && wsConnected && !wsLoading && !wsData && !localData && !wsError) {
+      wsFetch({ model: selectedModel, forceRefresh: false });
+    }
+  }, [config, wsStatusChecked, wsConnected, wsLoading, wsData, localData, wsError, selectedModel, wsFetch]);
 
   // Unified fetch: always through WebSocket
   const fetchRecommendations = (forceRefresh: boolean = false, modelOverride?: string) => {
@@ -135,7 +154,7 @@ export function AIRecommendations() {
       wsFetch({ model, forceRefresh });
     } else {
       // WS not connected yet, queue for when it connects
-      setPendingFetch({ model, forceRefresh });
+      setPendingAction({ model, forceRefresh });
     }
   };
 

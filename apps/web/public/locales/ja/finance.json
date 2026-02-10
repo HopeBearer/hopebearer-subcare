@@ -30,7 +30,31 @@
     "anomalies": {
         "title": "異常と変更",
         "detected": "件検出",
-        "empty": "最近異常は検出されませんでした。"
+        "empty": "最近異常は検出されませんでした。",
+        "types": {
+            "price_increase": "値上げ",
+            "price_decrease": "値下げ",
+            "duplicate_billing": "重複請求",
+            "failed_payment": "支払い失敗",
+            "long_pending": "長期保留中",
+            "spending_spike": "支出急増",
+            "new_spending_high": "過去最高額",
+            "currency_change": "通貨変更",
+            "subscription_overlap": "サブスク重複",
+            "budget_exceeded": "予算超過"
+        },
+        "descriptions": {
+            "price_increase": "価格が {{currency}} {{oldPrice}} から {{currency}} {{newPrice}} に値上がりしました (+{{changePercent}}%)",
+            "price_decrease": "価格が {{currency}} {{oldPrice}} から {{currency}} {{newPrice}} に値下がりしました ({{changePercent}}%)",
+            "duplicate_billing": "同一期間内に {{count}} 件の請求があります ({{period}})、合計 {{currency}} {{totalAmount}}",
+            "failed_payment": "{{currency}} {{amount}} の支払いが失敗しました",
+            "long_pending": "支払いが {{daysPending}} 日間保留中です ({{currency}} {{amount}})",
+            "spending_spike": "{{month}} の支出が平均より {{overPercent}}% 高くなっています ({{amount}} vs 平均 {{average}})",
+            "new_spending_high": "過去最高額: {{currency}} {{amount}} (前回の最高額 {{previousMax}} より {{increasePercent}}% 増加)",
+            "currency_change": "請求通貨が {{oldCurrency}} から {{newCurrency}} に変更されました",
+            "subscription_overlap": "{{count}} 件のアクティブなサブスクリプションが同一サービスの可能性があります: {{names}}",
+            "budget_exceeded": "{{categoryName}} の今月の支出は {{spent}} で、予算 {{limit}} を {{overPercent}}% 超過しています"
+        }
     },
     "sankey": {
         "title": "支出フロー",

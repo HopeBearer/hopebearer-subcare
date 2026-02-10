@@ -274,11 +274,25 @@ export interface HeatmapItem {
   count: number; // Amount or frequency intensity
 }
 
+export type AnomalyType =
+  // High-value
+  | 'PRICE_INCREASE'
+  | 'PRICE_DECREASE'
+  | 'DUPLICATE_BILLING'
+  | 'FAILED_PAYMENT'
+  | 'LONG_PENDING'
+  // Medium-value
+  | 'SPENDING_SPIKE'
+  | 'NEW_SPENDING_HIGH'
+  | 'CURRENCY_CHANGE'
+  | 'SUBSCRIPTION_OVERLAP'
+  | 'BUDGET_EXCEEDED';
+
 export interface SpendingAnomaly {
   id: string;
-  subscriptionId?: string; // Optional if not linked directly
+  subscriptionId?: string;
   subscriptionName: string;
-  type: 'PRICE_INCREASE' | 'ABNORMAL_FREQUENCY' | 'DUPLICATE';
+  type: AnomalyType;
   description: string;
   date: string | Date;
   severity: 'low' | 'medium' | 'high';

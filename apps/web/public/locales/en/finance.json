@@ -30,7 +30,31 @@
   "anomalies": {
     "title": "Anomalies & Changes",
     "detected": "detected",
-    "empty": "No anomalies detected recently."
+    "empty": "No anomalies detected recently.",
+    "types": {
+      "price_increase": "Price Increase",
+      "price_decrease": "Price Decrease",
+      "duplicate_billing": "Duplicate Billing",
+      "failed_payment": "Failed Payment",
+      "long_pending": "Long Pending",
+      "spending_spike": "Spending Spike",
+      "new_spending_high": "New High",
+      "currency_change": "Currency Change",
+      "subscription_overlap": "Overlap",
+      "budget_exceeded": "Budget Exceeded"
+    },
+    "descriptions": {
+      "price_increase": "Price increased from {{currency}} {{oldPrice}} to {{currency}} {{newPrice}} (+{{changePercent}}%)",
+      "price_decrease": "Price decreased from {{currency}} {{oldPrice}} to {{currency}} {{newPrice}} ({{changePercent}}%)",
+      "duplicate_billing": "{{count}} charges in the same period ({{period}}), totaling {{currency}} {{totalAmount}}",
+      "failed_payment": "Payment of {{currency}} {{amount}} failed",
+      "long_pending": "Payment pending for {{daysPending}} days ({{currency}} {{amount}})",
+      "spending_spike": "Spending in {{month}} was {{overPercent}}% above average ({{amount}} vs avg {{average}})",
+      "new_spending_high": "New all-time high: {{currency}} {{amount}} (+{{increasePercent}}% above previous max {{previousMax}})",
+      "currency_change": "Billing currency changed from {{oldCurrency}} to {{newCurrency}}",
+      "subscription_overlap": "{{count}} active subscriptions appear to be the same service: {{names}}",
+      "budget_exceeded": "{{categoryName}} spending this month: {{spent}}, exceeding budget of {{limit}} by {{overPercent}}%"
+    }
   },
   "sankey": {
     "title": "Spending Flow",

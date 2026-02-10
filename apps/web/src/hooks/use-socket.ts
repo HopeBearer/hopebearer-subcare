@@ -98,9 +98,10 @@ export function useSocketInit() {
       path: '/socket.io',
       auth: { token: accessToken },
       query: { userId: user.id },
-      transports: ['websocket', 'polling'],
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
+      transports: ['polling', 'websocket'],  // polling first → 更可靠；连接后自动 upgrade 到 websocket
+      reconnectionAttempts: 10,
+      reconnectionDelay: 2000,
+      timeout: 10000,
     });
 
     newSocket.on('connect', () => {

@@ -419,6 +419,9 @@ Please analyze and provide recommendations.
     try {
       const parsedContent = this.extractJsonFromResponse(finalResponse);
 
+      // 8.1 Validate and clamp savings to prevent unreasonable values
+      this.validateAndClampSavings(parsedContent, totalSpent);
+
       // Upsert to Cache Table
       try {
         await prisma.aIRecommendation.upsert({
@@ -488,6 +491,51 @@ Please analyze and provide recommendations.
   }
 
   /**
+   * Validate and clamp savings values to prevent unreasonable AI output.
+   * Mutates the parsed content in-place.
+   * 
+   * Rules:
+   * - Each potentialSavings must be >= 0
+   * - Total savings must not exceed totalMonthlySpend
+   * - If total exceeds limit, proportionally scale down all values
+   */
+  private validateAndClampSavings(content: any, totalMonthlySpend: number): void {
+    if (!content?.insights || !Array.isArray(content.insights)) return;
+
+    // 1. Clamp each individual value to >= 0
+    for (const insight of content.insights) {
+      if (typeof insight.potentialSavings === 'number') {
+        insight.potentialSavings = Math.max(0, insight.potentialSavings);
+      } else {
+        insight.potentialSavings = 0;
+      }
+    }
+
+    // 2. Check total against monthly spend
+    const totalSavings = content.insights.reduce(
+      (sum: number, i: any) => sum + (i.potentialSavings || 0), 0
+    );
+
+    if (totalSavings <= 0 || totalMonthlySpend <= 0) return;
+
+    // Cap total savings at 80% of monthly spend (a realistic maximum)
+    const maxAllowedSavings = totalMonthlySpend * 0.8;
+
+    if (totalSavings > maxAllowedSavings) {
+      // Proportionally scale down all savings
+      const scaleFactor = maxAllowedSavings / totalSavings;
+      for (const insight of content.insights) {
+        if (insight.potentialSavings > 0) {
+          insight.potentialSavings = Number((insight.potentialSavings * scaleFactor).toFixed(2));
+        }
+      }
+      console.warn(
+        `[AgentService] Savings clamped: AI claimed ${totalSavings.toFixed(2)} but monthly spend is ${totalMonthlySpend.toFixed(2)}. Scaled to ${maxAllowedSavings.toFixed(2)}`
+      );
+    }
+  }
+
+  /**
    * Build system prompt with or without tool instructions
    */
   private buildSystemPrompt(userCurrency: string, hasTools: boolean): string {
@@ -520,6 +568,16 @@ ${toolInstructions}
 User's Base Currency: ${userCurrency}
 All prices in the subscription data have been pre-converted to ${userCurrency}.
 
+## Savings Calculation Rules (CRITICAL)
+- "potentialSavings" means how much LESS the user would pay per month if they follow your advice.
+- It must be calculated as: (current monthly cost) - (recommended alternative monthly cost).
+- potentialSavings MUST be >= 0. If no savings, set to 0.
+- For each insight, potentialSavings MUST NOT exceed the monthlyEquivalent of the related subscription(s).
+- The SUM of all potentialSavings across all insights MUST NOT exceed the user's currentTotalMonthlySpend.
+- For "praise" type insights (things the user is doing well), set potentialSavings to 0.
+- Only claim savings you can justify with concrete price comparisons. Do NOT invent or exaggerate numbers.
+- If you are unsure about exact pricing, use conservative estimates or set potentialSavings to 0.
+
 Output Format: JSON only. No markdown ticks.
 IMPORTANT: You must provide content in both English ("en") and Chinese ("zh").
 
@@ -534,7 +592,7 @@ Schema:
       "type": "warning" | "suggestion" | "praise",
       "title": { "en": "...", "zh": "..." },
       "description": { "en": "...", "zh": "..." },
-      "potentialSavings": number (numeric value in ${userCurrency})
+      "potentialSavings": number (monthly savings in ${userCurrency}, MUST be >= 0 and <= related subscription cost)
     }
   ],
   "recommendations": [
