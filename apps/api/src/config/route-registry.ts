@@ -12,6 +12,9 @@ import { agentRegistry } from './registries/agent.registry';
 import { aiProviderRegistry } from './registries/ai-provider.registry';
 import { chatRegistry } from './registries/chat.registry';
 import { categoryRegistry } from './registries/category.registry';
+import { adminDashboardRegistry } from './registries/admin-dashboard.registry';
+import { adminManagementRegistry } from './registries/admin-management.registry';
+import { templateRegistry } from './registries/template.registry';
 
 export interface RouteImplementation {
   handler: RequestHandler;
@@ -40,4 +43,7 @@ export const routeRegistry: Record<string, RouteVersions> = {
   ...aiProviderRegistry,
   ...chatRegistry,
   ...categoryRegistry,
+  ...adminDashboardRegistry,
+  ...adminManagementRegistry,
+  ...templateRegistry,
 };

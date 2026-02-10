@@ -55,9 +55,13 @@ export const routeConfig: Record<string, string> = {
 
   // AI Providers & Models
   'GET /ai-providers': 'v1',
+  'POST /ai-providers': 'v1',
   'GET /ai-providers/:id': 'v1',
+  'PATCH /ai-providers/:id': 'v1',
   'GET /ai-providers/:id/models': 'v1',
   'POST /ai-providers/:id/models': 'v1',
+  'POST /ai-providers/:id/models/manual': 'v1',
+  'DELETE /ai-providers/:id/models/:modelId': 'v1',
   'GET /ai-providers/slug/:slug/models': 'v1',
   'POST /ai-providers/:id/sync': 'v1',
   'POST /ai-providers/sync-all': 'v1',
@@ -80,6 +84,7 @@ export const routeConfig: Record<string, string> = {
 
   // System Logs
   'GET /system-logs': 'v1',
+  'GET /system-logs/export': 'v1',
   'GET /system-logs/:id': 'v1',
 
   // Message Templates
@@ -103,5 +108,48 @@ export const routeConfig: Record<string, string> = {
   'GET /categories/:id': 'v1',
   'POST /categories': 'v1',
   'PATCH /categories/:id': 'v1',
-  'DELETE /categories/:id': 'v1'
+  'DELETE /categories/:id': 'v1',
+
+  // Admin Dashboard
+  'GET /admin/stats': 'v1',
+  'GET /admin/stats/users': 'v1',
+  'GET /admin/stats/subscriptions': 'v1',
+
+  // Admin Management - Exchange Rates
+  'GET /admin/exchange-rates': 'v1',
+  'POST /admin/exchange-rates/sync': 'v1',
+  'PATCH /admin/exchange-rates/:id': 'v1',
+
+  // Admin Management - Payments
+  'GET /admin/payments': 'v1',
+  'GET /admin/payments/stats': 'v1',
+
+  // Admin Management - Notifications
+  'GET /admin/notifications': 'v1',
+  'GET /admin/notifications/stats': 'v1',
+  'POST /admin/notifications/broadcast': 'v1',
+
+  // Admin Management - AI Chat
+  'GET /admin/ai-chat/stats': 'v1',
+  'GET /admin/ai-chat/conversations': 'v1',
+
+  // Admin Management - Search Usage
+  'GET /admin/search-usage': 'v1',
+  'POST /admin/search-usage/clean-cache': 'v1',
+  'PATCH /admin/search-usage/limit': 'v1',
+
+  // Admin Management - User AI Configs
+  'GET /admin/user-ai-configs/stats': 'v1',
+
+  // Admin - User Management (extended)
+  'GET /users/:id/detail': 'v1',
+  'PATCH /users/:id/role': 'v1',
+
+  // Subscription Templates
+  'GET /templates': 'v1',
+  'GET /templates/categories': 'v1',
+  'GET /templates/:id': 'v1',
+  'POST /templates': 'v1',
+  'PATCH /templates/:id': 'v1',
+  'DELETE /templates/:id': 'v1'
 };

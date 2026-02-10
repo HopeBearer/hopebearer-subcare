@@ -1,69 +1,117 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { MessageTemplateService } from '../../services/MessageTemplateService';
 import { AppError } from '../../utils/AppError';
+import { BusinessCode } from '../../constants/BusinessCode';
+import { z } from 'zod';
+
+const createMessageTemplateSchema = z.object({
+  key: z.string().min(1).max(100),
+  title: z.string().min(1).max(200),
+  content: z.string().min(1),
+  channel: z.enum(['email', 'in-app']),
+});
+
+const updateMessageTemplateSchema = z.object({
+  key: z.string().min(1).max(100).optional(),
+  title: z.string().min(1).max(200).optional(),
+  content: z.string().min(1).optional(),
+  channel: z.enum(['email', 'in-app']).optional(),
+});
 
 export class MessageTemplateController {
   constructor(private messageTemplateService: MessageTemplateService) {}
 
   /**
    * Create a new template
+   * POST /api/message-templates
    */
-  async create(req: Request, res: Response) {
-    const template = await this.messageTemplateService.createTemplate(req.body);
-    res.status(StatusCodes.CREATED).json({
-      success: true,
-      data: template,
-    });
-  }
+  create = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const validatedData = createMessageTemplateSchema.parse(req.body);
+      const template = await this.messageTemplateService.createTemplate(validatedData);
+      res.status(StatusCodes.CREATED).json({
+        status: 'success',
+        code: BusinessCode.CREATED,
+        data: { template },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 
   /**
    * Update an existing template
+   * PATCH /api/message-templates/:id
    */
-  async update(req: Request, res: Response) {
-    const { id } = req.params;
-    const template = await this.messageTemplateService.updateTemplate(id, req.body);
-    res.status(StatusCodes.OK).json({
-      success: true,
-      data: template,
-    });
-  }
+  update = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const validatedData = updateMessageTemplateSchema.parse(req.body);
+      const template = await this.messageTemplateService.updateTemplate(id, validatedData);
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data: { template },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 
   /**
    * Get all templates
+   * GET /api/message-templates
    */
-  async list(req: Request, res: Response) {
-    const templates = await this.messageTemplateService.getAllTemplates();
-    res.status(StatusCodes.OK).json({
-      success: true,
-      data: templates,
-    });
-  }
+  list = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const templates = await this.messageTemplateService.getAllTemplates();
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data: { templates },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 
   /**
    * Get a single template
+   * GET /api/message-templates/:id
    */
-  async get(req: Request, res: Response) {
-    const { id } = req.params;
-    const template = await this.messageTemplateService.getTemplate(id);
-    if (!template) {
-      throw new AppError('NOT_FOUND', StatusCodes.NOT_FOUND, { message: 'Template not found' });
+  get = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const template = await this.messageTemplateService.getTemplate(id);
+      if (!template) {
+        throw new AppError('NOT_FOUND', StatusCodes.NOT_FOUND, { message: 'Template not found' });
+      }
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data: { template },
+      });
+    } catch (error) {
+      next(error);
     }
-    res.status(StatusCodes.OK).json({
-      success: true,
-      data: template,
-    });
-  }
+  };
 
   /**
    * Delete a template
+   * DELETE /api/message-templates/:id
    */
-  async delete(req: Request, res: Response) {
-    const { id } = req.params;
-    await this.messageTemplateService.deleteTemplate(id);
-    res.status(StatusCodes.OK).json({
-      success: true,
-      message: 'Template deleted',
-    });
-  }
+  delete = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      await this.messageTemplateService.deleteTemplate(id);
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        message: 'Template deleted successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

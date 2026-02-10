@@ -3,6 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import { CategoryService, CreateCategoryDTO, UpdateCategoryDTO } from '../../services/CategoryService';
 import { AppError } from '../../utils/AppError';
 import { BusinessCode } from '../../constants/BusinessCode';
+import { logger } from '../../infrastructure/logger/logger';
 import { z } from 'zod';
 
 const createCategorySchema = z.object({
@@ -85,6 +86,14 @@ export class CategoryController {
       const validatedData = createCategorySchema.parse(req.body);
       const category = await this.categoryService.createCategory(req.user.userId, validatedData);
 
+      logger.audit({
+        domain: 'ADMIN',
+        action: 'CREATE_CATEGORY',
+        userId: req.user.userId,
+        ip: req.ip,
+        metadata: { categoryId: category.id, name: category.name },
+      });
+
       res.status(StatusCodes.CREATED).json({
         status: 'success',
         code: BusinessCode.SUCCESS,
@@ -137,6 +146,14 @@ export class CategoryController {
       }
 
       await this.categoryService.deleteCategory(req.params.id, req.user.userId);
+
+      logger.audit({
+        domain: 'ADMIN',
+        action: 'DELETE_CATEGORY',
+        userId: req.user.userId,
+        ip: req.ip,
+        metadata: { categoryId: req.params.id },
+      });
 
       res.status(StatusCodes.OK).json({
         status: 'success',

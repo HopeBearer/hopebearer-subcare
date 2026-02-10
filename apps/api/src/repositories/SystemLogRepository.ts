@@ -1,5 +1,9 @@
 import { prisma, SystemLog, Prisma } from "@subcare/database";
 
+export type SystemLogWithUser = SystemLog & {
+  user: { name: string | null; email: string } | null;
+};
+
 export interface SystemLogFilter {
   level?: string;
   domain?: string;
@@ -13,7 +17,7 @@ export class SystemLogRepository {
     filter: SystemLogFilter,
     skip: number,
     take: number
-  ): Promise<{ items: SystemLog[]; total: number }> {
+  ): Promise<{ items: SystemLogWithUser[]; total: number }> {
     const where: Prisma.SystemLogWhereInput = {};
 
     if (filter.level) {
@@ -38,6 +42,11 @@ export class SystemLogRepository {
         skip,
         take,
         orderBy: { createdAt: "desc" },
+        include: {
+          user: {
+            select: { name: true, email: true },
+          },
+        },
       }),
       prisma.systemLog.count({ where }),
     ]);
@@ -45,9 +54,14 @@ export class SystemLogRepository {
     return { items, total };
   }
 
-  async findById(id: string): Promise<SystemLog | null> {
+  async findById(id: string) {
     return prisma.systemLog.findUnique({
       where: { id },
+      include: {
+        user: {
+          select: { name: true, email: true },
+        },
+      },
     });
   }
 }

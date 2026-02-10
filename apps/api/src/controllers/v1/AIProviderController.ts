@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AIProviderService } from '../../services/AIProviderService';
 import { StatusCodes } from 'http-status-codes';
 import { BusinessCode } from '../../constants/BusinessCode';
+import { logger } from '../../infrastructure/logger/logger';
 import { z } from 'zod';
 
 const modelFilterSchema = z.object({
@@ -16,6 +17,33 @@ const fetchModelsSchema = z.object({
   apiKey: z.string().min(1, 'API Key is required')
 });
 
+// Schema for creating a provider
+const createProviderSchema = z.object({
+  name: z.string().min(1).max(100),
+  slug: z.string().min(1).max(50).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens'),
+  baseUrl: z.string().url(),
+  modelsUrl: z.string().url().optional().or(z.literal('')),
+  logoUrl: z.string().optional(),
+  description: z.string().optional(),
+  website: z.string().url().optional().or(z.literal('')),
+  modelFetchStrategy: z.enum(['DYNAMIC', 'PUBLIC', 'MANUAL']),
+  apiFormat: z.enum(['OPENAI', 'ANTHROPIC', 'CUSTOM']),
+  sortOrder: z.number().int().optional(),
+});
+
+// Schema for updating a provider
+const updateProviderSchema = createProviderSchema.partial().omit({ slug: true });
+
+// Schema for adding a model manually
+const addModelSchema = z.object({
+  modelId: z.string().min(1).max(200),
+  name: z.string().min(1).max(200),
+  description: z.string().optional(),
+  contextLength: z.number().int().positive().optional(),
+  maxTokens: z.number().int().positive().optional(),
+  isFree: z.boolean().optional(),
+});
+
 export class AIProviderController {
   constructor(private aiProviderService: AIProviderService) {}
 
@@ -25,12 +53,138 @@ export class AIProviderController {
    */
   getProviders = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const providers = await this.aiProviderService.getProviders();
+      // Admin gets all (including inactive), normal users get active only
+      const includeInactive = req.query.includeInactive === 'true';
+      const providers = includeInactive
+        ? await this.aiProviderService.getAllProviders(true)
+        : await this.aiProviderService.getProviders();
       
       res.status(StatusCodes.OK).json({
         status: 'success',
         code: BusinessCode.SUCCESS,
         data: providers
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Create a new provider (Admin only)
+   * POST /api/v1/ai-providers
+   */
+  createProvider = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const data = createProviderSchema.parse(req.body);
+      const provider = await this.aiProviderService.createProvider({
+        ...data,
+        modelsUrl: data.modelsUrl || undefined,
+        website: data.website || undefined,
+      });
+
+      logger.audit({
+        userId: req.user?.userId,
+        domain: 'AI_PROVIDER_MANAGEMENT',
+        action: 'CREATE_PROVIDER',
+        metadata: { providerId: provider.id, name: provider.name, slug: provider.slug },
+        ip: req.ip,
+        requestId: req.id,
+      });
+
+      res.status(StatusCodes.CREATED).json({
+        status: 'success',
+        code: BusinessCode.CREATED,
+        data: provider,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Update a provider (Admin only)
+   * PATCH /api/v1/ai-providers/:id
+   */
+  updateProvider = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const data = updateProviderSchema.parse(req.body);
+      const provider = await this.aiProviderService.updateProvider(id, {
+        ...data,
+        modelsUrl: data.modelsUrl || undefined,
+        website: data.website || undefined,
+      });
+
+      logger.audit({
+        userId: req.user?.userId,
+        domain: 'AI_PROVIDER_MANAGEMENT',
+        action: 'UPDATE_PROVIDER',
+        metadata: { providerId: provider.id, updates: data },
+        ip: req.ip,
+        requestId: req.id,
+      });
+
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data: provider,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Add a model manually (Admin only)
+   * POST /api/v1/ai-providers/:id/models/manual
+   */
+  addManualModel = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const data = addModelSchema.parse(req.body);
+      const model = await this.aiProviderService.addManualModel(id, data);
+
+      logger.audit({
+        userId: req.user?.userId,
+        domain: 'AI_PROVIDER_MANAGEMENT',
+        action: 'ADD_MANUAL_MODEL',
+        metadata: { providerId: id, modelId: data.modelId, name: data.name },
+        ip: req.ip,
+        requestId: req.id,
+      });
+
+      res.status(StatusCodes.CREATED).json({
+        status: 'success',
+        code: BusinessCode.CREATED,
+        data: model,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Delete a model (Admin only)
+   * DELETE /api/v1/ai-providers/:providerId/models/:modelId
+   */
+  deleteModel = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id: providerId, modelId } = req.params;
+      await this.aiProviderService.deleteModel(providerId, modelId);
+
+      logger.audit({
+        userId: req.user?.userId,
+        domain: 'AI_PROVIDER_MANAGEMENT',
+        action: 'DELETE_MODEL',
+        metadata: { providerId, modelId },
+        ip: req.ip,
+        requestId: req.id,
+      });
+
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        message: 'Model deleted successfully',
       });
     } catch (error) {
       next(error);

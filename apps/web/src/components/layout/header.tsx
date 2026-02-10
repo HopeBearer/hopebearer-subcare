@@ -5,7 +5,7 @@ import { useAuthStore, useChatStore } from '@/store';
 import { useModalStore } from '@/store';
 import { useSettingsStore } from '@/store';
 import { useRouter, usePathname } from 'next/navigation';
-import { LogOut, Plus, ArrowLeft, MessageCircle } from 'lucide-react';
+import { LogOut, Plus, ArrowLeft, MessageCircle, Shield } from 'lucide-react';
 import { ThemeToggle } from '@/components/common/theme-toggle';
 import { LanguageSwitcher } from '@/components/common/language-switcher';
 import { cn } from '@/lib/utils';
@@ -120,6 +120,23 @@ export function Header() {
         <NotificationBell />
         <ThemeToggle />
         <LanguageSwitcher />
+
+        {/* Admin Panel Entry - Only visible for ADMIN users */}
+        {user?.role === 'ADMIN' && (
+          <button
+            onClick={() => window.open('/admin', '_blank')}
+            className={cn(
+              'flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 ease group',
+              'bg-transparent hover:bg-purple-50 dark:hover:bg-purple-900/10'
+            )}
+            title="管理后台"
+          >
+            <Shield className="w-4 h-4 text-purple-500 dark:text-purple-400" />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors group-hover:text-purple-600 dark:group-hover:text-purple-400">
+              管理后台
+            </span>
+          </button>
+        )}
 
         <button 
           onClick={handleLogout}

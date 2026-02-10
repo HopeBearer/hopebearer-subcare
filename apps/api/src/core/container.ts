@@ -9,6 +9,12 @@ import { FinancialController } from '../controllers/v1/FinancialController';
 import { CurrencyController } from '../controllers/v1/CurrencyController';
 import { AIProviderController } from '../controllers/v1/AIProviderController';
 import { CategoryController } from '../controllers/v1/CategoryController';
+import { AdminDashboardController } from '../controllers/v1/AdminDashboardController';
+import { AdminDashboardService } from '../services/AdminDashboardService';
+import { TemplateController } from '../controllers/v1/TemplateController';
+import { TemplateService } from '../services/TemplateService';
+import { AdminManagementController } from '../controllers/v1/AdminManagementController';
+import { AdminManagementService } from '../services/AdminManagementService';
 import { UserController as UserControllerV2 } from '../controllers/v2/UserController';
 import { AuthService } from '../services/AuthService';
 import { SubscriptionService } from '../services/SubscriptionService';
@@ -137,6 +143,9 @@ const chatService = new ChatService({
 });
 const systemLogService = new SystemLogService(systemLogRepository);
 const messageTemplateService = new MessageTemplateService(messageTemplateRepository);
+const adminDashboardService = new AdminDashboardService();
+const adminManagementService = new AdminManagementService();
+const templateService = new TemplateService(templateRepository);
 
 // Middleware
 export const authMiddleware = new AuthMiddleware(tokenService);
@@ -155,7 +164,10 @@ export const controllersV1 = {
   Agent: new AgentController(agentService),
   AIProvider: new AIProviderController(aiProviderService),
   Chat: new ChatController(chatService),
-  Category: new CategoryController(categoryService)
+  Category: new CategoryController(categoryService),
+  AdminDashboard: new AdminDashboardController(adminDashboardService),
+  AdminManagement: new AdminManagementController(adminManagementService, currencyService),
+  Template: new TemplateController(templateService)
 };
 
 // V2 Controllers

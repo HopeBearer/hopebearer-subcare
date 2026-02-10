@@ -57,6 +57,7 @@ model User {
   aiConfigs     UserAIConfig[]
   aiRecommendation AIRecommendation?
   conversations Conversation[]
+  systemLogs    SystemLog[]
 
   @@map("users")
 }
@@ -222,6 +223,7 @@ model SystemLog {
   action    String   // login | send_email | create_subscription
 
   userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
   ip        String?
   requestId String?
 

@@ -8,10 +8,22 @@ export const aiProviderRegistry: Record<string, RouteVersions> = {
       middlewares: [authMiddleware.authenticate]
     }
   },
+  'POST /ai-providers': {
+    v1: {
+      handler: controllersV1.AIProvider.createProvider,
+      middlewares: [authMiddleware.authenticate, authMiddleware.requireAdmin]
+    }
+  },
   'GET /ai-providers/:id': {
     v1: { 
       handler: controllersV1.AIProvider.getProviderById,
       middlewares: [authMiddleware.authenticate]
+    }
+  },
+  'PATCH /ai-providers/:id': {
+    v1: {
+      handler: controllersV1.AIProvider.updateProvider,
+      middlewares: [authMiddleware.authenticate, authMiddleware.requireAdmin]
     }
   },
   'GET /ai-providers/:id/models': {
@@ -24,6 +36,18 @@ export const aiProviderRegistry: Record<string, RouteVersions> = {
     v1: { 
       handler: controllersV1.AIProvider.fetchModels,
       middlewares: [authMiddleware.authenticate]
+    }
+  },
+  'POST /ai-providers/:id/models/manual': {
+    v1: {
+      handler: controllersV1.AIProvider.addManualModel,
+      middlewares: [authMiddleware.authenticate, authMiddleware.requireAdmin]
+    }
+  },
+  'DELETE /ai-providers/:id/models/:modelId': {
+    v1: {
+      handler: controllersV1.AIProvider.deleteModel,
+      middlewares: [authMiddleware.authenticate, authMiddleware.requireAdmin]
     }
   },
   'GET /ai-providers/slug/:slug/models': {

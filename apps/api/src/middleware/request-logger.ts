@@ -8,8 +8,9 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
     const duration = Date.now() - start;
     const status = res.statusCode;
 
-    // Extend Request type to include user if it exists (usually added by auth middleware)
-    const userId = (req as any).user?.id;
+    // req.user is injected by auth middleware: { userId, email, role }
+    const userId = req.user?.userId;
+    const userEmail = req.user?.email;
 
     const logData = {
       domain: 'API',
@@ -20,6 +21,7 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
         status,
         duration,
         userAgent: req.get('user-agent'),
+        ...(userEmail && { userEmail }),
       },
     };
 

@@ -209,10 +209,11 @@ export class AIProviderRepository {
   }
 
   async findModelByProviderAndModelId(providerId: string, modelId: string): Promise<AIModel | null> {
-    return db.aIModel.findUnique({
-      where: {
-        providerId_modelId: { providerId, modelId }
-      }
+    // Use findFirst with separate fields instead of composite unique key
+    // because the soft-delete middleware converts findUnique → findFirst,
+    // and findFirst doesn't support composite unique key syntax.
+    return db.aIModel.findFirst({
+      where: { providerId, modelId, deletedAt: null }
     });
   }
 

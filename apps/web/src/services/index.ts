@@ -7,3 +7,4 @@ export * from './modules/currency';
 export * from './modules/ai-provider';
 export * from './modules/chat';
 export * from './modules/category';
+export * from './modules/admin';

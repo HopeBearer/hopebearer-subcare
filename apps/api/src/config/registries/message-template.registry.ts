@@ -1,36 +1,35 @@
 import { controllersV1, authMiddleware } from '../../core/container';
 import { RouteVersions } from '../route-registry';
 
-// TODO: Admin middleware
 export const messageTemplateRegistry: Record<string, RouteVersions> = {
   'POST /message-templates': {
     v1: {
-      handler: (req, res, next) => controllersV1.MessageTemplate.create(req, res).catch(next),
-      middlewares: [authMiddleware.authenticate]
-    }
+      handler: controllersV1.MessageTemplate.create,
+      middlewares: [authMiddleware.authenticate, authMiddleware.requireAdmin],
+    },
   },
   'GET /message-templates': {
     v1: {
-      handler: (req, res, next) => controllersV1.MessageTemplate.list(req, res).catch(next),
-      middlewares: [authMiddleware.authenticate]
-    }
+      handler: controllersV1.MessageTemplate.list,
+      middlewares: [authMiddleware.authenticate, authMiddleware.requireAdmin],
+    },
   },
   'GET /message-templates/:id': {
     v1: {
-      handler: (req, res, next) => controllersV1.MessageTemplate.get(req, res).catch(next),
-      middlewares: [authMiddleware.authenticate]
-    }
+      handler: controllersV1.MessageTemplate.get,
+      middlewares: [authMiddleware.authenticate, authMiddleware.requireAdmin],
+    },
   },
   'PATCH /message-templates/:id': {
     v1: {
-      handler: (req, res, next) => controllersV1.MessageTemplate.update(req, res).catch(next),
-      middlewares: [authMiddleware.authenticate]
-    }
+      handler: controllersV1.MessageTemplate.update,
+      middlewares: [authMiddleware.authenticate, authMiddleware.requireAdmin],
+    },
   },
   'DELETE /message-templates/:id': {
     v1: {
-      handler: (req, res, next) => controllersV1.MessageTemplate.delete(req, res).catch(next),
-      middlewares: [authMiddleware.authenticate]
-    }
-  }
+      handler: controllersV1.MessageTemplate.delete,
+      middlewares: [authMiddleware.authenticate, authMiddleware.requireAdmin],
+    },
+  },
 };

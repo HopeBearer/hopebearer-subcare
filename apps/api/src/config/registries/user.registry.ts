@@ -25,6 +25,18 @@ export const userRegistry: Record<string, RouteVersions> = {
       middlewares: [authMiddleware.authenticate, authMiddleware.authorize([Role.ADMIN])]
     }
   },
+  'GET /users/:id/detail': {
+    v1: {
+      handler: controllersV1.User.getDetail,
+      middlewares: [authMiddleware.authenticate, authMiddleware.authorize([Role.ADMIN])]
+    }
+  },
+  'PATCH /users/:id/role': {
+    v1: {
+      handler: controllersV1.User.changeRole,
+      middlewares: [authMiddleware.authenticate, authMiddleware.authorize([Role.ADMIN])]
+    }
+  },
   'PATCH /users/:id/disable': {
     v1: { 
       handler: controllersV1.User.disable,

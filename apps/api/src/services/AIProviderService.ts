@@ -70,6 +70,192 @@ export class AIProviderService {
   constructor(private repository: AIProviderRepository) {}
 
   /**
+   * Get all providers (including inactive for admin)
+   */
+  async getAllProviders(includeInactive = false): Promise<AIProviderDTO[]> {
+    const providers = await this.repository.findAllProviders(includeInactive);
+    return providers.map(p => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      baseUrl: p.baseUrl,
+      modelsUrl: p.modelsUrl ?? undefined,
+      logoUrl: p.logoUrl ?? undefined,
+      description: p.description ?? undefined,
+      website: p.website ?? undefined,
+      modelFetchStrategy: p.modelFetchStrategy,
+      apiFormat: p.apiFormat,
+      isBuiltIn: p.isBuiltIn,
+      isActive: p.isActive,
+      sortOrder: p.sortOrder
+    }));
+  }
+
+  /**
+   * Create a new AI provider
+   */
+  async createProvider(data: {
+    name: string;
+    slug: string;
+    baseUrl: string;
+    modelsUrl?: string;
+    logoUrl?: string;
+    description?: string;
+    website?: string;
+    modelFetchStrategy: ModelFetchStrategy;
+    apiFormat: ApiFormat;
+    sortOrder?: number;
+  }): Promise<AIProviderDTO> {
+    // Check slug uniqueness
+    const existing = await this.repository.findProviderBySlug(data.slug);
+    if (existing) {
+      throw new AppError('PROVIDER_SLUG_EXISTS', StatusCodes.CONFLICT, {
+        message: `Provider with slug "${data.slug}" already exists`
+      });
+    }
+
+    const provider = await this.repository.upsertProvider({
+      ...data,
+      isBuiltIn: false,
+      isActive: true,
+    });
+
+    return {
+      id: provider.id,
+      name: provider.name,
+      slug: provider.slug,
+      baseUrl: provider.baseUrl,
+      modelsUrl: provider.modelsUrl ?? undefined,
+      logoUrl: provider.logoUrl ?? undefined,
+      description: provider.description ?? undefined,
+      website: provider.website ?? undefined,
+      modelFetchStrategy: provider.modelFetchStrategy,
+      apiFormat: provider.apiFormat,
+      isBuiltIn: provider.isBuiltIn,
+      isActive: provider.isActive,
+      sortOrder: provider.sortOrder
+    };
+  }
+
+  /**
+   * Update an existing AI provider
+   */
+  async updateProvider(id: string, data: {
+    name?: string;
+    baseUrl?: string;
+    modelsUrl?: string;
+    logoUrl?: string;
+    description?: string;
+    website?: string;
+    modelFetchStrategy?: ModelFetchStrategy;
+    apiFormat?: ApiFormat;
+    isActive?: boolean;
+    sortOrder?: number;
+  }): Promise<AIProviderDTO> {
+    const existing = await this.repository.findProviderById(id);
+    if (!existing) {
+      throw new AppError('PROVIDER_NOT_FOUND', StatusCodes.NOT_FOUND, {
+        message: 'AI Provider not found'
+      });
+    }
+
+    // Use upsertProvider with existing slug
+    const provider = await this.repository.upsertProvider({
+      slug: existing.slug,
+      name: data.name ?? existing.name,
+      baseUrl: data.baseUrl ?? existing.baseUrl,
+      modelsUrl: data.modelsUrl ?? existing.modelsUrl ?? undefined,
+      logoUrl: data.logoUrl ?? existing.logoUrl ?? undefined,
+      description: data.description ?? existing.description ?? undefined,
+      website: data.website ?? existing.website ?? undefined,
+      modelFetchStrategy: data.modelFetchStrategy ?? existing.modelFetchStrategy,
+      apiFormat: data.apiFormat ?? existing.apiFormat,
+      isActive: data.isActive ?? existing.isActive,
+      sortOrder: data.sortOrder ?? existing.sortOrder,
+    });
+
+    return {
+      id: provider.id,
+      name: provider.name,
+      slug: provider.slug,
+      baseUrl: provider.baseUrl,
+      modelsUrl: provider.modelsUrl ?? undefined,
+      logoUrl: provider.logoUrl ?? undefined,
+      description: provider.description ?? undefined,
+      website: provider.website ?? undefined,
+      modelFetchStrategy: provider.modelFetchStrategy,
+      apiFormat: provider.apiFormat,
+      isBuiltIn: provider.isBuiltIn,
+      isActive: provider.isActive,
+      sortOrder: provider.sortOrder
+    };
+  }
+
+  /**
+   * Add a model manually to a provider
+   */
+  async addManualModel(providerId: string, data: {
+    modelId: string;
+    name: string;
+    description?: string;
+    contextLength?: number;
+    maxTokens?: number;
+    isFree?: boolean;
+  }): Promise<AIModelDTO> {
+    const provider = await this.repository.findProviderById(providerId);
+    if (!provider) {
+      throw new AppError('PROVIDER_NOT_FOUND', StatusCodes.NOT_FOUND, {
+        message: 'AI Provider not found'
+      });
+    }
+
+    // Check if model already exists
+    const existingModel = await this.repository.findModelByProviderAndModelId(providerId, data.modelId);
+    if (existingModel) {
+      throw new AppError('MODEL_EXISTS', StatusCodes.CONFLICT, {
+        message: `Model "${data.modelId}" already exists for this provider`
+      });
+    }
+
+    const model = await this.repository.upsertModel(providerId, {
+      ...data,
+      source: 'MANUAL',
+      isActive: true,
+    });
+
+    return {
+      id: model.id,
+      modelId: model.modelId,
+      name: model.name,
+      description: model.description ?? undefined,
+      providerId: model.providerId,
+      providerSlug: provider.slug,
+      contextLength: model.contextLength ?? undefined,
+      maxTokens: model.maxTokens ?? undefined,
+      pricingCurrency: model.pricingCurrency,
+      isFree: model.isFree,
+    };
+  }
+
+  /**
+   * Delete (soft) a model
+   */
+  async deleteModel(providerId: string, modelId: string): Promise<void> {
+    const model = await this.repository.findModelByProviderAndModelId(providerId, modelId);
+    if (!model) {
+      throw new AppError('MODEL_NOT_FOUND', StatusCodes.NOT_FOUND, {
+        message: 'Model not found'
+      });
+    }
+    // Mark as inactive and soft-delete
+    await this.repository.upsertModel(providerId, {
+      modelId,
+      name: model.name,
+      isActive: false,
+    });
+  }
+
+  /**
    * Get all active providers
    */
   async getProviders(): Promise<AIProviderDTO[]> {
@@ -291,15 +477,18 @@ export class AIProviderService {
       });
     }
 
-    // Skip providers without sync capability
+    // MANUAL strategy providers cannot be synced — models must be added manually
+    if (provider.modelFetchStrategy === 'MANUAL') {
+      throw new AppError('SYNC_NOT_SUPPORTED', StatusCodes.BAD_REQUEST, {
+        message: `供应商 "${provider.name}" 为手动维护策略，不支持同步，请手动添加模型`
+      });
+    }
+
+    // Skip providers without a models URL
     if (provider.slug !== 'openrouter' && !provider.modelsUrl) {
-      return {
-        added: 0,
-        updated: 0,
-        removed: 0,
-        providerId: provider.id,
-        providerName: provider.name
-      };
+      throw new AppError('SYNC_NOT_SUPPORTED', StatusCodes.BAD_REQUEST, {
+        message: `供应商 "${provider.name}" 未配置 Models URL，无法同步`
+      });
     }
 
     console.log(`[AIProviderService] Syncing models for provider: ${provider.name}`);

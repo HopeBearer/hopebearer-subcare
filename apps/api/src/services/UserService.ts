@@ -1,6 +1,8 @@
 import { UserRepository } from "../repositories/UserRepository";
-import { User, PrismaClient } from "@subcare/database";
+import { User, PrismaClient, Role } from "@subcare/database";
 import { NotificationService } from "../modules/notification/notification.service";
+import { AppError } from "../utils/AppError";
+import { StatusCodes } from "http-status-codes";
 
 const prisma = new PrismaClient();
 
@@ -84,6 +86,92 @@ export class UserService {
     return { ...rest, hasAIConfig: aiConfigCount > 0 };
   }
 
+
+  /**
+   * 获取用户详情（含订阅、支付记录统计）
+   * 用于管理后台用户详情页
+   */
+  async getUserDetail(id: string) {
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        subscriptions: {
+          where: { deletedAt: null },
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            currency: true,
+            billingCycle: true,
+            status: true,
+            startDate: true,
+            nextPayment: true,
+            icon: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+        paymentRecords: {
+          where: { deletedAt: null },
+          select: {
+            id: true,
+            amount: true,
+            currency: true,
+            billingDate: true,
+            status: true,
+            createdAt: true,
+          },
+          orderBy: { billingDate: 'desc' },
+          take: 20,
+        },
+        _count: {
+          select: {
+            subscriptions: true,
+            paymentRecords: true,
+            notifications: true,
+            aiConfigs: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new AppError('NOT_FOUND', StatusCodes.NOT_FOUND, { message: 'User not found' });
+    }
+
+    const { password: _p, refreshToken: _r, ...rest } = user;
+    return rest;
+  }
+
+  /**
+   * 修改用户角色
+   * 仅管理员可调用，防止自行提权
+   */
+  async changeUserRole(targetUserId: string, newRole: Role, operatorId: string): Promise<Omit<User, 'password' | 'refreshToken'>> {
+    // 禁止修改自己的角色
+    if (targetUserId === operatorId) {
+      throw new AppError('FORBIDDEN', StatusCodes.FORBIDDEN, { message: 'Cannot change your own role' });
+    }
+
+    const targetUser = await this.userRepository.findById(targetUserId);
+    if (!targetUser) {
+      throw new AppError('NOT_FOUND', StatusCodes.NOT_FOUND, { message: 'Target user not found' });
+    }
+
+    // 如果角色未发生变化，直接返回
+    if (targetUser.role === newRole) {
+      const { password: _p, refreshToken: _r, ...rest } = targetUser;
+      return rest;
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: targetUserId },
+      data: { role: newRole },
+    });
+
+    const { password: _p, refreshToken: _r, ...rest } = updatedUser;
+    return rest;
+  }
 
   /**
    * 删除用户 (逻辑自洽版)
