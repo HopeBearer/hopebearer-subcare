@@ -7,29 +7,22 @@ import { SubscriptionFilterDTO } from "@subcare/types";
  */
 export class SubscriptionRepository {
   /**
-   * 内部辅助方法：获取所有分类的颜色映射
+   * 内部辅助方法：从关联的 Category 或 legacy categoryName 解析分类信息
+   * 优先使用 categoryId 关联数据，降级到 categoryName 字符串
    */
-  private async getCategoryColorMap(): Promise<Map<string, string>> {
-    const categories = await prisma.category.findMany({
-      where: { deletedAt: null },
-      select: { name: true, color: true }
-    });
-    const colorMap = new Map<string, string>();
-    categories.forEach(cat => {
-      colorMap.set(cat.name.toLowerCase(), cat.color || '#9CA3AF');
-    });
-    return colorMap;
-  }
+  private resolveCategoryInfo(item: any): any {
+    const relatedCategory = item.category; // Prisma relation (Category object or null)
+    const categoryName = relatedCategory?.name || item.categoryName || 'Other';
+    const categoryColor = relatedCategory?.color || '#9CA3AF';
+    const categoryIcon = relatedCategory?.icon || null;
+    const categoryId = item.categoryId || relatedCategory?.id || null;
 
-  /**
-   * 内部辅助方法：为订阅添加颜色信息
-   */
-  private addCategoryColor(item: any, colorMap: Map<string, string>): any {
-    const categoryName = item.category?.name || item.categoryName || 'Other';
     return {
       ...item,
+      categoryId,
       category: categoryName,
-      categoryColor: item.category?.color || colorMap.get(categoryName.toLowerCase()) || '#9CA3AF'
+      categoryColor,
+      categoryIcon,
     };
   }
 
@@ -130,22 +123,20 @@ export class SubscriptionRepository {
     const skip = page && limit ? (page - 1) * limit : undefined;
 
     try {
-      const [items, total, colorMap] = await Promise.all([
+      const [items, total] = await Promise.all([
         prisma.subscription.findMany({
           where,
           include: {
-            category: true // 关联查询分类
+            category: true // 关联查询分类（Category 对象）
           },
           orderBy: { createdAt: 'desc' },
           skip,
           take
         }),
         prisma.subscription.count({ where }),
-        this.getCategoryColorMap()
       ]);
 
-      // MAP: 优先使用关联的分类，其次使用旧的 categoryName 字段
-      const mappedItems = items.map(item => this.addCategoryColor(item, colorMap));
+      const mappedItems = items.map(item => this.resolveCategoryInfo(item));
 
       return { items: mappedItems, total };
     } catch (error) {
@@ -168,8 +159,7 @@ export class SubscriptionRepository {
     });
     if (!item) return null;
     
-    const colorMap = await this.getCategoryColorMap();
-    return this.addCategoryColor(item, colorMap);
+    return this.resolveCategoryInfo(item);
   }
   
   /**
@@ -187,8 +177,7 @@ export class SubscriptionRepository {
         }
     });
     
-    const colorMap = await this.getCategoryColorMap();
-    return this.addCategoryColor(item, colorMap);
+    return this.resolveCategoryInfo(item);
   }
 
   /**
@@ -216,20 +205,17 @@ export class SubscriptionRepository {
    * @returns 活跃订阅列表
    */
   async findActiveByUserId(userId: string): Promise<any[]> {
-    const [items, colorMap] = await Promise.all([
-      prisma.subscription.findMany({
-        where: { 
-          userId,
-          status: 'ACTIVE'
-        },
-        include: {
-          category: true
-        },
-        orderBy: { price: 'desc' },
-      }),
-      this.getCategoryColorMap()
-    ]);
-    return items.map(item => this.addCategoryColor(item, colorMap));
+    const items = await prisma.subscription.findMany({
+      where: { 
+        userId,
+        status: 'ACTIVE'
+      },
+      include: {
+        category: true
+      },
+      orderBy: { price: 'desc' },
+    });
+    return items.map(item => this.resolveCategoryInfo(item));
   }
 
   /**
@@ -246,26 +232,23 @@ export class SubscriptionRepository {
     futureDate.setDate(today.getDate() + days);
     futureDate.setHours(23, 59, 59, 999); // Set to end of the target day
 
-    const [items, colorMap] = await Promise.all([
-      prisma.subscription.findMany({
-        where: {
-          userId,
-          status: 'ACTIVE',
-          autoRenewal: true, // Only show actual renewals, not expiring subscriptions
-          nextPayment: {
-            gte: today,
-            lte: futureDate
-          }
-        },
-        include: {
-          category: true
-        },
-        orderBy: { nextPayment: 'asc' }
-      }),
-      this.getCategoryColorMap()
-    ]);
+    const items = await prisma.subscription.findMany({
+      where: {
+        userId,
+        status: 'ACTIVE',
+        autoRenewal: true, // Only show actual renewals, not expiring subscriptions
+        nextPayment: {
+          gte: today,
+          lte: futureDate
+        }
+      },
+      include: {
+        category: true
+      },
+      orderBy: { nextPayment: 'asc' }
+    });
     
-    return items.map(item => this.addCategoryColor(item, colorMap));
+    return items.map(item => this.resolveCategoryInfo(item));
   }
 
   /**

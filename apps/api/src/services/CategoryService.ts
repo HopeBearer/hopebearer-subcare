@@ -55,14 +55,15 @@ export class CategoryService {
   }
 
   /**
-   * 创建用户自定义分类
+   * 创建系统分类（仅管理员）
+   * 创建的分类 userId = null，所有用户可见
    */
   async createCategory(userId: string, data: CreateCategoryDTO): Promise<Category> {
-    // 检查名称是否已存在
-    const existing = await this.categoryRepository.findByName(data.name, userId);
+    // 检查系统分类中是否已存在同名分类
+    const existing = await this.categoryRepository.findByName(data.name, null);
     if (existing) {
       throw new AppError('CONFLICT', StatusCodes.CONFLICT, {
-        message: `Category "${data.name}" already exists`
+        message: `System category "${data.name}" already exists`
       });
     }
 
@@ -71,12 +72,14 @@ export class CategoryService {
       icon: data.icon,
       color: data.color || '#9CA3AF',
       budgetLimit: data.budgetLimit,
-      user: { connect: { id: userId } }
+      // System category: no user connection (userId = null)
+      user: undefined
     });
   }
 
   /**
-   * 更新分类（仅限用户自定义分类）
+   * 更新分类（管理员可更新系统分类）
+   * 路由层已通过 requireAdmin 中间件限制，此处仅做数据校验
    */
   async updateCategory(id: string, userId: string, data: UpdateCategoryDTO): Promise<Category> {
     const category = await this.categoryRepository.findById(id);
@@ -87,23 +90,9 @@ export class CategoryService {
       });
     }
 
-    // 系统分类不能修改
-    if (category.userId === null) {
-      throw new AppError('FORBIDDEN', StatusCodes.FORBIDDEN, {
-        message: 'System categories cannot be modified'
-      });
-    }
-
-    // 验证归属
-    if (category.userId !== userId) {
-      throw new AppError('FORBIDDEN', StatusCodes.FORBIDDEN, {
-        message: 'You can only modify your own categories'
-      });
-    }
-
     // 如果修改名称，检查是否重复
     if (data.name && data.name !== category.name) {
-      const existing = await this.categoryRepository.findByName(data.name, userId);
+      const existing = await this.categoryRepository.findByName(data.name, null);
       if (existing) {
         throw new AppError('CONFLICT', StatusCodes.CONFLICT, {
           message: `Category "${data.name}" already exists`
@@ -115,7 +104,8 @@ export class CategoryService {
   }
 
   /**
-   * 删除分类（仅限用户自定义分类）
+   * 删除分类（管理员可删除系统分类）
+   * 路由层已通过 requireAdmin 中间件限制，此处仅做业务校验
    */
   async deleteCategory(id: string, userId: string): Promise<void> {
     const category = await this.categoryRepository.findById(id);
@@ -123,20 +113,6 @@ export class CategoryService {
     if (!category) {
       throw new AppError('NOT_FOUND', StatusCodes.NOT_FOUND, {
         message: 'Category not found'
-      });
-    }
-
-    // 系统分类不能删除
-    if (category.userId === null) {
-      throw new AppError('FORBIDDEN', StatusCodes.FORBIDDEN, {
-        message: 'System categories cannot be deleted'
-      });
-    }
-
-    // 验证归属
-    if (category.userId !== userId) {
-      throw new AppError('FORBIDDEN', StatusCodes.FORBIDDEN, {
-        message: 'You can only delete your own categories'
       });
     }
 

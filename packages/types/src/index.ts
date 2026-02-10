@@ -88,6 +88,8 @@ export interface CreateSubscriptionDTO {
   billingCycle: string;
   startDate: Date | string;
   userId: string;
+  categoryId?: string;
+  /** @deprecated Use categoryId instead */
   category?: string;
   description?: string;
   icon?: string;
@@ -109,6 +111,8 @@ export interface UpdateSubscriptionDTO {
   billingCycle?: string;
   nextPayment?: Date | string;
   status?: string;
+  categoryId?: string;
+  /** @deprecated Use categoryId instead */
   category?: string;
   description?: string;
   icon?: string;
@@ -132,8 +136,10 @@ export interface SubscriptionDTO {
   startDate: Date;
   nextPayment?: Date | null;
   status: string;
-  category: string;
-  categoryColor?: string | null; // Color from Category table
+  categoryId?: string | null;
+  category: string;  // Resolved category name (from relation or legacy field)
+  categoryColor?: string | null; // Color from Category relation
+  categoryIcon?: string | null;  // Icon from Category relation
   icon?: string | null;
   description?: string | null;
   userId: string;

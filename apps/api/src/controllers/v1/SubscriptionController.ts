@@ -13,7 +13,8 @@ const createSubscriptionSchema = z.object({
   currency: z.string().length(3),
   billingCycle: z.string(),
   startDate: z.coerce.date(),
-  category: z.string().optional(),
+  categoryId: z.string().uuid().optional(),
+  category: z.string().optional(), // Legacy: category name string
   paymentMethod: z.string().optional(),
   autoRenewal: z.boolean().default(true),
   enableNotification: z.boolean().optional(),

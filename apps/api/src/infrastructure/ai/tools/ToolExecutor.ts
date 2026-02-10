@@ -700,6 +700,7 @@ export class ToolExecutor {
           currency: finalCurrency,
           billingCycle,
           startDate: start,
+          categoryId: finalCategoryId,
           category: finalCategoryName,
           icon: finalIcon,
           website: finalWebsite,
@@ -1279,7 +1280,7 @@ export class ToolExecutor {
       if (updateData.billingCycle) data.billingCycle = updateData.billingCycle;
       if (updateData.status) data.status = updateData.status;
       
-      // 分类更新：复用 CategoryService 验证分类
+      // 分类更新：复用 CategoryService 验证分类，传递 categoryId（FK）
       if (updateData.category) {
         const availableCategories = await this.deps.categoryService.getCategories(userId);
         const matchedCategory = availableCategories.find(
@@ -1294,7 +1295,7 @@ export class ToolExecutor {
           };
         }
         
-        data.category = matchedCategory.name;
+        data.categoryId = matchedCategory.id;
       }
       
       if (updateData.autoRenewal !== undefined) data.autoRenewal = updateData.autoRenewal;

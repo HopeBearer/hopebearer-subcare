@@ -89,7 +89,10 @@ export class SubscriptionService {
       startDate: data.startDate,
       nextPayment: nextPayment,
       status: 'ACTIVE',
-      categoryName: data.category || 'Other',
+      // Category: prefer categoryId (FK relation), fallback to legacy categoryName string
+      ...(data.categoryId
+        ? { category: { connect: { id: data.categoryId } }, categoryName: data.category || 'Other' }
+        : { categoryName: data.category || 'Other' }),
       description: data.description,
       icon: data.icon,
       paymentMethod: data.paymentMethod,
@@ -129,10 +132,7 @@ export class SubscriptionService {
          await this.billGeneratorService.generateBillForSubscription(subscription);
     }
 
-    return {
-      ...subscription,
-      category: subscription.categoryName
-    } as any;
+    return subscription;
   }
 
   /**
@@ -209,9 +209,17 @@ export class SubscriptionService {
         updateData.normalizedName = this.normalizeName(data.name);
     }
     
-    if (data.category) {
+    // Category update: prefer categoryId (FK), fallback to legacy string
+    if (data.categoryId) {
+      updateData.category = { connect: { id: data.categoryId } };
+      // Also update legacy categoryName for backward compatibility
+      if (data.category) {
         updateData.categoryName = data.category;
-        delete updateData.category;
+      }
+      delete updateData.categoryId;
+    } else if (data.category) {
+      updateData.categoryName = data.category;
+      delete updateData.category;
     }
 
     const updatedSubscription = await this.subscriptionRepository.update(id, updateData);

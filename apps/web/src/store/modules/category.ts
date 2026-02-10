@@ -13,8 +13,11 @@ interface CategoryState {
   /** Force refresh categories (ignores lock) */
   refreshCategories: () => Promise<void>;
   
-  /** Get category options formatted for Select components */
+  /** Get category options formatted for Select components (value = category id) */
   getCategoryOptions: () => { label: string; value: string }[];
+  
+  /** Look up a category by its ID */
+  getCategoryById: (id: string | undefined | null) => Category | undefined;
 }
 
 export const useCategoryStore = create<CategoryState>((set, get) => ({
@@ -52,7 +55,12 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
   getCategoryOptions: () => {
     return get().categories.map(c => ({
       label: c.name,
-      value: c.name,
+      value: c.id,
     }));
+  },
+
+  getCategoryById: (id) => {
+    if (!id) return undefined;
+    return get().categories.find(c => c.id === id);
   },
 }));

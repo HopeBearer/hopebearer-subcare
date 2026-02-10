@@ -35,7 +35,7 @@ const step1Schema = z.object({
 });
 
 const step2Schema = z.object({
-  category: z.string().optional(),
+  categoryId: z.string().optional(),
   paymentMethod: z.string().optional(),
   usage: z.string().default('Normally'),
 });
@@ -73,7 +73,7 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
   const [logoPreview, setLogoPreview] = useState<string | undefined>(initialValues?.icon || undefined);
   const router = useRouter();
   const { closeAddSubscription, openAddSubscription } = useModalStore();
-  const { categories, fetchCategories, getCategoryOptions } = useCategoryStore();
+  const { categories, fetchCategories, getCategoryOptions, getCategoryById } = useCategoryStore();
 
   // Fetch categories on mount (locked — only fetches once)
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
@@ -120,7 +120,7 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
       currency: initialValues?.currency || 'CNY',
       cycle: (initialValues?.billingCycle as 'Monthly' | 'Yearly') || 'Monthly',
       startDate: defaultStartDate,
-      category: initialValues?.category || 'Entertainment',
+      categoryId: initialValues?.categoryId || undefined,
       paymentMethod: initialValues?.paymentMethod || 'Credit Card',
       autoRenewal: initialValues?.autoRenewal ?? true,
       usage: initialValues?.usage || 'Normally',
@@ -148,7 +148,7 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
     startDate: formData.startDate ? new Date(formData.startDate) : new Date(),
     nextPayment: formData.autoRenewal && formData.startDate ? calculateNextPayment(formData.startDate, formData.cycle) : null,
     status: initialValues?.status || 'Active',
-    category: formData.category || 'Uncategorized',
+    category: getCategoryById(formData.categoryId)?.name || 'Uncategorized',
     usage: formData.usage,
     icon: logoPreview,
     autoRenewal: formData.autoRenewal,
@@ -190,7 +190,7 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
          }
       }
     } else if (step === 2) {
-      isStepValid = await trigger(['category', 'paymentMethod', 'usage']);
+      isStepValid = await trigger(['categoryId', 'paymentMethod', 'usage']);
     }
 
     if (isStepValid) {
@@ -249,7 +249,7 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
       currency: data.currency,
       billingCycle: data.cycle,
       startDate: new Date(data.startDate), // Convert string to Date
-      category: data.category,
+      categoryId: data.categoryId,
       paymentMethod: data.paymentMethod,
       autoRenewal: data.autoRenewal,
       usage: data.usage as SubscriptionUsage,
@@ -577,13 +577,13 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
                  <div className="grid grid-cols-1 gap-4">
                    <Controller
                      control={control}
-                     name="category"
+                     name="categoryId"
                      render={({ field }) => (
                        <Select
                          label={t('category', { ns: 'subscription' })}
                          {...field}
                          options={getCategoryOptions().map(opt => ({
-                           label: t(`categories.${opt.value.toLowerCase()}`, { ns: 'subscription', defaultValue: opt.label }),
+                           label: t(`categories.${opt.label.toLowerCase()}`, { ns: 'subscription', defaultValue: opt.label }),
                            value: opt.value,
                          }))}
                        />

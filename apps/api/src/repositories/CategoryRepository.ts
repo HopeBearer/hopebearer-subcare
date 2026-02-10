@@ -98,12 +98,22 @@ export class CategoryRepository {
 
   /**
    * 统计分类下的订阅数量
+   * 检查 categoryId（外键关联）和 legacy categoryName（字符串匹配）
    */
   async countSubscriptions(categoryId: string): Promise<number> {
+    // First get the category name for legacy matching
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+      select: { name: true }
+    });
+
     return prisma.subscription.count({
-      where: { 
-        categoryId,
-        deletedAt: null
+      where: {
+        deletedAt: null,
+        OR: [
+          { categoryId }, // New: FK relation
+          ...(category ? [{ categoryName: category.name, categoryId: null }] : []) // Legacy: string match where FK not set
+        ]
       }
     });
   }
