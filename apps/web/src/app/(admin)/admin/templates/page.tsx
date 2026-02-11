@@ -24,6 +24,7 @@ import { Modal } from '@/components/ui/modal';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { Select } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { useSiteSettingsStore } from '@/store';
 
 const CYCLE_LABELS: Record<string, string> = {
   monthly: '月付',
@@ -32,19 +33,22 @@ const CYCLE_LABELS: Record<string, string> = {
   daily: '日付',
 };
 
-const defaultForm: TemplateFormData = {
-  name: '',
-  displayName: '',
-  description: '',
-  searchText: '',
-  category: '',
-  icon: '',
-  website: '',
-  defaultCurrency: 'CNY',
-  defaultCycle: 'monthly',
-};
-
 export default function AdminTemplatesPage() {
+  const { settings: siteSettings } = useSiteSettingsStore();
+  const siteDefaultCurrency = siteSettings?.['site.defaultCurrency'] || 'CNY';
+
+  const defaultForm: TemplateFormData = {
+    name: '',
+    displayName: '',
+    description: '',
+    searchText: '',
+    category: '',
+    icon: '',
+    website: '',
+    defaultCurrency: siteDefaultCurrency,
+    defaultCycle: 'monthly',
+  };
+
   const [templates, setTemplates] = useState<SubscriptionTemplateItem[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -99,7 +103,7 @@ export default function AdminTemplatesPage() {
       category: template.category || '',
       icon: template.icon || '',
       website: template.website || '',
-      defaultCurrency: template.defaultCurrency || 'CNY',
+      defaultCurrency: template.defaultCurrency || siteDefaultCurrency,
       defaultCycle: template.defaultCycle || 'monthly',
     });
     setEditModalOpen(true);

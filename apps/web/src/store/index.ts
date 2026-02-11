@@ -6,3 +6,4 @@ export * from './modules/layout';
 export * from './modules/notification';
 export * from './modules/chat';
 export * from './modules/category';
+export * from './modules/site-settings';

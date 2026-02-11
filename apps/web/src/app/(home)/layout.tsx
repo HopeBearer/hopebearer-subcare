@@ -4,7 +4,7 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import AuthGuard from '@/components/guards/auth-guard';
 import { AddSubscriptionModal } from '@/components/features/subscriptions/add-subscription-modal';
-import { useLayoutStore } from '@/store';
+import { useLayoutStore, useSiteSettingsStore } from '@/store';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import { useSocketInit } from '@/hooks/use-socket';
@@ -16,12 +16,18 @@ export default function HomeLayout({
   children: React.ReactNode;
 }) {
   const { isSidebarCollapsed } = useLayoutStore();
+  const { fetchSiteSettings } = useSiteSettingsStore();
   const [mounted, setMounted] = useState(false);
   
   // 全局唯一 socket 初始化（仅此一处创建连接 + 注册通知事件）
   useSocketInit();
   // 注册 Chat 流式事件处理（纯消费 socket，不创建连接）
   useChatStream();
+
+  // 初始化站点公开设置（site.name, site.description 等）
+  useEffect(() => {
+    fetchSiteSettings();
+  }, [fetchSiteSettings]);
 
   useEffect(() => {
     setMounted(true);

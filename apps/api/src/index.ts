@@ -180,17 +180,15 @@ server.listen(PORT, async () => {
         await services.scheduledJob.recordCronExecution('notification-cleanup', status, Date.now() - start, undefined, error).catch(console.error);
     });
 
-    // Start external job cron schedules
-    exchangeRateJob.start();
-    aiModelSyncJob.start();
+    // Seed data BEFORE starting dynamic-cron jobs (so DB settings are available)
+    await seedTemplates().catch(console.error);
+    await seedSystemSettings().catch(console.error);
+
+    // Start external job cron schedules (a9: now async, reads cron from DB settings)
+    await exchangeRateJob.start();
+    await aiModelSyncJob.start();
 
     console.log('✅ All 5 cron jobs registered & scheduled.');
-
-    // Optional: Run seeding on startup or via separate script
-    await seedTemplates().catch(console.error);
-
-    // Seed default system settings (won't overwrite existing values)
-    await seedSystemSettings().catch(console.error);
 
     // Initialize Vector Services (for AI Agent semantic search)
     await initializeVectorServices().catch(err => {

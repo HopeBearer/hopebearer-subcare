@@ -138,7 +138,7 @@ api.interceptors.response.use(
       // Specific Business Errors that should be handled by form fields:
       // INVALID_CREDENTIALS, CAPTCHA_INVALID, etc.
       // We skip global toast for these too, to let handleApiError map them.
-      if (['INVALID_CREDENTIALS', 'CAPTCHA_INVALID', 'CAPTCHA_REQUIRED', 'USER_ALREADY_EXISTS', 'USER_NOT_FOUND', 'INVALID_PASSWORD'].includes(reason)) {
+      if (['INVALID_CREDENTIALS', 'CAPTCHA_INVALID', 'CAPTCHA_REQUIRED', 'USER_ALREADY_EXISTS', 'USER_NOT_FOUND', 'INVALID_PASSWORD', 'REGISTRATION_DISABLED', 'TOO_MANY_ATTEMPTS'].includes(reason)) {
         return Promise.reject(error);
       }
 

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuthStore } from '@/store';
+import { useAuthStore, useSiteSettingsStore } from '@/store';
 import { authService } from '@/services';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,7 +31,15 @@ export default function LoginPage() {
   const [captchaImage, setCaptchaImage] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState(false);
   const [rotation, setRotation] = useState(0);
+  const { settings, fetchSiteSettings } = useSiteSettingsStore();
   const { t } = useTranslation(['auth', 'common']);
+
+  // a11: 获取站点公开设置
+  useEffect(() => {
+    fetchSiteSettings();
+  }, [fetchSiteSettings]);
+
+  const registrationEnabled = settings?.['security.registrationEnabled'] !== false;
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -96,7 +104,7 @@ export default function LoginPage() {
         <div className="flex justify-center lg:justify-start mb-6 items-center gap-3">
           <img src="/images/logo.png" alt="SubCare Logo" className="h-10 w-auto" />
           <span className="text-3xl text-gray-900 dark:text-white font-logo">
-            {t('app_name', { ns: 'common' })}
+            {settings?.['site.name'] || t('app_name', { ns: 'common' })}
           </span>
         </div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{t('login.title')}</h1>
@@ -192,12 +200,14 @@ export default function LoginPage() {
           {t('login.submit')}
         </Button>
 
-        <div className="mt-6 text-center text-sm">
-          <span className="text-gray-600 dark:text-gray-400">{t('login.no_account')} </span>
-          <Link href="/register" className="font-medium text-primary hover:text-primary-hover">
-            {t('login.sign_up_link')}
-          </Link>
-        </div>
+        {registrationEnabled && (
+          <div className="mt-6 text-center text-sm">
+            <span className="text-gray-600 dark:text-gray-400">{t('login.no_account')} </span>
+            <Link href="/register" className="font-medium text-primary hover:text-primary-hover">
+              {t('login.sign_up_link')}
+            </Link>
+          </div>
+        )}
 
       </form>
     </>

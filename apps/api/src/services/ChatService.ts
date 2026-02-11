@@ -13,6 +13,7 @@ import { LLMFactory } from '../infrastructure/ai/LLMFactory';
 import { AppError } from '../utils/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { ToolExecutor } from '../infrastructure/ai/tools/ToolExecutor';
+import { SystemSettingService } from './SystemSettingService';
 import {
   ChatStreamCallbacks,
   ChatProgressEvent,
@@ -31,12 +32,14 @@ export interface ChatServiceDeps {
   conversationRepo: ConversationRepository;
   messageRepo: MessageRepository;
   toolExecutor: ToolExecutor;
+  systemSettingService: SystemSettingService;
 }
 
 export class ChatService {
   private conversationRepo: ConversationRepository;
   private messageRepo: MessageRepository;
   private toolExecutor: ToolExecutor;
+  private systemSettingService: SystemSettingService;
   
   // 统一的 ReAct 代理循环
   private agentLoop: AgentLoop;
@@ -45,6 +48,7 @@ export class ChatService {
     this.conversationRepo = deps.conversationRepo;
     this.messageRepo = deps.messageRepo;
     this.toolExecutor = deps.toolExecutor;
+    this.systemSettingService = deps.systemSettingService;
     
     // 初始化统一的 AgentLoop（替代旧的 4 个 Handler）
     this.agentLoop = new AgentLoop(
@@ -57,6 +61,16 @@ export class ChatService {
   // ==================== 对话管理 ====================
 
   async createConversation(userId: string, title?: string): Promise<Conversation> {
+    // a3: 检查每用户最大会话数
+    const maxConversations = await this.systemSettingService.getValue<number>('ai.maxConversationsPerUser', 50);
+    if (maxConversations > 0) {
+      const { total } = await this.conversationRepo.findByUserId(userId, { page: 1, limit: 1 });
+      if (total >= maxConversations) {
+        throw new AppError('CONVERSATION_LIMIT_REACHED', StatusCodes.FORBIDDEN, {
+          message: `Maximum ${maxConversations} conversations reached. Please delete old conversations first.`
+        });
+      }
+    }
     return this.conversationRepo.create(userId, { title });
   }
 
@@ -133,6 +147,17 @@ export class ChatService {
         message: `Message too long. Maximum ${MAX_MESSAGE_LENGTH} characters.`,
         params: { maxLength: MAX_MESSAGE_LENGTH, currentLength: content.length }
       });
+    }
+
+    // a4: 检查每会话最大消息数
+    const maxMessages = await this.systemSettingService.getValue<number>('ai.maxMessagesPerConversation', 200);
+    if (maxMessages > 0) {
+      const { total: msgCount } = await this.messageRepo.findByConversationId(conversationId, { limit: 1 });
+      if (msgCount >= maxMessages) {
+        throw new AppError('MESSAGE_LIMIT_REACHED', StatusCodes.FORBIDDEN, {
+          message: `This conversation has reached the ${maxMessages} message limit. Please start a new conversation.`
+        });
+      }
     }
 
     // 验证对话归属
@@ -253,9 +278,15 @@ export class ChatService {
       });
     }
 
+    // a8: 若用户未配置模型，读取系统默认模型设置
+    let model = aiConfig.model;
+    if (!model) {
+      model = await this.systemSettingService.getValue<string>('ai.defaultModel', '') || 'gpt-4o-mini';
+    }
+
     return LLMFactory.createProvider({
       apiKey: aiConfig.apiKey,
-      model: aiConfig.model || 'gpt-4o-mini',
+      model,
       baseUrl: aiConfig.baseUrl || aiProvider.baseUrl,
       apiFormat: aiProvider.apiFormat as 'OPENAI' | 'ANTHROPIC' | 'CUSTOM',
       providerSlug: aiConfig.provider

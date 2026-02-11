@@ -16,6 +16,8 @@
     "seed:templates:clean": "tsx scripts/seed-templates.ts --clean",
     "seed:categories": "tsx scripts/seed-categories.ts",
     "seed:categories:clean": "tsx scripts/seed-categories.ts --clean",
+    "seed:settings": "tsx scripts/seed-settings.ts",
+    "seed:settings:clean": "tsx scripts/seed-settings.ts --clean",
     "generate:embeddings": "tsx scripts/generate-embeddings.ts",
     "generate:embeddings:force": "tsx scripts/generate-embeddings.ts --force"
   },

@@ -31,13 +31,6 @@ const DEFAULT_SETTINGS: SettingSeed[] = [
     group: 'general',
     label: '默认货币',
   },
-  {
-    key: 'site.defaultLanguage',
-    value: 'zh-CN',
-    type: 'string',
-    group: 'general',
-    label: '默认语言',
-  },
 
   // ===== Security =====
   {

@@ -10,6 +10,37 @@ export class SystemSettingController {
   constructor(private systemSettingService: SystemSettingService) {}
 
   /**
+   * GET /settings/public
+   * a11: 公开接口 — 返回前端需要的站点级设置（site.*, security.registrationEnabled 等）
+   * 无需认证
+   */
+  getPublicSettings = async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      const publicKeys = [
+        'site.name',
+        'site.description',
+        'site.defaultCurrency',
+        'security.registrationEnabled',
+        'security.requireEmailVerification',
+      ];
+
+      const result: Record<string, unknown> = {};
+      for (const key of publicKeys) {
+        result[key] = await this.systemSettingService.getValue(key);
+      }
+
+      const response: ApiResponse = {
+        status: 'success',
+        code: BusinessCode.SUCCESS,
+        data: result,
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
    * GET /admin/settings
    * 获取所有系统设置（支持按分组筛选）
    */

@@ -9,10 +9,12 @@ import { StatusCodes } from "http-status-codes";
 import { addMonths, addWeeks, addYears, addDays, format, isBefore, startOfYear, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { calculateMonthlyEquivalent } from '../utils/billing-utils';
 import { NotificationService } from "../modules/notification/notification.service";
+import { SystemSettingService } from "./SystemSettingService";
 import { runAllDetectors, DetectorRecord, DetectorSubscription, DetectorCategory } from './anomaly-detectors';
 
 export class FinancialService {
   private categoryRepository = new CategoryRepository();
+  private systemSettingService?: SystemSettingService;
 
   constructor(
     private paymentRecordRepository: PaymentRecordRepository,
@@ -22,6 +24,13 @@ export class FinancialService {
     private billGeneratorService: BillGeneratorService,
     private notificationService: NotificationService
   ) {}
+
+  /**
+   * 延迟注入 SystemSettingService（避免循环依赖）
+   */
+  setSystemSettingService(service: SystemSettingService) {
+    this.systemSettingService = service;
+  }
 
   /**
    * Get global billing history
@@ -134,7 +143,11 @@ export class FinancialService {
    * 3. This ensures each subscription's notification preference is respected individually
    */
   async checkAndSendPendingBillReminders() {
-      const DEFAULT_OVERDUE_DAYS = 3;
+      // 从系统设置读取默认提醒天数，降级到硬编码 3
+      let DEFAULT_OVERDUE_DAYS = 3;
+      if (this.systemSettingService) {
+        DEFAULT_OVERDUE_DAYS = await this.systemSettingService.getValue<number>('notification.renewalReminderDays', 3);
+      }
       
       // Fetch all pending bills for notification-enabled subscriptions
       const pendingBills = await this.paymentRecordRepository.findOverduePendingBills();

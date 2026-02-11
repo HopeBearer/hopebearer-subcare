@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuthStore } from '@/store';
+import { useAuthStore, useSiteSettingsStore } from '@/store';
 import { authService } from '@/services';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,11 +36,24 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function RegisterPage() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const { settings, fetchSiteSettings } = useSiteSettingsStore();
   const [isLoading, setIsLoading] = useState(false);
   const [sendingCode, setSendingCode] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const { t } = useTranslation(['auth', 'common']);
+
+  // a11: 检查注册是否开放
+  useEffect(() => {
+    fetchSiteSettings();
+  }, [fetchSiteSettings]);
+
+  useEffect(() => {
+    if (settings && settings['security.registrationEnabled'] === false) {
+      toast.error(t('register.disabled', { defaultValue: '注册功能已关闭' }));
+      router.replace('/login');
+    }
+  }, [settings, router, t]);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -136,7 +149,7 @@ export default function RegisterPage() {
         <div className="flex justify-center lg:justify-start mb-6 items-center gap-3">
           <img src="/images/logo.png" alt="SubCare Logo" className="h-10 w-auto" />
           <span className="text-3xl text-gray-900 dark:text-white font-logo">
-            {t('app_name', { ns: 'common' })}
+            {settings?.['site.name'] || t('app_name', { ns: 'common' })}
           </span>
         </div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('register.title')}</h1>

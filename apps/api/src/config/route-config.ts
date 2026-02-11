@@ -153,6 +153,9 @@ export const routeConfig: Record<string, string> = {
   'PATCH /templates/:id': 'v1',
   'DELETE /templates/:id': 'v1',
 
+  // Public Settings (a11: 前端站点信息，无需认证)
+  'GET /settings/public': 'v1',
+
   // Admin - System Settings
   'GET /admin/settings': 'v1',
   'GET /admin/settings/groups': 'v1',

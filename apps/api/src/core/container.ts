@@ -77,13 +77,22 @@ const currencyService = new CurrencyService(exchangeRateRepository);
 const aiProviderService = new AIProviderService(aiProviderRepository);
 const webSearchService = new WebSearchService(searchCacheRepository);
 
+// New: SystemSetting (created early — other services depend on it)
+const systemSettingRepository = new SystemSettingRepository();
+const systemSettingService = new SystemSettingService(systemSettingRepository, systemLogRepository);
+
+// a6: 注入 SystemSettingService 到 TokenService（会话超时动态配置）
+tokenService.setSystemSettingService(systemSettingService);
+
 // Infrastructure - moved before ToolExecutor to enable notification injection
 const emailProvider = new NodemailerProvider();
 // Pass messageTemplateRepository to NotificationService for template rendering
 const notificationService = new NotificationService(emailProvider, messageTemplateRepository);
+// a2: 注入 SystemSettingService 到 NotificationService（全局邮件开关）
+notificationService.setSystemSettingService(systemSettingService);
 
 // Services that ToolExecutor depends on (must be created first)
-const authService = new AuthService(userRepository, tokenService, notificationService);
+const authService = new AuthService(userRepository, tokenService, notificationService, systemSettingService);
 const userService = new UserService(userRepository, notificationService);
 const billGeneratorService = new BillGeneratorService(subscriptionRepository, paymentRecordRepository, notificationService);
 
@@ -117,6 +126,9 @@ const financialService = new FinancialService(
   notificationService
 );
 
+// a11: 注入 SystemSettingService 到 FinancialService（notification.renewalReminderDays 动态配置）
+financialService.setSystemSettingService(systemSettingService);
+
 // Tool Executor for AI Agent - 复用核心服务保持数据一致
 const toolExecutor = new ToolExecutor({
   // 核心服务
@@ -148,17 +160,14 @@ agentService.setDependencies({
 const chatService = new ChatService({
   conversationRepo: conversationRepository,
   messageRepo: messageRepository,
-  toolExecutor
+  toolExecutor,
+  systemSettingService
 });
 const systemLogService = new SystemLogService(systemLogRepository);
 const messageTemplateService = new MessageTemplateService(messageTemplateRepository);
 const adminDashboardService = new AdminDashboardService();
 const adminManagementService = new AdminManagementService();
 const templateService = new TemplateService(templateRepository);
-
-// New: SystemSetting
-const systemSettingRepository = new SystemSettingRepository();
-const systemSettingService = new SystemSettingService(systemSettingRepository, systemLogRepository);
 
 // New: ScheduledJob
 const scheduledJobRepository = new ScheduledJobRepository();

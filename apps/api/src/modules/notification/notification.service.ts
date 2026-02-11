@@ -4,6 +4,7 @@ import { EmailProvider } from '../../infrastructure/email/email.provider';
 import { MessageTemplateRepository } from '../../repositories/MessageTemplateRepository';
 import { NotificationSettingService } from './notification-setting.service';
 import { SocketService } from '../../infrastructure/socket/socket.service';
+import type { SystemSettingService } from '../../services/SystemSettingService';
 
 export type CreateNotificationPayload = {
   userId: string;
@@ -30,12 +31,20 @@ export type CreateNotificationPayload = {
 export class NotificationService {
   private socketService: SocketService | null = null;
   private notificationSettingService: NotificationSettingService;
+  private systemSettingService?: SystemSettingService;
 
   constructor(
     private emailProvider: EmailProvider,
     private messageTemplateRepository: MessageTemplateRepository
   ) {
     this.notificationSettingService = new NotificationSettingService();
+  }
+
+  /**
+   * 注入 SystemSettingService（可选，保持向后兼容）
+   */
+  setSystemSettingService(service: SystemSettingService) {
+    this.systemSettingService = service;
   }
 
   public setSocketService(socketService: SocketService) {
@@ -47,6 +56,14 @@ export class NotificationService {
   }
 
   async sendInstantEmail(email: string, title: string, content: string): Promise<void> {
+    // a2: 全局邮件开关检查（即时邮件也需遵守）
+    if (this.systemSettingService) {
+      const globalEmailEnabled = await this.systemSettingService.getValue<boolean>('notification.emailEnabled', true);
+      if (!globalEmailEnabled) {
+        logger.info({ domain: 'NOTIFICATION', action: 'instant_email_disabled_globally', metadata: { email, title } });
+        return;
+      }
+    }
     await this.emailProvider.sendEmail(email, title, content);
   }
 
@@ -185,23 +202,38 @@ export class NotificationService {
       }
     }
 
-    // 2. Email Notification
+    // 2. Email Notification — a2: 全局邮件开关检查
     if (sendEmail) {
-      try {
-        const user = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { email: true },
-        });
+      // 检查全局邮件通知开关
+      let globalEmailEnabled = true;
+      if (this.systemSettingService) {
+        globalEmailEnabled = await this.systemSettingService.getValue<boolean>('notification.emailEnabled', true);
+      }
 
-        if (user?.email) {
-          await this.emailProvider.sendEmail(user.email, title, content);
+      if (globalEmailEnabled) {
+        try {
+          const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { email: true },
+          });
+
+          if (user?.email) {
+            await this.emailProvider.sendEmail(user.email, title, content);
+          }
+        } catch (error) {
+          logger.error({
+            domain: 'NOTIFICATION',
+            action: 'send_email_fail',
+            userId,
+            error,
+          });
         }
-      } catch (error) {
-        logger.error({
+      } else {
+        logger.info({
           domain: 'NOTIFICATION',
-          action: 'send_email_fail',
+          action: 'email_disabled_globally',
           userId,
-          error,
+          metadata: { title }
         });
       }
     }
@@ -302,16 +334,20 @@ export class NotificationService {
 
   /**
    * Cleanup old notifications (Soft Delete)
-   * Keeps notifications for 30 days
+   * a10: 保留天数从系统设置读取（默认 90 天）
    */
   async cleanupOldNotifications(): Promise<void> {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    let retentionDays = 90;
+    if (this.systemSettingService) {
+      retentionDays = await this.systemSettingService.getValue<number>('notification.cleanupRetentionDays', 90);
+    }
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
     const result = await prisma.notification.updateMany({
         where: {
             createdAt: {
-                lt: thirtyDaysAgo
+                lt: cutoffDate
             },
             deletedAt: null // Only update active ones
         } as any,
@@ -325,7 +361,8 @@ export class NotificationService {
         action: 'cleanup',
         metadata: {
             count: result.count,
-            cutoff: thirtyDaysAgo
+            retentionDays,
+            cutoff: cutoffDate
         }
     });
   }

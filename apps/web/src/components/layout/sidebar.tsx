@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation } from '@/lib/i18n/hooks';
-import { useAuthStore, useLayoutStore, useChatStore } from '@/store';
+import { useAuthStore, useLayoutStore, useChatStore, useSiteSettingsStore } from '@/store';
 import { 
   LayoutDashboard, 
   CreditCard, 
@@ -36,6 +36,7 @@ export function Sidebar() {
   const router = useRouter();
   const { t, i18n } = useTranslation('common');
   const { user } = useAuthStore();
+  const { settings: siteSettings } = useSiteSettingsStore();
   const { isSidebarCollapsed, toggleSidebar } = useLayoutStore();
   // 精细订阅：sidebar 不订阅 activeStreamContent / activeToolCalls
   const conversations = useChatStore(state => state.conversations);
@@ -162,7 +163,7 @@ export function Sidebar() {
           "font-logo font-normal text-gray-900 dark:text-white tracking-tight transition-opacity duration-300",
           isSidebarCollapsed ? "opacity-0 w-0 overflow-hidden" : "text-3xl opacity-100"
         )}>
-          {t('app_name')}
+          {siteSettings?.['site.name'] || t('app_name')}
         </span>
       </div>
 

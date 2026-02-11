@@ -484,14 +484,15 @@ model Message {
 // 系统设置 (System Settings)
 // ============================================
 model SystemSetting {
-  id        String   @id @default(uuid())
-  key       String   @unique // "site.name", "registration.enabled", "ai.defaultModel"
-  value     String   @db.Text
-  type      String   @default("string") // string, number, boolean, json
-  group     String   @default("general") // general, security, ai, notification
-  label     String?  // 中文描述
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String    @id @default(uuid())
+  key       String    @unique // "site.name", "registration.enabled", "ai.defaultModel"
+  value     String    @db.Text
+  type      String    @default("string") // string, number, boolean, json
+  group     String    @default("general") // general, security, ai, notification
+  label     String?   // 中文描述
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@map("system_settings")
 }
@@ -514,6 +515,7 @@ model ScheduledJob {
   nextRunAt      DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
 
   executions     JobExecution[]
 
@@ -521,16 +523,17 @@ model ScheduledJob {
 }
 
 model JobExecution {
-  id          String   @id @default(uuid())
+  id          String       @id @default(uuid())
   jobId       String
   job         ScheduledJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  status      String   // SUCCESS, FAILED, RUNNING
-  startedAt   DateTime @default(now())
+  status      String       // SUCCESS, FAILED, RUNNING
+  startedAt   DateTime     @default(now())
   completedAt DateTime?
-  duration    Int?     // ms
-  result      Json?    // execution result details
-  error       String?  @db.Text
-  triggeredBy String   @default("cron") // cron, manual
+  duration    Int?         // ms
+  result      Json?        // execution result details
+  error       String?      @db.Text
+  triggeredBy String       @default("cron") // cron, manual
+  deletedAt   DateTime?
 
   @@index([jobId, startedAt])
   @@map("job_executions")

@@ -9,6 +9,7 @@ import { TokenService } from "./TokenService";
 import { CaptchaService } from "./CaptchaService";
 import { VerificationCodeService } from "./VerificationCodeService";
 import { NotificationService } from "../modules/notification/notification.service";
+import { SystemSettingService } from "./SystemSettingService";
 
 /**
  * 认证响应接口
@@ -28,11 +29,14 @@ export interface AuthResponse {
 export class AuthService {
   private captchaService: CaptchaService;
   private verificationCodeService: VerificationCodeService;
+  /** In-memory login attempt tracking: email → { count, lockedUntil } */
+  private loginAttempts: Map<string, { count: number; lockedUntil: number }> = new Map();
 
   constructor(
     private userRepository: UserRepository,
     private tokenService: TokenService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private systemSettingService: SystemSettingService
   ) {
     this.captchaService = new CaptchaService();
     this.verificationCodeService = new VerificationCodeService();
@@ -62,10 +66,19 @@ export class AuthService {
    * @returns 认证响应（用户数据和 Tokens）
    */
   async register(data: CreateUserDTO): Promise<AuthResponse> {
-    // 验证验证码
-    const isCodeValid = this.verificationCodeService.verify(data.email, data.verificationCode);
-    if (!isCodeValid) {
-      throw new AppError("INVALID_VERIFICATION_CODE", StatusCodes.BAD_REQUEST, { message: "Invalid verification code" });
+    // a1: 检查是否开放注册
+    const registrationEnabled = await this.systemSettingService.getValue<boolean>('security.registrationEnabled', true);
+    if (!registrationEnabled) {
+      throw new AppError("REGISTRATION_DISABLED", StatusCodes.FORBIDDEN, { message: "Registration is currently disabled" });
+    }
+
+    // a7: 可选邮箱验证 — 仅当设置为 true 时才验证验证码
+    const requireEmailVerification = await this.systemSettingService.getValue<boolean>('security.requireEmailVerification', false);
+    if (requireEmailVerification) {
+      const isCodeValid = this.verificationCodeService.verify(data.email, data.verificationCode);
+      if (!isCodeValid) {
+        throw new AppError("INVALID_VERIFICATION_CODE", StatusCodes.BAD_REQUEST, { message: "Invalid verification code" });
+      }
     }
 
     // 检查邮箱是否已存在
@@ -86,8 +99,8 @@ export class AuthService {
       password: hashedPassword,
     });
 
-    // 生成 Tokens
-    const tokens = this.tokenService.generateTokens(user);
+    // 生成 Tokens（a6: 异步读取会话超时配置）
+    const tokens = await this.tokenService.generateTokens(user);
     // 对 Refresh Token 进行哈希存储，提高安全性
     const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10);
 
@@ -224,6 +237,16 @@ export class AuthService {
    * @returns 认证响应
    */
   async login(data: LoginUserDTO): Promise<AuthResponse> {
+    // a5: 登录限流 — 检查是否被锁定
+    const maxAttempts = await this.systemSettingService.getValue<number>('security.maxLoginAttempts', 5);
+    const attempt = this.loginAttempts.get(data.email);
+    if (attempt && attempt.lockedUntil > Date.now()) {
+      const remainSec = Math.ceil((attempt.lockedUntil - Date.now()) / 1000);
+      throw new AppError("TOO_MANY_ATTEMPTS", StatusCodes.TOO_MANY_REQUESTS, {
+        message: `Too many login attempts. Please try again in ${remainSec} seconds.`
+      });
+    }
+
     // 验证图形验证码
     if (data.captchaId && data.captchaCode) {
       const isValid = this.captchaService.verify(data.captchaId, data.captchaCode);
@@ -231,30 +254,28 @@ export class AuthService {
         throw new AppError("CAPTCHA_INVALID", StatusCodes.BAD_REQUEST, { message: "Invalid captcha code" });
       }
     } else {
-      // Enforce captcha if you want, or make it optional. 
-      // For security, it's better to enforce it if provided, or enforce generally.
-      // Let's enforce it if the frontend is sending it, but maybe allow without for API testing if needed,
-      // or strictly require it. The requirement was "replace with free verification", so likely mandatory.
-      // However, existing tests might break. Let's make it mandatory if we want to prevent bots.
-
-      // Checking if we should enforce it. The user said "add a machine test", so let's enforce it.
       throw new AppError("CAPTCHA_REQUIRED", StatusCodes.BAD_REQUEST, { message: "Captcha is required" });
     }
 
     // 查找用户
     let user = await this.userRepository.findByEmail(data.email);
     if (!user) {
+      this.recordFailedAttempt(data.email, maxAttempts);
       throw new AppError("USER_NOT_FOUND", StatusCodes.BAD_REQUEST, { message: "User not found" });
     }
 
     // 验证密码
     const isPasswordValid = await bcrypt.compare(data.password, user.password);
     if (!isPasswordValid) {
+      this.recordFailedAttempt(data.email, maxAttempts);
       throw new AppError("INVALID_PASSWORD", StatusCodes.BAD_REQUEST, { message: "Invalid password" });
     }
 
-    // 生成新 Tokens
-    const tokens = this.tokenService.generateTokens(user);
+    // 登录成功 → 清除失败记录
+    this.loginAttempts.delete(data.email);
+
+    // 生成新 Tokens（a6: 异步读取会话超时配置）
+    const tokens = await this.tokenService.generateTokens(user);
     const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10);
 
     // 更新 Refresh Token
@@ -299,8 +320,8 @@ export class AuthService {
       throw new AppError("REFRESH_TOKEN_INVALID", StatusCodes.UNAUTHORIZED, { message: "Invalid refresh token" });
     }
 
-    // 生成新 Tokens
-    const tokens = this.tokenService.generateTokens(user);
+    // 生成新 Tokens（a6: 异步读取会话超时配置）
+    const tokens = await this.tokenService.generateTokens(user);
     const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10);
 
     // 更新数据库中的 Refresh Token
@@ -451,5 +472,22 @@ export class AuthService {
         eventKey: 'security.password_change',
         channels: { email: true, inApp: true }
     });
+  }
+
+  // ==================== 内部方法 ====================
+
+  /**
+   * 记录失败的登录尝试，超限则锁定 15 分钟
+   */
+  private recordFailedAttempt(email: string, maxAttempts: number) {
+    const existing = this.loginAttempts.get(email);
+    const count = (existing?.count || 0) + 1;
+
+    if (count >= maxAttempts) {
+      // 锁定 15 分钟
+      this.loginAttempts.set(email, { count, lockedUntil: Date.now() + 15 * 60 * 1000 });
+    } else {
+      this.loginAttempts.set(email, { count, lockedUntil: 0 });
+    }
   }
 }

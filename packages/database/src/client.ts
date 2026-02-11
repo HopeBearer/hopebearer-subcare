@@ -19,9 +19,6 @@ const prismaClientSingleton = () => {
           });
         },
         async findUnique({ model, args, query }) {
-          // Add filter for soft delete if it's not explicitly included
-          // Note: findUnique args.where usually expects unique fields. 
-          // Injecting 'deletedAt: null' into where might break type safety or runtime if not supported on unique queries directly.
           // Prisma doesn't support adding non-unique fields to findUnique.
           // We must change findUnique to findFirst if we want to filter by deletedAt.
           args.where = { ...args.where, deletedAt: null };
@@ -39,7 +36,6 @@ const prismaClientSingleton = () => {
            args.where = { ...args.where, deletedAt: null };
            return query(args);
         },
-        // We might also want to handle aggregate, etc.
       },
     },
   }) as unknown as PrismaClient;

@@ -2,6 +2,12 @@ import { controllersV1, authMiddleware } from '../../core/container';
 import { RouteVersions } from '../route-registry';
 
 export const systemSettingRegistry: Record<string, RouteVersions> = {
+  // a11: 公开接口，前端读取站点设置（无需认证）
+  'GET /settings/public': {
+    v1: {
+      handler: controllersV1.SystemSetting.getPublicSettings,
+    },
+  },
   'GET /admin/settings': {
     v1: {
       handler: controllersV1.SystemSetting.getSettings,

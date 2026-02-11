@@ -18,7 +18,7 @@ import { subscriptionService } from '@/services';
 import { useQuery } from '@tanstack/react-query';
 import { Modal } from '@/components/ui/modal';
 import { useRouter } from 'next/navigation';
-import { useModalStore, useCategoryStore } from '@/store';
+import { useModalStore, useCategoryStore, useSiteSettingsStore } from '@/store';
 import { calculateNextPayment } from '@subcare/utils';
 import { isBefore, isFuture, isToday, format } from 'date-fns';
 
@@ -74,6 +74,8 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
   const router = useRouter();
   const { closeAddSubscription, openAddSubscription } = useModalStore();
   const { categories, fetchCategories, getCategoryOptions, getCategoryById } = useCategoryStore();
+  const { settings: siteSettings } = useSiteSettingsStore();
+  const siteDefaultCurrency = siteSettings?.['site.defaultCurrency'] || 'CNY';
 
   // Fetch categories on mount (locked — only fetches once)
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
@@ -117,7 +119,7 @@ export function AddSubscriptionStepForm({ onCancel, onSubmit, initialValues }: A
     defaultValues: {
       name: initialValues?.name || '',
       price: initialValues?.price || undefined,
-      currency: initialValues?.currency || 'CNY',
+      currency: initialValues?.currency || siteDefaultCurrency,
       cycle: (initialValues?.billingCycle as 'Monthly' | 'Yearly') || 'Monthly',
       startDate: defaultStartDate,
       categoryId: initialValues?.categoryId || undefined,

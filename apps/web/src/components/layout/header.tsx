@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslation } from '@/lib/i18n/hooks';
-import { useAuthStore, useChatStore } from '@/store';
+import { useAuthStore, useChatStore, useSiteSettingsStore } from '@/store';
 import { useModalStore } from '@/store';
 import { useSettingsStore } from '@/store';
 import { useRouter, usePathname } from 'next/navigation';
@@ -18,6 +18,7 @@ export function Header() {
   const { openAddSubscription } = useModalStore();
   const { activeTab } = useSettingsStore();
   const { conversations, currentConversationId } = useChatStore();
+  const { settings: siteSettings } = useSiteSettingsStore();
   const router = useRouter();
   const pathname = usePathname();
   
@@ -54,7 +55,7 @@ export function Header() {
     if (pathname?.includes('/subscriptions')) return t('nav.subscriptions', { ns: 'common' });
     if (pathname?.includes('/finance')) return t('nav.finance', { ns: 'common' });
     if (pathname?.includes('/notifications')) return t('nav.notifications', { ns: 'common' });
-    return t('app_name', { ns: 'common' });
+    return siteSettings?.['site.name'] || t('app_name', { ns: 'common' });
   };
 
   const getPageSubtitle = () => {
