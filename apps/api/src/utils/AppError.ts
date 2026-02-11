@@ -56,6 +56,7 @@ export class AppError extends Error {
       case 404: return BusinessCode.NOT_FOUND;
       case 409: return BusinessCode.CONFLICT;
       case 422: return BusinessCode.VALIDATION_ERROR;
+      case 429: return BusinessCode.TOO_MANY_REQUESTS;
       case 500: return BusinessCode.INTERNAL_ERROR;
       default: return BusinessCode.INTERNAL_ERROR;
     }

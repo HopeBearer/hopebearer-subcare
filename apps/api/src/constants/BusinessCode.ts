@@ -11,5 +11,6 @@ export enum BusinessCode {
   NOT_FOUND = 40400,        // 资源不存在
   CONFLICT = 40900,         // 资源冲突（如重复创建）
   VALIDATION_ERROR = 42200, // 数据验证失败
+  TOO_MANY_REQUESTS = 42900, // 请求频率超限
   INTERNAL_ERROR = 50000,   // 服务器内部错误
 }

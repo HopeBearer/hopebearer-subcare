@@ -62,9 +62,10 @@ api.interceptors.response.use(
     // If backend returns 400 for invalid credentials, this 401 block won't be entered for login failures.
 
     if (response?.status === 401 && !originalRequest._retry) {
-      // If the error comes from the refresh token request itself, logout
+      // If the error comes from the refresh token request itself, logout all tabs
       if (originalRequest.url?.includes('/auth/refresh')) {
-        useAuthStore.getState().logout();
+        useAuthStore.getState().logoutWithBroadcast();
+        window.location.replace('/login');
         return Promise.reject(error);
       }
 
@@ -119,8 +120,8 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        useAuthStore.getState().logout();
-        // If refresh fails, we want to reject with the refresh error, OR maybe redirect to login
+        useAuthStore.getState().logoutWithBroadcast();
+        window.location.replace('/login');
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

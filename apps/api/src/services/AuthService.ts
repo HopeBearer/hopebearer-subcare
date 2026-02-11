@@ -1,4 +1,5 @@
 import { UserRepository } from "../repositories/UserRepository";
+import { LoginAttemptRepository } from "../repositories/LoginAttemptRepository";
 import { CreateUserDTO, LoginUserDTO } from "../dtos/auth.dto";
 import { AppError } from "../utils/AppError";
 import { StatusCodes } from "http-status-codes";
@@ -29,14 +30,13 @@ export interface AuthResponse {
 export class AuthService {
   private captchaService: CaptchaService;
   private verificationCodeService: VerificationCodeService;
-  /** In-memory login attempt tracking: email → { count, lockedUntil } */
-  private loginAttempts: Map<string, { count: number; lockedUntil: number }> = new Map();
 
   constructor(
     private userRepository: UserRepository,
     private tokenService: TokenService,
     private notificationService: NotificationService,
-    private systemSettingService: SystemSettingService
+    private systemSettingService: SystemSettingService,
+    private loginAttemptRepository: LoginAttemptRepository
   ) {
     this.captchaService = new CaptchaService();
     this.verificationCodeService = new VerificationCodeService();
@@ -218,6 +218,9 @@ export class AuthService {
       password: hashedPassword
     });
 
+    // 4b. 修改密码 → 清零登录失败记录
+    await this.loginAttemptRepository.deleteByEmail(user.email);
+
     // 5. Notify
     await this.notificationService.notify({
       userId: user.id,
@@ -237,17 +240,36 @@ export class AuthService {
    * @returns 认证响应
    */
   async login(data: LoginUserDTO): Promise<AuthResponse> {
-    // a5: 登录限流 — 检查是否被锁定
-    const maxAttempts = await this.systemSettingService.getValue<number>('security.maxLoginAttempts', 5);
-    const attempt = this.loginAttempts.get(data.email);
-    if (attempt && attempt.lockedUntil > Date.now()) {
-      const remainSec = Math.ceil((attempt.lockedUntil - Date.now()) / 1000);
+    const maxFreeAttempts = await this.systemSettingService.getValue<number>('security.maxLoginAttempts', 5);
+    const attempt = await this.loginAttemptRepository.findByEmail(data.email);
+
+    // ── 1. 冻结检查 ──
+    if (attempt && attempt.lockedUntil && attempt.lockedUntil.getTime() > Date.now()) {
+      const remainSec = Math.ceil((attempt.lockedUntil.getTime() - Date.now()) / 1000);
       throw new AppError("TOO_MANY_ATTEMPTS", StatusCodes.TOO_MANY_REQUESTS, {
-        message: `Too many login attempts. Please try again in ${remainSec} seconds.`
+        message: `Too many login attempts. Please try again in ${remainSec} seconds.`,
+        params: { seconds: remainSec }
       });
     }
 
-    // 验证图形验证码
+    // ── 2. TTL 窗口检查：超过 10 分钟无失败则自动过期 ──
+    // TTL 起点 = max(最后一次失败时间, 冻结截止时间)，确保冻结期间 TTL 不流逝
+    let effectiveCount = 0;
+    if (attempt) {
+      const referenceTime = Math.max(
+        attempt.lastAttemptAt.getTime(),
+        attempt.lockedUntil?.getTime() || 0
+      );
+      const ttlExpired = Date.now() - referenceTime > AuthService.TTL_WINDOW_MS;
+      effectiveCount = ttlExpired ? 0 : attempt.count;
+
+      // 如果 TTL 过期，清理数据库记录
+      if (ttlExpired) {
+        await this.loginAttemptRepository.deleteByEmail(data.email);
+      }
+    }
+
+    // ── 3. 验证图形验证码 ──
     if (data.captchaId && data.captchaCode) {
       const isValid = this.captchaService.verify(data.captchaId, data.captchaCode);
       if (!isValid) {
@@ -257,28 +279,43 @@ export class AuthService {
       throw new AppError("CAPTCHA_REQUIRED", StatusCodes.BAD_REQUEST, { message: "Captcha is required" });
     }
 
-    // 查找用户
+    // ── 4. 查找用户 ──
     let user = await this.userRepository.findByEmail(data.email);
     if (!user) {
-      this.recordFailedAttempt(data.email, maxAttempts);
-      throw new AppError("USER_NOT_FOUND", StatusCodes.BAD_REQUEST, { message: "User not found" });
+      const result = await this.recordFailedAttempt(data.email, effectiveCount, maxFreeAttempts);
+      // 无论是否刚触发冻结，都返回 USER_NOT_FOUND（前端在 input 下方展示）
+      throw new AppError("USER_NOT_FOUND", StatusCodes.BAD_REQUEST, {
+        message: "User not found",
+        params: {
+          remaining: result.remaining,
+          nextFreezeMinutes: result.nextFreezeMinutes,
+          freezeSeconds: result.frozen ? result.freezeSeconds : undefined
+        }
+      });
     }
 
-    // 验证密码
+    // ── 5. 验证密码 ──
     const isPasswordValid = await bcrypt.compare(data.password, user.password);
     if (!isPasswordValid) {
-      this.recordFailedAttempt(data.email, maxAttempts);
-      throw new AppError("INVALID_PASSWORD", StatusCodes.BAD_REQUEST, { message: "Invalid password" });
+      const result = await this.recordFailedAttempt(data.email, effectiveCount, maxFreeAttempts);
+      // 无论是否刚触发冻结，都返回 INVALID_PASSWORD（前端在 input 下方展示）
+      throw new AppError("INVALID_PASSWORD", StatusCodes.BAD_REQUEST, {
+        message: "Invalid password",
+        params: {
+          remaining: result.remaining,
+          nextFreezeMinutes: result.nextFreezeMinutes,
+          freezeSeconds: result.frozen ? result.freezeSeconds : undefined
+        }
+      });
     }
 
-    // 登录成功 → 清除失败记录
-    this.loginAttempts.delete(data.email);
+    // ── 6. 登录成功 → 清零 ──
+    await this.loginAttemptRepository.deleteByEmail(data.email);
 
-    // 生成新 Tokens（a6: 异步读取会话超时配置）
+    // 生成新 Tokens
     const tokens = await this.tokenService.generateTokens(user);
     const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10);
 
-    // 更新 Refresh Token
     user = await this.userRepository.update(user.id, {
       refreshToken: hashedRefreshToken,
     });
@@ -456,6 +493,9 @@ export class AuthService {
         password: hashedPassword
     });
 
+    // 重置密码 → 清零登录失败记录
+    await this.loginAttemptRepository.deleteByEmail(user.email);
+
     // Delete token (Consume)
     await prisma.passwordResetToken.delete({
         where: { id: record.id }
@@ -476,18 +516,63 @@ export class AuthService {
 
   // ==================== 内部方法 ====================
 
-  /**
-   * 记录失败的登录尝试，超限则锁定 15 分钟
-   */
-  private recordFailedAttempt(email: string, maxAttempts: number) {
-    const existing = this.loginAttempts.get(email);
-    const count = (existing?.count || 0) + 1;
+  /** TTL 窗口：超过此时长无新失败则自动清零（10 分钟） */
+  private static readonly TTL_WINDOW_MS = 10 * 60 * 1000;
 
-    if (count >= maxAttempts) {
-      // 锁定 15 分钟
-      this.loginAttempts.set(email, { count, lockedUntil: Date.now() + 15 * 60 * 1000 });
-    } else {
-      this.loginAttempts.set(email, { count, lockedUntil: 0 });
+  /**
+   * 根据累计失败次数返回冻结时长（分钟）
+   *
+   * | 失败次数     | 冻结时长   |
+   * |-------------|-----------|
+   * | 1 – N       | 0（无冻结）|
+   * | N+1         | 5 分钟    |
+   * | N+2         | 10 分钟   |
+   * | N+3 ~ N+4   | 30 分钟   |
+   * | ≥ N+5       | 60 分钟   |
+   *
+   * 其中 N = maxFreeAttempts（默认 5）
+   */
+  private getFreezeDurationMinutes(count: number, maxFreeAttempts: number): number {
+    const excess = count - maxFreeAttempts;
+    if (excess <= 0) return 0;    // 1–5: 无冻结
+    if (excess === 1) return 5;   // 6:   5 分钟
+    if (excess === 2) return 10;  // 7:   10 分钟
+    if (excess <= 4) return 30;   // 8–9: 30 分钟
+    return 60;                    // ≥10: 60 分钟
+  }
+
+  /**
+   * 记录一次失败的登录尝试并返回结果
+   * @param email 邮箱
+   * @param currentCount TTL 窗口内的有效失败次数
+   * @param maxFreeAttempts 免惩罚阈值
+   * @returns frozen=true 时返回冻结秒数，否则返回剩余免惩罚次数
+   */
+  private async recordFailedAttempt(
+    email: string,
+    currentCount: number,
+    maxFreeAttempts: number
+  ): Promise<{ remaining: number; frozen: boolean; freezeSeconds?: number; nextFreezeMinutes?: number }> {
+    const newCount = currentCount + 1;
+    const freezeMinutes = this.getFreezeDurationMinutes(newCount, maxFreeAttempts);
+
+    if (freezeMinutes > 0) {
+      // 触发冻结
+      const lockedUntil = new Date(Date.now() + freezeMinutes * 60 * 1000);
+      await this.loginAttemptRepository.upsert(email, newCount, lockedUntil);
+      return { remaining: 0, frozen: true, freezeSeconds: freezeMinutes * 60 };
     }
+
+    // 未触发冻结，记录失败次数
+    await this.loginAttemptRepository.upsert(email, newCount, null);
+    const remaining = maxFreeAttempts - newCount;
+
+    // 当剩余次数为 0 时，计算下次失败将触发的冻结时长，供前端展示警告
+    if (remaining === 0) {
+      const nextFreezeMinutes = this.getFreezeDurationMinutes(newCount + 1, maxFreeAttempts);
+      return { remaining: 0, frozen: false, nextFreezeMinutes };
+    }
+
+    return { remaining, frozen: false };
   }
 }

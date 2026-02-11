@@ -563,6 +563,21 @@ model Feedback {
 }
 
 // ============================================
+// 登录尝试记录 (Login Attempt Tracking)
+// ============================================
+model LoginAttempt {
+  id            String    @id @default(uuid())
+  email         String    @unique           // 按邮箱追踪，无论用户是否存在
+  count         Int       @default(0)       // 连续失败次数
+  lockedUntil   DateTime?                   // 冻结截止时间（null = 未冻结）
+  lastAttemptAt DateTime  @default(now())   // 最近一次失败时间
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("login_attempts")
+}
+
+// ============================================
 // 订阅服务模板
 // ============================================
 model SubscriptionTemplate {

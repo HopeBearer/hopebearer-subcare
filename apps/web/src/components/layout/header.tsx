@@ -14,7 +14,7 @@ import { NotificationBell } from './notification-bell';
 
 export function Header() {
   const { t } = useTranslation(['common', 'subscription', 'dashboard', 'settings']);
-  const { user, logout } = useAuthStore();
+  const { user, logoutWithBroadcast } = useAuthStore();
   const { openAddSubscription } = useModalStore();
   const { activeTab } = useSettingsStore();
   const { conversations, currentConversationId } = useChatStore();
@@ -28,7 +28,7 @@ export function Header() {
   const currentConversation = conversations.find(c => c.id === currentConversationId);
 
   const handleLogout = () => {
-    logout();
+    logoutWithBroadcast();
     // Force a full page reload to clear all states and cancel pending requests
     window.location.replace('/login');
   };

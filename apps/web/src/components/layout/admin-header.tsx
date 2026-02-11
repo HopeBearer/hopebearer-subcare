@@ -26,13 +26,13 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
 };
 
 export function AdminHeader() {
-  const { user, logout } = useAuthStore();
+  const { user, logoutWithBroadcast } = useAuthStore();
   const pathname = usePathname();
 
   const pageInfo = pageTitles[pathname || ''] || { title: '管理后台', subtitle: '' };
 
   const handleLogout = () => {
-    logout();
+    logoutWithBroadcast();
     window.location.replace('/login');
   };
 

@@ -157,8 +157,10 @@
       "CAPTCHA_REQUIRED": "Captcha is required",
       "BAD_REQUEST": "Bad request",
       "INVALID_CREDENTIALS": "Username or password incorrect",
-      "USER_NOT_FOUND": "User not found",
-      "INVALID_PASSWORD": "Password incorrect"
+      "USER_NOT_FOUND": "User not found. {{remaining}} attempt(s) remaining",
+      "INVALID_PASSWORD": "Password incorrect. {{remaining}} attempt(s) remaining",
+      "LAST_ATTEMPT_WARNING": "Password incorrect. Next failure will freeze your account for {{minutes}} minutes",
+      "ACCOUNT_FROZEN": "Password incorrect. Account has been frozen for {{minutes}} minutes"
     },
     "40100": {
       "UNAUTHORIZED": "Session expired, please login again",
@@ -181,6 +183,9 @@
       "VALIDATION_ERROR": "Validation failed.",
       "EMAIL_INVALID": "Invalid email format.",
       "PASSWORD_TOO_SHORT": "Password must be at least {{min}} characters."
+    },
+    "42900": {
+      "TOO_MANY_ATTEMPTS": "Too many login attempts. Please try again in {{seconds}} seconds."
     },
     "50000": "System error, please try again later."
   },

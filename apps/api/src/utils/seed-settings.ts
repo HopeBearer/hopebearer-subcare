@@ -55,6 +55,13 @@ const DEFAULT_SETTINGS: SettingSeed[] = [
     label: '会话超时（分钟）',
   },
   {
+    key: 'security.loginLockDurationMinutes',
+    value: '15',
+    type: 'number',
+    group: 'security',
+    label: '登录锁定时长（分钟）',
+  },
+  {
     key: 'security.requireEmailVerification',
     value: 'false',
     type: 'boolean',

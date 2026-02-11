@@ -48,6 +48,7 @@ import { ExchangeRateRepository } from '../repositories/ExchangeRateRepository';
 import { AIProviderRepository } from '../repositories/AIProviderRepository';
 import { SearchCacheRepository } from '../repositories/SearchCacheRepository';
 import { TemplateRepository } from '../repositories/TemplateRepository';
+import { LoginAttemptRepository } from '../repositories/LoginAttemptRepository';
 import { AuthMiddleware } from '../middleware/auth.middleware';
 import { NodemailerProvider } from '../infrastructure/email/nodemailer.provider';
 import { NotificationService } from '../modules/notification/notification.service';
@@ -70,6 +71,7 @@ const exchangeRateRepository = new ExchangeRateRepository();
 const aiProviderRepository = new AIProviderRepository();
 const searchCacheRepository = new SearchCacheRepository();
 const templateRepository = new TemplateRepository();
+const loginAttemptRepository = new LoginAttemptRepository();
 const conversationRepository = new ConversationRepository();
 const messageRepository = new MessageRepository();
 const tokenService = new TokenService();
@@ -92,7 +94,7 @@ const notificationService = new NotificationService(emailProvider, messageTempla
 notificationService.setSystemSettingService(systemSettingService);
 
 // Services that ToolExecutor depends on (must be created first)
-const authService = new AuthService(userRepository, tokenService, notificationService, systemSettingService);
+const authService = new AuthService(userRepository, tokenService, notificationService, systemSettingService, loginAttemptRepository);
 const userService = new UserService(userRepository, notificationService);
 const billGeneratorService = new BillGeneratorService(subscriptionRepository, paymentRecordRepository, notificationService);
 

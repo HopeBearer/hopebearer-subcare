@@ -42,6 +42,27 @@ export const getErrorMessage = (code: number, reason?: string, params?: Record<s
 };
 
 /**
+ * 根据登录失败状态选择合适的提示文案
+ * - freezeSeconds > 0: 刚触发冻结 → "账号已被冻结 X 分钟"
+ * - remaining === 0 && nextFreezeMinutes: 最后机会 → "再次失败将被冻结 X 分钟"
+ * - remaining > 0: 普通失败 → "密码错误，还剩 X 次机会"
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getLoginAttemptMessage = (code: number, reason: string, params?: Record<string, any>): string => {
+  // 刚触发冻结
+  if (params?.freezeSeconds) {
+    const minutes = Math.ceil(params.freezeSeconds / 60);
+    return getErrorMessage(code, 'ACCOUNT_FROZEN', { minutes });
+  }
+  // 最后一次免惩罚机会已用完，下次将冻结
+  if (params?.remaining === 0 && params?.nextFreezeMinutes) {
+    return getErrorMessage(code, 'LAST_ATTEMPT_WARNING', { minutes: params.nextFreezeMinutes });
+  }
+  // 普通失败，显示剩余次数
+  return getErrorMessage(code, reason, params);
+};
+
+/**
  * 解析字段错误
  */
 export const parseFieldErrors = (response: ApiErrorResponse) => {
@@ -93,18 +114,14 @@ export const handleApiError = (error: any, form?: UseFormReturn<any>) => {
     // 例如：INVALID_CREDENTIALS -> password 字段错误
     if (form) {
       if (reason === 'USER_NOT_FOUND') {
-        form.setError('email', {
-          type: 'server',
-          message: `common:error.${code}.${reason}`
-        });
+        const message = getLoginAttemptMessage(code, reason, params);
+        form.setError('email', { type: 'server', message });
         return;
       }
 
       if (reason === 'INVALID_PASSWORD') {
-        form.setError('password', {
-          type: 'server',
-          message: `common:error.${code}.${reason}`
-        });
+        const message = getLoginAttemptMessage(code, reason, params);
+        form.setError('password', { type: 'server', message });
         form.setValue('password', '');
         return;
       }
@@ -124,6 +141,35 @@ export const handleApiError = (error: any, form?: UseFormReturn<any>) => {
         });
         return;
       }
+
+      if (reason === 'INVALID_CREDENTIALS') {
+        form.setError('password', {
+          type: 'server',
+          message: `common:error.${code}.${reason}`
+        });
+        return;
+      }
+
+      // 冻结期间再次尝试 → 在 password 字段下方提示剩余冻结时间
+      if (reason === 'TOO_MANY_ATTEMPTS') {
+        const message = getErrorMessage(code, reason, params);
+        form.setError('password', { type: 'server', message });
+        return;
+      }
+    }
+
+    // 无 form 时的 TOO_MANY_ATTEMPTS 回退到 toast
+    if (reason === 'TOO_MANY_ATTEMPTS') {
+      const message = getErrorMessage(code, reason, params);
+      toast.error(message);
+      return;
+    }
+
+    // Registration disabled — show a toast
+    if (reason === 'REGISTRATION_DISABLED') {
+      const message = getErrorMessage(code, reason, params);
+      toast.error(message);
+      return;
     }
 
     // 其他错误 (如 500, 403) 已由全局拦截器处理，此处不再重复提示

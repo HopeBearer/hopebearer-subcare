@@ -148,8 +148,10 @@
       "CAPTCHA_REQUIRED": "認証コードを入力してください。",
       "BAD_REQUEST": "リクエストが無効です。",
       "INVALID_CREDENTIALS": "ユーザー名またはパスワードが間違っています。",
-      "USER_NOT_FOUND": "ユーザーが見つかりません。",
-      "INVALID_PASSWORD": "パスワードが間違っています。"
+      "USER_NOT_FOUND": "ユーザーが見つかりません。残り {{remaining}} 回試行できます。",
+      "INVALID_PASSWORD": "パスワードが間違っています。残り {{remaining}} 回試行できます。",
+      "LAST_ATTEMPT_WARNING": "パスワードが間違っています。次回失敗すると {{minutes}} 分間凍結されます。",
+      "ACCOUNT_FROZEN": "パスワードが間違っています。アカウントが {{minutes}} 分間凍結されました。"
     },
     "40100": {
       "UNAUTHORIZED": "セッションの有効期限が切れました。再度ログインしてください。",
@@ -172,6 +174,9 @@
       "VALIDATION_ERROR": "検証に失敗しました。",
       "EMAIL_INVALID": "メールアドレスの形式が無効です。",
       "PASSWORD_TOO_SHORT": "パスワードは {{min}} 文字以上である必要があります。"
+    },
+    "42900": {
+      "TOO_MANY_ATTEMPTS": "ログイン試行回数が多すぎます。{{seconds}} 秒後に再試行してください。"
     },
     "50000": "システムエラーが発生しました。後でもう一度お試しください。"
   },
