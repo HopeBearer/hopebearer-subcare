@@ -139,14 +139,11 @@ export class ScheduledJobService {
       });
 
       // 更新执行记录
-      await this.jobRepository.createExecution({
-        jobId: job.id,
+      await this.jobRepository.updateExecution(execution.id, {
         status: 'SUCCESS',
-        startedAt: execution.startedAt,
         completedAt: new Date(),
         duration,
         result: result as object || {},
-        triggeredBy: 'manual',
       });
 
       // 审计日志
@@ -170,14 +167,11 @@ export class ScheduledJobService {
         lastRunError: errorMsg,
       });
 
-      await this.jobRepository.createExecution({
-        jobId: job.id,
+      await this.jobRepository.updateExecution(execution.id, {
         status: 'FAILED',
-        startedAt: execution.startedAt,
         completedAt: new Date(),
         duration,
         error: errorMsg,
-        triggeredBy: 'manual',
       });
 
       await this.systemLogRepository.create({

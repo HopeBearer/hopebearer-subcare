@@ -90,6 +90,22 @@ export class ScheduledJobRepository {
   }
 
   /**
+   * 更新任务执行记录
+   */
+  async updateExecution(executionId: string, data: {
+    status: string;
+    completedAt?: Date;
+    duration?: number;
+    result?: object;
+    error?: string;
+  }) {
+    return prisma.jobExecution.update({
+      where: { id: executionId },
+      data: data as any,
+    });
+  }
+
+  /**
    * 获取任务执行历史
    */
   async getExecutions(jobId: string, page: number = 1, limit: number = 20) {
