@@ -241,9 +241,11 @@ export class AuthService {
    */
   async login(data: LoginUserDTO): Promise<AuthResponse> {
     const maxFreeAttempts = await this.systemSettingService.getValue<number>('security.maxLoginAttempts', 5);
+    const ttlWindowMs = await this.getTtlWindowMs();
+    const freezeTiers = await this.getFreezeTiers();
     const attempt = await this.loginAttemptRepository.findByEmail(data.email);
 
-    // ── 1. 冻结检查 ──
+    // ── 1. 冻结检查（冻结期间 count 不增加，直接返回） ──
     if (attempt && attempt.lockedUntil && attempt.lockedUntil.getTime() > Date.now()) {
       const remainSec = Math.ceil((attempt.lockedUntil.getTime() - Date.now()) / 1000);
       throw new AppError("TOO_MANY_ATTEMPTS", StatusCodes.TOO_MANY_REQUESTS, {
@@ -252,7 +254,7 @@ export class AuthService {
       });
     }
 
-    // ── 2. TTL 窗口检查：超过 10 分钟无失败则自动过期 ──
+    // ── 2. TTL 窗口检查：超过 N 分钟无失败则自动过期 ──
     // TTL 起点 = max(最后一次失败时间, 冻结截止时间)，确保冻结期间 TTL 不流逝
     let effectiveCount = 0;
     if (attempt) {
@@ -260,7 +262,7 @@ export class AuthService {
         attempt.lastAttemptAt.getTime(),
         attempt.lockedUntil?.getTime() || 0
       );
-      const ttlExpired = Date.now() - referenceTime > AuthService.TTL_WINDOW_MS;
+      const ttlExpired = Date.now() - referenceTime > ttlWindowMs;
       effectiveCount = ttlExpired ? 0 : attempt.count;
 
       // 如果 TTL 过期，清理数据库记录
@@ -282,7 +284,7 @@ export class AuthService {
     // ── 4. 查找用户 ──
     let user = await this.userRepository.findByEmail(data.email);
     if (!user) {
-      const result = await this.recordFailedAttempt(data.email, effectiveCount, maxFreeAttempts);
+      const result = await this.recordFailedAttempt(data.email, effectiveCount, maxFreeAttempts, freezeTiers);
       // 无论是否刚触发冻结，都返回 USER_NOT_FOUND（前端在 input 下方展示）
       throw new AppError("USER_NOT_FOUND", StatusCodes.BAD_REQUEST, {
         message: "User not found",
@@ -297,7 +299,7 @@ export class AuthService {
     // ── 5. 验证密码 ──
     const isPasswordValid = await bcrypt.compare(data.password, user.password);
     if (!isPasswordValid) {
-      const result = await this.recordFailedAttempt(data.email, effectiveCount, maxFreeAttempts);
+      const result = await this.recordFailedAttempt(data.email, effectiveCount, maxFreeAttempts, freezeTiers);
       // 无论是否刚触发冻结，都返回 INVALID_PASSWORD（前端在 input 下方展示）
       throw new AppError("INVALID_PASSWORD", StatusCodes.BAD_REQUEST, {
         message: "Invalid password",
@@ -516,8 +518,23 @@ export class AuthService {
 
   // ==================== 内部方法 ====================
 
-  /** TTL 窗口：超过此时长无新失败则自动清零（10 分钟） */
-  private static readonly TTL_WINDOW_MS = 10 * 60 * 1000;
+  /** 默认冻结阶梯（分钟）：[无冻结, 第 N+1 次, 第 N+2 次, 第 N+3~N+4 次, ≥N+5 次] */
+  private static readonly DEFAULT_FREEZE_TIERS = [0, 5, 10, 30, 60];
+
+  /**
+   * 获取 TTL 窗口毫秒数（从系统设置读取，默认 10 分钟）
+   */
+  private async getTtlWindowMs(): Promise<number> {
+    const minutes = await this.systemSettingService.getValue<number>('security.attemptTtlMinutes', 10);
+    return minutes * 60 * 1000;
+  }
+
+  /**
+   * 获取冻结阶梯配置（从系统设置读取）
+   */
+  private async getFreezeTiers(): Promise<number[]> {
+    return this.systemSettingService.getValue<number[]>('security.freezeTiers', AuthService.DEFAULT_FREEZE_TIERS);
+  }
 
   /**
    * 根据累计失败次数返回冻结时长（分钟）
@@ -525,20 +542,20 @@ export class AuthService {
    * | 失败次数     | 冻结时长   |
    * |-------------|-----------|
    * | 1 – N       | 0（无冻结）|
-   * | N+1         | 5 分钟    |
-   * | N+2         | 10 分钟   |
-   * | N+3 ~ N+4   | 30 分钟   |
-   * | ≥ N+5       | 60 分钟   |
+   * | N+1         | tiers[1] 分钟 |
+   * | N+2         | tiers[2] 分钟 |
+   * | N+3 ~ N+4   | tiers[3] 分钟 |
+   * | ≥ N+5       | tiers[4] 分钟 |
    *
    * 其中 N = maxFreeAttempts（默认 5）
    */
-  private getFreezeDurationMinutes(count: number, maxFreeAttempts: number): number {
+  private getFreezeDurationMinutes(count: number, maxFreeAttempts: number, tiers: number[]): number {
     const excess = count - maxFreeAttempts;
-    if (excess <= 0) return 0;    // 1–5: 无冻结
-    if (excess === 1) return 5;   // 6:   5 分钟
-    if (excess === 2) return 10;  // 7:   10 分钟
-    if (excess <= 4) return 30;   // 8–9: 30 分钟
-    return 60;                    // ≥10: 60 分钟
+    if (excess <= 0) return 0;
+    if (excess === 1) return tiers[1] ?? 5;
+    if (excess === 2) return tiers[2] ?? 10;
+    if (excess <= 4) return tiers[3] ?? 30;
+    return tiers[4] ?? 60;
   }
 
   /**
@@ -546,15 +563,17 @@ export class AuthService {
    * @param email 邮箱
    * @param currentCount TTL 窗口内的有效失败次数
    * @param maxFreeAttempts 免惩罚阈值
+   * @param tiers 冻结阶梯配置
    * @returns frozen=true 时返回冻结秒数，否则返回剩余免惩罚次数
    */
   private async recordFailedAttempt(
     email: string,
     currentCount: number,
-    maxFreeAttempts: number
+    maxFreeAttempts: number,
+    tiers: number[]
   ): Promise<{ remaining: number; frozen: boolean; freezeSeconds?: number; nextFreezeMinutes?: number }> {
     const newCount = currentCount + 1;
-    const freezeMinutes = this.getFreezeDurationMinutes(newCount, maxFreeAttempts);
+    const freezeMinutes = this.getFreezeDurationMinutes(newCount, maxFreeAttempts, tiers);
 
     if (freezeMinutes > 0) {
       // 触发冻结
@@ -569,7 +588,7 @@ export class AuthService {
 
     // 当剩余次数为 0 时，计算下次失败将触发的冻结时长，供前端展示警告
     if (remaining === 0) {
-      const nextFreezeMinutes = this.getFreezeDurationMinutes(newCount + 1, maxFreeAttempts);
+      const nextFreezeMinutes = this.getFreezeDurationMinutes(newCount + 1, maxFreeAttempts, tiers);
       return { remaining: 0, frozen: false, nextFreezeMinutes };
     }
 

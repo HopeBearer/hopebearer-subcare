@@ -181,6 +181,12 @@ export const routeConfig: Record<string, string> = {
   'POST /feedbacks': 'v1',
   'GET /feedbacks': 'v1',
 
+  // Admin - Login Attempts
+  'GET /admin/login-attempts': 'v1',
+  'GET /admin/login-attempts/stats': 'v1',
+  'DELETE /admin/login-attempts/:id': 'v1',
+  'POST /admin/login-attempts/clean': 'v1',
+
   // Admin - API Analytics
   'GET /admin/api-analytics/overview': 'v1',
   'GET /admin/api-analytics/trend': 'v1',

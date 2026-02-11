@@ -465,6 +465,35 @@ export interface ApiTopUserItem {
   count: number;
 }
 
+// ============= Login Attempt Types =============
+
+export interface LoginAttemptItem {
+  id: string;
+  email: string;
+  count: number;
+  lockedUntil: string | null;
+  lastAttemptAt: string;
+  createdAt: string;
+  updatedAt: string;
+  isFrozen: boolean;
+  remainingSeconds: number;
+}
+
+export interface LoginAttemptListResult {
+  items: LoginAttemptItem[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface LoginAttemptStats {
+  total: number;
+  frozenCount: number;
+}
+
 // ============= API Service =============
 
 export const adminService = {
@@ -799,6 +828,31 @@ export const adminService = {
     const response = await api.get<unknown, ApiResponse<{ users: ApiTopUserItem[] }>>('/admin/api-analytics/top-users', {
       params: { limit },
     });
+    return response.data;
+  },
+
+  // ===== Login Attempts =====
+  getLoginAttempts: async (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    email?: string;
+  }): Promise<LoginAttemptListResult> => {
+    const response = await api.get<unknown, ApiResponse<LoginAttemptListResult>>('/admin/login-attempts', { params });
+    return response.data;
+  },
+
+  getLoginAttemptStats: async (): Promise<LoginAttemptStats> => {
+    const response = await api.get<unknown, ApiResponse<LoginAttemptStats>>('/admin/login-attempts/stats');
+    return response.data;
+  },
+
+  unfreezeLoginAttempt: async (id: string): Promise<void> => {
+    await api.delete(`/admin/login-attempts/${id}`);
+  },
+
+  cleanExpiredLoginAttempts: async (): Promise<{ cleaned: number }> => {
+    const response = await api.post<unknown, ApiResponse<{ cleaned: number }>>('/admin/login-attempts/clean');
     return response.data;
   },
 };

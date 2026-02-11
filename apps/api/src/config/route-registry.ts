@@ -18,6 +18,7 @@ import { templateRegistry } from './registries/template.registry';
 import { systemSettingRegistry } from './registries/system-setting.registry';
 import { scheduledJobRegistry } from './registries/scheduled-job.registry';
 import { feedbackRegistry } from './registries/feedback.registry';
+import { loginAttemptRegistry } from './registries/login-attempt.registry';
 
 export interface RouteImplementation {
   handler: RequestHandler;
@@ -52,4 +53,5 @@ export const routeRegistry: Record<string, RouteVersions> = {
   ...systemSettingRegistry,
   ...scheduledJobRegistry,
   ...feedbackRegistry,
+  ...loginAttemptRegistry,
 };

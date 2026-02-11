@@ -55,11 +55,18 @@ const DEFAULT_SETTINGS: SettingSeed[] = [
     label: '会话超时（分钟）',
   },
   {
-    key: 'security.loginLockDurationMinutes',
-    value: '15',
+    key: 'security.attemptTtlMinutes',
+    value: '10',
     type: 'number',
     group: 'security',
-    label: '登录锁定时长（分钟）',
+    label: '登录失败计数有效窗口（分钟）',
+  },
+  {
+    key: 'security.freezeTiers',
+    value: '[0,5,10,30,60]',
+    type: 'json',
+    group: 'security',
+    label: '渐进式冻结时长阶梯（分钟）',
   },
   {
     key: 'security.requireEmailVerification',

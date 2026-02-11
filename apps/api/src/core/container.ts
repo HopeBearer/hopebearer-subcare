@@ -24,6 +24,8 @@ import { ScheduledJobRepository } from '../repositories/ScheduledJobRepository';
 import { FeedbackController } from '../controllers/v1/FeedbackController';
 import { FeedbackService } from '../services/FeedbackService';
 import { FeedbackRepository } from '../repositories/FeedbackRepository';
+import { LoginAttemptController } from '../controllers/v1/LoginAttemptController';
+import { LoginAttemptService } from '../services/LoginAttemptService';
 import { UserController as UserControllerV2 } from '../controllers/v2/UserController';
 import { AuthService } from '../services/AuthService';
 import { SubscriptionService } from '../services/SubscriptionService';
@@ -179,6 +181,9 @@ const scheduledJobService = new ScheduledJobService(scheduledJobRepository, syst
 const feedbackRepository = new FeedbackRepository();
 const feedbackService = new FeedbackService(feedbackRepository, systemLogRepository);
 
+// New: LoginAttempt Admin Service
+const loginAttemptService = new LoginAttemptService(loginAttemptRepository, systemLogRepository);
+
 // Middleware
 export const authMiddleware = new AuthMiddleware(tokenService);
 
@@ -202,7 +207,8 @@ export const controllersV1 = {
   Template: new TemplateController(templateService),
   SystemSetting: new SystemSettingController(systemSettingService),
   ScheduledJob: new ScheduledJobController(scheduledJobService),
-  Feedback: new FeedbackController(feedbackService)
+  Feedback: new FeedbackController(feedbackService),
+  LoginAttempt: new LoginAttemptController(loginAttemptService)
 };
 
 // V2 Controllers

@@ -21,6 +21,7 @@ import {
   Clock,
   MessageCircle,
   BarChart3,
+  ShieldAlert,
 } from 'lucide-react';
 
 interface NavItem {
@@ -45,6 +46,7 @@ const navGroups: NavGroup[] = [
     title: '用户与权限',
     items: [
       { href: '/admin/users', icon: Users, label: '用户管理' },
+      { href: '/admin/security', icon: ShieldAlert, label: '登录安全' },
     ],
   },
   {
