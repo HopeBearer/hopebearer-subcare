@@ -88,7 +88,6 @@ export class AIProviderController {
         action: 'CREATE_PROVIDER',
         metadata: { providerId: provider.id, name: provider.name, slug: provider.slug },
         ip: req.ip,
-        requestId: req.id,
       });
 
       res.status(StatusCodes.CREATED).json({
@@ -121,7 +120,6 @@ export class AIProviderController {
         action: 'UPDATE_PROVIDER',
         metadata: { providerId: provider.id, updates: data },
         ip: req.ip,
-        requestId: req.id,
       });
 
       res.status(StatusCodes.OK).json({
@@ -150,7 +148,6 @@ export class AIProviderController {
         action: 'ADD_MANUAL_MODEL',
         metadata: { providerId: id, modelId: data.modelId, name: data.name },
         ip: req.ip,
-        requestId: req.id,
       });
 
       res.status(StatusCodes.CREATED).json({
@@ -178,7 +175,6 @@ export class AIProviderController {
         action: 'DELETE_MODEL',
         metadata: { providerId, modelId },
         ip: req.ip,
-        requestId: req.id,
       });
 
       res.status(StatusCodes.OK).json({

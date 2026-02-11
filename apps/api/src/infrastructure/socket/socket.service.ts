@@ -13,7 +13,7 @@ export interface AIRecommendationRequest {
   forceRefresh?: boolean;
 }
 
-export { AIProgressEvent };
+export type { AIProgressEvent };
 
 // Types for Chat events
 export interface ChatMessageSendRequest {

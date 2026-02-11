@@ -1,6 +1,6 @@
 import { ScheduledJobRepository } from '../repositories/ScheduledJobRepository';
 import { SystemLogRepository } from '../repositories/SystemLogRepository';
-import cronParser from 'cron-parser';
+import { CronExpressionParser } from 'cron-parser';
 
 interface JobDefinition {
   name: string;
@@ -212,7 +212,7 @@ export class ScheduledJobService {
    */
   private calculateNextRun(cronExpression: string, timezone: string): Date | null {
     try {
-      const interval = cronParser.parseExpression(cronExpression, {
+      const interval = CronExpressionParser.parse(cronExpression, {
         currentDate: new Date(),
         tz: timezone,
       });

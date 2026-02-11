@@ -18,13 +18,13 @@ export interface CreateTemplateDTO {
 
 export interface UpdateTemplateDTO {
   name?: string;
-  displayName?: string;
-  description?: string;
+  displayName?: string | null;
+  description?: string | null;
   searchText?: string;
-  category?: string;
-  icon?: string;
-  website?: string;
-  pricingPlans?: Record<string, unknown>;
+  category?: string | null;
+  icon?: string | null;
+  website?: string | null;
+  pricingPlans?: Record<string, unknown> | null;
   defaultCurrency?: string;
   defaultCycle?: string;
 }

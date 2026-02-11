@@ -11,8 +11,8 @@ import type { SystemSettingService } from './SystemSettingService';
 export class TokenService {
   private readonly ACCESS_TOKEN_SECRET = process.env.JWT_ACCESS_SECRET || 'access-secret';
   private readonly REFRESH_TOKEN_SECRET = process.env.JWT_REFRESH_SECRET || 'refresh-secret';
-  private readonly ACCESS_TOKEN_EXPIRES_IN = '15m'; // Access Token 有效期 15 分钟
-  private readonly DEFAULT_REFRESH_TOKEN_EXPIRES_IN = '7d'; // Refresh Token 默认有效期 7 天
+  private readonly ACCESS_TOKEN_EXPIRES_IN = 15 * 60; // Access Token 有效期 15 分钟（秒）
+  private readonly DEFAULT_REFRESH_TOKEN_EXPIRES_IN = 7 * 24 * 60 * 60; // Refresh Token 默认有效期 7 天（秒）
 
   private systemSettingService?: SystemSettingService;
 
@@ -35,12 +35,12 @@ export class TokenService {
       role: user.role,
     };
 
-    // a6: 从系统设置读取会话超时（分钟），映射为 Refresh Token 有效期
-    let refreshExpiresIn: string = this.DEFAULT_REFRESH_TOKEN_EXPIRES_IN;
+    // a6: 从系统设置读取会话超时（分钟），映射为 Refresh Token 有效期（秒）
+    let refreshExpiresInSeconds: number = this.DEFAULT_REFRESH_TOKEN_EXPIRES_IN;
     if (this.systemSettingService) {
       const timeoutMinutes = await this.systemSettingService.getValue<number>('security.sessionTimeoutMinutes', 0);
       if (timeoutMinutes > 0) {
-        refreshExpiresIn = `${timeoutMinutes}m`;
+        refreshExpiresInSeconds = timeoutMinutes * 60;
       }
     }
 
@@ -51,7 +51,7 @@ export class TokenService {
 
     // 生成 Refresh Token
     const refreshToken = jwt.sign(payload, this.REFRESH_TOKEN_SECRET, {
-      expiresIn: refreshExpiresIn,
+      expiresIn: refreshExpiresInSeconds,
     });
 
     return { accessToken, refreshToken };
