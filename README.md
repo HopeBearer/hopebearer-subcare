@@ -352,8 +352,8 @@ docker compose up -d
 
 ## 📬 联系方式
 
-- 📧 Email: [your-email@example.com](mailto:your-email@example.com)
-- 🐛 Issue: [GitHub Issues](https://github.com/your-username/subcare/issues)
+- 📧 Email: [hopebearer666@gmail.com](mailto:hopebearer666@gmail.com)
+- 🐛 Issue: [GitHub Issues](https://github.com/hopebearer/subcare/issues)
 
 ---
 
